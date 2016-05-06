@@ -1,0 +1,9 @@
+useDynLib(normalregMix)
+
+export(normalmixCrit, normalmixCritBoot, normalmixMEMtest, normalmixMEMtestSeq,
+       normalmixPMLE, normalmixVcov, rnormregmix,
+       regmixCrit, regmixCritBoot, regmixMEMtest,
+       regmixPMLE, regmixVcov,        
+       print.normalregMix, print.summary.normalregMix, summary.normalregMix)
+
+# exportPattern("^[[:alpha:]]+")
