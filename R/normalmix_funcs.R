@@ -285,7 +285,6 @@ return(list(crit = crit, pvals = pvals))
 normalmixPMLE <- function (y, m = 2, z = NULL, vcov.method = c("Hessian", "OPG", "none"),
                            ninits = 25, epsilon = 1e-08, maxit = 2000,
                            epsilon.short = 1e-02, maxit.short = 500) {
-# Estimate parameters of a finite mixture of univariate normals by the method of penalized maximum likelhood.
 y <- as.vector(y)
 n <- length(y)
 p <- 0
