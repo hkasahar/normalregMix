@@ -1,9 +1,9 @@
-useDynLib(normalregMix)
+useDynLib(normalregMix2)
 
 export(normalmixCrit, normalmixCritBoot, normalmixMEMtest, normalmixMEMtestSeq,
        normalmixPMLE, normalmixVcov, rnormregmix,
        regmixCrit, regmixCritBoot, regmixMEMtest,
        regmixPMLE, regmixVcov,        
-       print.normalregMix, print.summary.normalregMix, summary.normalregMix)
+       print.normalregMix, print.summary.normalregMix, summary.normalregMix, omega.12, omega.123)
 
 # exportPattern("^[[:alpha:]]+")

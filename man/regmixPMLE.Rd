@@ -2,10 +2,10 @@
 \alias{regmixPMLE}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-Penalized Maximum Likelihood Estimation of a Normal Mixture Regression Model
+title %%  ~~function to do ... ~~
 }
 \description{
-Estimate parameters of a normal mixture regression model by the method of penalized maximum likelhood.
+%%  ~~ A concise (1-5 lines) description of what the function does. ~~
 }
 \usage{
 regmixPMLE(y, x, m = 2, z = NULL, vcov.method = c("Hessian", "OPG", "none"),
@@ -15,37 +15,38 @@ regmixPMLE(y, x, m = 2, z = NULL, vcov.method = c("Hessian", "OPG", "none"),
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{y}{
-Numeric vector of dependent variable.
+%%     ~~Describe \code{y} here~~
 }
   \item{x}{
-An nxq matrix of explanatory variables. Should not include an intercept.
+%%     ~~Describe \code{x} here~~
 }
   \item{m}{
-The number of components in the mixture.}
+%%     ~~Describe \code{m} here~~
+}
   \item{z}{
-An nxp matrix of covariates whose coefficients are common to all the components.
+%%     ~~Describe \code{z} here~~
 }
   \item{vcov.method}{
-The method to compute the covariance matrix of the PMLE
+%%     ~~Describe \code{vcov.method} here~~
 }
   \item{ninits}{
-The number of randomly drawn initial values.
+%%     ~~Describe \code{ninits} here~~
 }
   \item{epsilon}{
-The convergence criterion. Convergence is declared when the penalized log-likelihood increases by less than \code{epsilon}. 
+%%     ~~Describe \code{epsilon} here~~
 }
   \item{maxit}{
-The maximum number of iterations.
+%%     ~~Describe \code{maxit} here~~
 }
   \item{epsilon.short}{
-The convergence criterion in short EM. Convergence is declared when the penalized log-likelihood increases by less than \code{epsilon.short}.
+%%     ~~Describe \code{epsilon.short} here~~
 }
   \item{maxit.short}{
-The maximum number of iterations in short EM.
+%%     ~~Describe \code{maxit.short} here~~
 }
 }
 \details{
-The likelihood function of normal mixtures diverges to infinity when the variance of a component is allowed to go to zero. The penalized MLE overcomes this problem by the use of a penalty term. See Chen et al. (2008) for details.
+%%  ~~ If necessary, more details than the description above ~~
 }
 \value{
 %%  ~Describe the value returned

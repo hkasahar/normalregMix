@@ -72,7 +72,7 @@ if (reorder) {
     cat("Gamma\n")
     printCoefmat(gamma, P.values = TRUE, has.Pvalue = TRUE, signif.legend = FALSE, digits=x$digits)
   }    
-  cat("---\nSignif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1")
+  cat("---\nSignif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1")
 } else {
   printCoefmat(x$coefficients, P.values = TRUE, has.Pvalue = TRUE, digits = x$digits)
 }

@@ -22,7 +22,7 @@ normalmixPMLE(y, m = 2, z = NULL, vcov.method = c("Hessian", "OPG", "none"),
   An nxp matrix of covariates whose coefficients are common to all the components.
   }
   \item{vcov.method}{
-  The method to compute the covariance matrix of the PMLE
+  TO BE WRITTEN
   }
   \item{ninits}{
   The number of randomly drawn initial values.
@@ -55,7 +55,7 @@ When \code{z=NULL}, \code{normalmixPMLE} estimates an \eqn{m}-component normal m
  }
 \note{\code{normalmixPMLE} maximizes the penalized log-likelihood function using the EM algorithm with combining short and long runs of EM steps as in Biernacki et al. (2003). \code{normalmixPMLE} first runs the EM algorithm from \code{ninits}\eqn{* 4m(1 + p)} initial values with the convertence criterion \code{epsilon.short} and \code{maxit.short}. Then, \code{normalmixPMLE} uses \code{ninits} best initial values to run the EM algorithm with the convertence criterion \code{epsilon} and \code{maxit}.}
 \value{
-\code{normalmixPMLE} returns a list of class \code{normareglMix} with items:
+\code{normalmixPMLE} returns a list of class \code{normalMix} with items:
 \item{coefficients}{A vector of parameter estimates. Ordered as \eqn{\alpha_1,\ldots,\alpha_m,\mu_1,\ldots,\mu_m,\sigma_1,\ldots,\sigma_m,\gamma}.}
 \item{parlist}{The parameter estimates as a list containing alpha, mu, and sigma (and gamma if z is included in the model).}
 \item{vcov}{The estimated variance-covariance matrix.}

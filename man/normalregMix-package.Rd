@@ -3,8 +3,8 @@
 \alias{normalregMix}
 \docType{package}
 \title{
-modified EM test for the number of components in normal mixtures
-and normal regression mixtures
+What the package does (short line)
+~~ package title ~~
 }
 \description{
 More about what it does (maybe more than one line)
@@ -27,6 +27,8 @@ Maintainer: Katsumi Shimotsu <shimotsu@e.u-tokyo.ac.jp>
 \references{
 ~~ Literature or other references for background information ~~
 }
+~~ Optionally other standard keywords, one per line, from file KEYWORDS in the R documentation ~~
+~~ directory ~~
 \keyword{ package }
 \seealso{
 ~~ Optional links to other man pages, e.g. ~~

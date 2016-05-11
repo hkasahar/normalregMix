@@ -19,7 +19,9 @@ extern "C" {
         double *sigma0, /* stdevs used in the penalty term */
         double *mu0,    /* estimate of mu from m-1 component model */
         double *aan, /* constant in the penalty term */
-        int *hh, /* the component that is split into two */
+    	double *ttau,   /* the parameter that splits the h-th component */
+        int *hh, /* the component that is split into two. If ==0, no penalty on tau is imposed */
+        int *kk, /* the steps in EM update. If =0, no penalty on tau. If >=1, penalty on tau. If =1, constraints are imposed on mu. */
         double *lub, /* lower and upper bound on mu */
         double *work, /* 3*m-vector of workspace, which will be broken into 3 parts */
         double *post, /* n by m matrix of posterior probabilities */
@@ -36,11 +38,11 @@ extern "C" {
             int *mmaxit = set+4;    /* maximum number of iterations */
             int *jpvt = set+5;      /* pivots used in dgelsy */
 
-            int n=*nn, m=*mm, p=*pp, h=*hh, i, j, ii, minj=0, info, rk;
+            int n=*nn, m=*mm, p=*pp, h=*hh, k = *kk, i, j, ii, minj=0, info, rk;
             int ninits=*nninits, maxit = *mmaxit, emit, sing;
             const int np = n*p;
             double tol = *ttol, oldpenloglik;
-            double wmu=0.0, r, rowsum, min=0.0, an=*aan, worksize, ssr_j, s0j;
+            double wmu=0.0, r, rowsum, min=0.0, an=*aan, alphah, tau=*ttau, tauhat, worksize, ssr_j, s0j;
             double *AlpSigRatio = work+m; /* Second 1/3 of workspace, for frequently used constants */
             double *logAlpSigRatio = work+2*m; /* Third 1/3 of workspace, for frequently used constants */
             double *lb = lub;
@@ -59,7 +61,7 @@ extern "C" {
             work2 = (double *) R_alloc(nwork, sizeof(double));
             if (work2==NULL) error("Cannot allocate workspace\n");
 
-            if (h!=0) {  // If h!=0, compute upper and lower bounds
+            if (k==1) {  // If k==1, compute upper and lower bounds
                 mu0[0] = R_NegInf;
                 mu0[m] = R_PosInf;
                 double *lb0 = mu0;
@@ -139,7 +141,7 @@ extern "C" {
                 } /* end for (i=0; i<n; i++) loop */
 
                 /* Compute the penalized loglik. Note that penalized loglik uses old (not updated) sigma */
-                penloglik = loglik;
+                penloglik = loglik + log(2.0) + fmin(log(tau),log(1-tau));
                 for (j=0; j<m; j++) {
                     s0j = sigma0[j]/sigma[j];
                     penloglik += -an*(s0j*s0j - 2.0*log(s0j) -1.0);
@@ -193,8 +195,8 @@ extern "C" {
                     }
                     mu[j] = mu[j] / (alpha[j] * n);
 
-                    /* If h!=0, impose upper and lower bound */
-                    if (h!=0) {
+                    /* If k==1, impose upper and lower bound */
+                    if (k==1) {
                         mu[j] = fmax(mu[j],lb[j]);
                         mu[j] = fmin(mu[j],ub[j]);
                     }
@@ -210,11 +212,21 @@ extern "C" {
                     sigma[j] = fmax(sigma[j],0.01*sigma0[j]);
                 }   /* end for j=0; j<m; j++ loop updating alpha, mu and sigma */
 
-                /* If h!=0, update the h and h+1 th element of alpha */
-                if (h!=0) {
-                    double alphah = (alpha[h-1]+alpha[h])/2;
-                    alpha[h-1] = alphah;
-                    alpha[h] = alphah;
+                /* if k!=0, update alpha and/or tau */
+                if (k!=0){
+                    alphah = (alpha[h-1]+alpha[h]);
+                    /* If k!=1, update tau. If k==1, no update of tau. */
+                    if (k!=1) {
+                        tauhat = alpha[h-1]/(alpha[h-1]+alpha[h]);
+                        if (tauhat <= 0.5) {
+                            tau = fmin((alpha[h-1]*n + 1.0)/(alpha[h-1]*n + alpha[h]*n + 1.0), 0.5);
+                        } else {
+                            tau = fmax(alpha[h-1]*n /(alpha[h-1]*n + alpha[h]*n + 1.0), 0.5);
+                        }
+                    }
+                    /* Using tau, revise the h and h+1 th element of alpha */
+                    alpha[h-1] = alphah*tau;
+                    alpha[h] = alphah*(1-tau);
                 }
 
                 /* Check singularity */

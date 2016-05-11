@@ -2,10 +2,9 @@
 \alias{normalmixMEMtest}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-Modified EM Test for the Number of Components in a Finite Mixture of Univariate Normals
+modified em test%%  ~~function to do ... ~~
 }
 \description{
-Compute the modified EM test statistic for testing the number of components in a finite mixture of univariate normals.
 %%  ~~ A concise (1-5 lines) description of what the function does. ~~
 }
 \usage{
@@ -16,31 +15,28 @@ normalmixMEMtest(y, m = 2, z = NULL, an = NULL, ninits = 25,
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{y}{
-Numeric vector of data.
+%%     ~~Describe \code{y} here~~
 }
   \item{m}{
-Number of components under the null hypothesis.
+%%     ~~Describe \code{m} here~~
 }
   \item{z}{
-Matrix of additional covariates whose coefficient is the same across components
+%%     ~~Describe \code{z} here~~
 }
   \item{an}{
-Tuning parameter in the modified EM test.
+%%     ~~Describe \code{an} here~~
 }
   \item{ninits}{
-Number of initial values used when maximizing the log-likelihood function.
+%%     ~~Describe \code{ninits} here~~
 }
   \item{crit.method}{
-Method for computing the critical values of the modified EM test.
-If "none", no critical values are computed.
-If "asy", asymptotic critical values are computed by simulation.
-If "boot", critical values are computed by bootstrap.
+%%     ~~Describe \code{crit.method} here~~
 }
   \item{nbtsp}{
-Number of bootstrap repetitions.
+%%     ~~Describe \code{nbtsp} here~~
 }
   \item{parallel}{
-If TRUE, all the cores of the computer are used when bootstrapping the critical values.
+%%     ~~Describe \code{parallel} here~~
 }
   \item{cl}{
 %%     ~~Describe \code{cl} here~~
@@ -50,11 +46,6 @@ If TRUE, all the cores of the computer are used when bootstrapping the critical 
 %%  ~~ If necessary, more details than the description above ~~
 }
 \value{
-\code{normalmixMEMtest} returns a list of class \code{normalregMix} with items:
-\item{emstat}{A vector of the modified EM statistics at k=1,2,3.}
-\item{pvals}{The p-value of the modified EM test of the null hyppthesis of m components.}
-\item{pvals}{The 10\%, 5\%, 1\% critical values the modified EM test of the null hyppthesis of m components.}
-\item{m}{The number of components under the null hypothesis.}
 %%  ~Describe the value returned
 %%  If it is a LIST, use
 %%  \item{comp1 }{Description of 'comp1'}
