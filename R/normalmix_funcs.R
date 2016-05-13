@@ -230,8 +230,8 @@ normalmixCritBoot <- function (y, parlist, z = NULL, values = NULL, ninits = 10,
 #  list(crit, pvals)
 #  crit = 3 by 3 matrix of (10%, 5%, 1% critical values), jth row corresponding to k=j
 #  pvals = p-values at k = 1, 2, 3
-
-set.seed(123456)
+SEED <- 123456
+set.seed(SEED)
 y   <- as.vector(y)
 n   <- length(y)
 
@@ -248,11 +248,6 @@ pvals <- NULL
 ii    <- sample(m, nbtsp*n, replace = TRUE, prob = alpha)
 ybset <- rnorm(nbtsp*n, mean = mu[ii], sd = sigma[ii])
 ybset <- matrix(ybset, nrow = n, ncol = nbtsp)
-
-if (!is.null(z)) {
-  zgamma <- as.matrix(z) %*% gamma
-  ybset <- ybset + as.vector(zgamma)
-}
 
 if (parallel) {
   if (is.null(cl)) {
@@ -391,10 +386,11 @@ if (m == 1) {
         notcg = integer(ninits), as.double(epsilon), double(n*(2+p)), package = "normalregMix")
   }
 
-    if (mean(out$notcg) >= 0.9) {
-  warning(sprintf("The EM algorithm failed to converge in %d%% of the initial values.
- Try increasing maxit.", 100*mean(out$notcg)))
-  }
+  # causes an error in snow package, running on %d.
+  #   if (mean(out$notcg) >= 0.9) {
+  #       warning(sprintf("The EM algorithm failed to converge in %d%% of the initial values.
+  #         Try increasing maxit.", 100*mean(out$notcg)))
+  # }
 
   index     <- which.max(out$penloglikset)
   alpha     <- out$alphaset[(m*(index-1)+1):(m*index)]
@@ -544,9 +540,11 @@ a = list(alpha = alpha, mu = mu, sigma = sigma, gamma = gamma, emstat = emstat, 
 }  # end normalmixMEMtestSeq
 
 
-normalmixMEMtest <- function (y, m = 2, z = NULL, an = NULL, ninits = 10,
+normalmixMEMtest <- function (y, m = 2, z = NULL, an = NULL, tauset = c(0.1,0.3,0.5), 
+                              ninits = 10,
                               crit.method = c("asy", "boot", "none"), nbtsp = 199,
-                              parallel = TRUE, cl = NULL) {
+                              cl = NULL, 
+                              parallel.method = c("none", "do", "snow")) {
 # Compute the modified EM test statistic for testing H_0 of m components
 # against H_1 of m+1 components for a univariate finite mixture of normals
 
@@ -554,13 +552,18 @@ y     <- as.vector(y)
 n     <- length(y)
 if (!is.null(z)) {z <- as.matrix(z)}
 crit.method <- match.arg(crit.method)
+parallel.method <- match.arg(parallel.method)
 
 par0    <- normalmixPMLE(y=y, m=m, z=z, vcov.method = "none", ninits=ninits)
 loglik0 <- par0$loglik
 
 if (is.null(an)){ an <- anFormula(par = par0$parlist, m = m, n = n) }
 
-par1  <- normalmixMaxPhi(y=y, par0=par0$parlist, z=z, an=an, ninits=ninits)
+par1  <- normalmixMaxPhi(y=y, par0=par0$parlist, z=z, 
+                         an=an, tauset = tauset, ninits=ninits,
+                         parallel.method = parallel.method, cl = cl)
+
+
 emstat  <- 2*(par1$penloglik - loglik0)
 # emstat  <- 2*(par1$loglik - loglik0)
 # print(par1)
@@ -569,7 +572,7 @@ if (crit.method == "asy"){
   result  <- normalmixCrit(y=y, parlist=par0$parlist, z=z, values=emstat)
 } else if (crit.method == "boot") {
   result  <- normalmixCritBoot(y=y, parlist= par0$parlist, z=z, values=emstat,
-                            ninits=ninits, nbtsp=nbtsp, parallel=parallel, cl=cl)
+                            ninits=ninits, nbtsp=nbtsp, (parallel.method != "none"), cl=cl)
 } else {
   result <- list()
   result$crit <- result$pvals <- rep(NA,3)
@@ -585,119 +588,186 @@ a
 }  # end normalmixMEMtest
 
 
-normalmixMaxPhi <- function (y, par0, z = NULL, an, ninits = 10,
-          epsilon.short = 1e-02, epsilon = 1e-08,
-          maxit.short = 500, maxit = 2000, verb = FALSE) {
+
+normalmixMaxPhi <- function (y, par0, z = NULL, an, tauset = c(0.1,0.3,0.5), 
+                             ninits = 10, epsilon.short = 1e-02, epsilon = 1e-08,
+                             maxit.short = 500, maxit = 2000, 
+                             verb = FALSE, 
+                             parallel.method = c("none", "do", "snow"),
+                             cl = NULL) {
 # Given a parameter estimate of an m component model and tuning paramter an,
 # maximize the objective function for computing the modified EM test statistic
 # for testing H_0 of m components against H_1 of m+1 for a univariate normal finite mixture
 
 warn  <- options(warn=-1) # Turn off warnings
-n     <- length(y)
-p     <- 0
+parallel.method <- match.arg(parallel.method)
 
+p <- 0
+m <- length(par0$alpha)
+
+# jpvt must be specified to run SNOW package
+jpvt <- NULL
 if (!is.null(z)) {
   p <- ncol(z)
   jpvt   <- integer(p)    # pivots used in dgelsy
 }
 
-alpha0  <- par0$alpha
-mu0     <- par0$mu
-sigma0  <- par0$sigma
-gamma0  <- par0$gamma
-
-m      <- length(alpha0)
-m1     <- m+1
-tauset <- c(0.1,0.3,0.5)
-k      <- 1
-
 ninits.short <- ninits*4*(1+p)*m
 
-loglik.all <- matrix(0,nrow=m,ncol=3)
-loglik.tau.all <- matrix(0,nrow=3,ncol=3)
-penloglik.all <- matrix(0,nrow=m,ncol=3)
-penloglik.tau.all <- matrix(0,nrow=3,ncol=3)
-phi1.tau <- vector('list',3)
-phi1 <- vector('list',m)
 
-# Computes constraints
-mu0h  <- c(0,mu0,0)        # m+1 by 1
 
-for (h in 1:m) {
+loglik.all <- matrix(0,nrow=m*length(tauset),ncol=3)
+penloglik.all <- matrix(0,nrow=m*length(tauset),ncol=3)
+# Remember, you can always take phi1 back,
+# phi1 <- vector('list',m*length(tauset))
 
-# Computes sigma0h
-  sigma0h <- c(sigma0[1:h],sigma0[h:m])  # m+1 by 1
-
-for (j in 1:3){
+if (parallel.method == "do") {
+  # TODO: Assign or check with cl, if possible.
+  registerDoParallel()
+  results <- foreach (t = 1:length(tauset),
+                      .export = 'normalmixMaxPhiStep', .combine = c)  %:%
+    foreach (h = 1:m) %dopar% {
+      normalmixMaxPhiStep (c(h, tauset[t]), y, par0, z = NULL, p, jpvt,
+                           an,
+                           ninits, ninits.short,
+                           epsilon.short, epsilon,
+                           maxit.short, maxit,
+                           verb) }
+  loglik.all <- t(sapply(results, "[[", "loglik"))
+  penloglik.all <- t(sapply(results, "[[", "penloglik"))
+}
+else if (parallel.method == "snow") {
+  if (is.null(cl))
+    cl <- snow::makeCluster(detectCores(), type = "SOCK")
   
-  tau <- tauset[j]
+  # causes an error in snow package, running on %d.
+  htaupairs <- expand.grid(h = seq(1,m), tau = tauset)
+  results <- snow::parApply(cl, htaupairs, 1, normalmixMaxPhiStep,
+                        y, par0, z, p, jpvt,
+                        an,
+                        ninits, ninits.short,
+                        epsilon.short, epsilon,
+                        maxit.short, maxit,
+                        verb)
+  snow::stopCluster(cl)
+  loglik.all <- t(sapply(results, "[[", "loglik"))
+  penloglik.all <- t(sapply(results, "[[", "penloglik")) 
+}
+else
+  for (h in 1:m) 
+    for (t in 1:length(tauset)) {
+      rowindex <- (t-1)*m + h
+      tau <- tauset[t]
+      result <- normalmixMaxPhiStep(c(h, tau), y, par0, z = NULL, p, jpvt, 
+                                    an,
+                                    ninits, ninits.short,
+                                    epsilon.short, epsilon,
+                                    maxit.short, maxit,
+                                    verb)
+      # phi1[[rowindex]] <- result$phi1
+      loglik.all[rowindex,] <- result$loglik
+      penloglik.all[rowindex,] <- result$penloglik
+    }
+loglik <- apply(loglik.all, 2, max)  # 3 by 1 vector
+penloglik <- apply(penloglik.all, 2, max)  # 3 by 1 vector
+
+out <- list(loglik = loglik, penloglik = penloglik)
+
+out
+
+}  # end normalmixMaxPhi
+
+normalmixMaxPhiStep <- function (htaupair, y, par0, z = NULL, p, jpvt, 
+                                 an,
+                                 ninits, ninits.short,
+                                 epsilon.short, epsilon,
+                                 maxit.short, maxit,
+                                 verb)
+{
+  # TODO: Beautify and move some parameters to the method
+  # that calls this.
+  alpha0 <- par0$alpha
   
+  m      <- length(alpha0)
+  m1     <- m+1
+  k      <- 1
+  n      <- length(y)
+  h      <- as.numeric(htaupair[1])
+  tau    <- as.numeric(htaupair[2])
+  
+  mu0    <- par0$mu
+  mu0h   <- c(0,mu0,0)        # m+1 by 1
+  sigma0 <- par0$sigma
+  sigma0h<- c(sigma0[1:h],sigma0[h:m])
+  gamma0 <- par0$gamma
+
   # generate initial values
-  tmp <- normalmixPhiInit(y = y, par = par0, z = z, h = h, tau = tau, ninits = ninits.short)
+  tmp <- normalmixPhiInit(y = y, par = par0, z = z, h=h, tau = tau, ninits = ninits.short)
   # tmp$alpha, tmp$sigma: m+1 by ninits matrix, tmp$mu: p by m+1 by ninits array
   # tmp$gamma: p by ninits matrix
-
-  alphaset.s  <- tmp$alpha
-  muset.s     <- tmp$mu
-  sigmaset.s  <- tmp$sigma
+  
+  alphaset.s   <- tmp$alpha
+  muset.s   <- tmp$mu
+  sigmaset.s   <- tmp$sigma
   gammaset.s  <- tmp$gamma
 
+  
   if (is.null(z)) {
     setting <- c(n,m1,ninits.short,maxit.short)  # configulation parameters
     out.short <- .C("normalmixpmle", as.integer(setting), as.double(y),
-      alphaset = as.double(alphaset.s), muset = as.double(muset.s), sigmaset = as.double(sigmaset.s),
-            as.double(sigma0h), as.double(mu0h), as.double(an), as.double(tau), as.integer(h),
-            as.integer(k), lub = double(2*m1), double(3*m1), post = double(n*m1),
-      loglikset = double(ninits.short), penloglikset = double(ninits.short),
-      notcg = integer(ninits.short), as.double(epsilon.short), package = "normalregMix")
+                    alphaset = as.double(alphaset.s), muset = as.double(muset.s), sigmaset = as.double(sigmaset.s),
+                    as.double(sigma0h), as.double(mu0h), as.double(an), as.double(tau), as.integer(h),
+                    as.integer(k), lub = double(2*m1), double(3*m1), post = double(n*m1),
+                    loglikset = double(ninits.short), penloglikset = double(ninits.short),
+                    notcg = integer(ninits.short), as.double(epsilon.short), package = "normalregMix")
   } else {
     setting.z <- c(n,m1,p,ninits.short,maxit.short,jpvt)  # configulation parameters
     out.short <- .C("normalmixpmle_z", as.integer(setting.z), as.double(y), as.double(z),
-      alphaset = as.double(alphaset.s), muset = as.double(muset.s), sigmaset = as.double(sigmaset.s), gammaset = as.double(gammaset.s),
-            as.double(sigma0h), as.double(mu0h), as.double(an), as.double(tau), as.integer(h),
-            as.integer(k), lub = double(2*m1), double(3*m1), post = double(n*m1),
-            loglikset = double(ninits.short), penloglikset = double(ninits.short),
-            notcg = integer(ninits.short), as.double(epsilon.short), double(n*(2+p)), package = "normalregMix")
+                    alphaset = as.double(alphaset.s), muset = as.double(muset.s), sigmaset = as.double(sigmaset.s), gammaset = as.double(gammaset.s),
+                    as.double(sigma0h), as.double(mu0h), as.double(an), as.double(tau), as.integer(h),
+                    as.integer(k), lub = double(2*m1), double(3*m1), post = double(n*m1),
+                    loglikset = double(ninits.short), penloglikset = double(ninits.short),
+                    notcg = integer(ninits.short), as.double(epsilon.short), double(n*(2+p)), package = "normalregMix")
   }
-
-    if (verb && any(out.short$notcg)) {
-        cat(sprintf("non-convergence rate at short-EM = %.3f\n",mean(out.short$notcg)))
-    }
-
+  
+  if (verb && any(out.short$notcg)) {
+    cat(sprintf("non-convergence rate at short-EM = %.3f\n",mean(out.short$notcg)))
+  }
+  
   penloglik.short <- out.short$penloglikset    # extract the 4th argument = penloglik
   oo <- order(penloglik.short, decreasing = TRUE)
   oo.inits <- oo[1:ninits]
-
+  
   # long EM
-
+  
   alphaset   <- alphaset.s[,oo.inits]
   muset      <- muset.s[,oo.inits]
   sigmaset   <- sigmaset.s[,oo.inits]
-
+  
   if (is.null(z)) {
     setting <- c(n,m1,ninits,maxit)
     out <- .C("normalmixpmle", as.integer(setting), as.double(y),
-            alphaset = as.double(alphaset), muset = as.double(muset), sigmaset = as.double(sigmaset),
-            as.double(sigma0h), as.double(mu0h), as.double(an), as.double(tau), as.integer(h),
-            as.integer(k), lub = double(2*m1), double(3*m1), post = double(n*m1),
-            loglikset = double(ninits), penloglikset = double(ninits),
-            notcg = integer(ninits), as.double(epsilon), package = "normalregMix")
+              alphaset = as.double(alphaset), muset = as.double(muset), sigmaset = as.double(sigmaset),
+              as.double(sigma0h), as.double(mu0h), as.double(an), as.double(tau), as.integer(h),
+              as.integer(k), lub = double(2*m1), double(3*m1), post = double(n*m1),
+              loglikset = double(ninits), penloglikset = double(ninits),
+              notcg = integer(ninits), as.double(epsilon), package = "normalregMix")
   } else {
     gammaset  <- gammaset.s[,oo.inits]
     setting.z <- c(n,m1,p,ninits,maxit,jpvt)
     out <- .C("normalmixpmle_z", as.integer(setting.z), as.double(y), as.double(z),
-            alphaset = as.double(alphaset), muset = as.double(muset), sigmaset = as.double(sigmaset), gammaset = as.double(gammaset),
-            as.double(sigma0h), as.double(mu0h), as.double(an), as.double(tau), as.integer(h),
-            as.integer(k), lub = double(2*m1), double(3*m1), post = double(n*m1),
-            loglikset = double(ninits), penloglikset = double(ninits),
-            notcg = integer(ninits), as.double(epsilon), double(n*(2+p)), package = "normalregMix")
+              alphaset = as.double(alphaset), muset = as.double(muset), sigmaset = as.double(sigmaset), gammaset = as.double(gammaset),
+              as.double(sigma0h), as.double(mu0h), as.double(an), as.double(tau), as.integer(h),
+              as.integer(k), lub = double(2*m1), double(3*m1), post = double(n*m1),
+              loglikset = double(ninits), penloglikset = double(ninits),
+              notcg = integer(ninits), as.double(epsilon), double(n*(2+p)), package = "normalregMix")
   }
-
-    if (mean(out$notcg) >= 0.9) {
-  warning(sprintf("The EM algorithm failed to converge in %d%% of the
- initial values at h = %d. Please increase maxit.", 100*mean(out$notcg), h))
-  }
-
+  # causes an error in snow package, running on %d.
+  # if (mean(out$notcg) >= 0.9) {
+  #   warning(sprintf("The EM algorithm failed to converge in %d%% of the
+  #                   initial values at h = %d. Please increase maxit.", 100*mean(out$notcg), h))
+  # }
+  
   index       <- which.max(out$penloglikset)
   alpha       <- out$alphaset[(m1*(index-1)+1):(m1*index)]
   mu          <- out$muset[(m1*(index-1)+1):(m1*index)]
@@ -706,57 +776,30 @@ for (j in 1:3){
   penloglik   <- out$penloglikset[index]
   loglik      <- out$loglikset[index]
   noncg.rate  <- mean(out$notcg)
-
-#    print(c(h,k,tau,alpha,mu,sigma))
-#   print(loglik)
-#   print(penloglik)
+  
+  #    print(c(h,k,tau,alpha,mu,sigma))
+  #   print(loglik)
+  #   print(penloglik)
   
   mu.order  <- order(mu)
   alpha     <- alpha[mu.order]
   mu        <- mu[mu.order]
   sigma     <- sigma[mu.order]
-
+  
   a0 = list(alpha = alpha, mu = mu, sigma = sigma, gamma = gamma,
-           penloglik = penloglik, loglik=loglik)
-
+            penloglik = penloglik, loglik=loglik)
+  
   # update parameters
   a     <- normalmixPhi2(y, z, a0, sigma0 = sigma0, h=h, tau=tau, an=an)
   a[[1]]  <- list(alpha = alpha, mu = mu, sigma = sigma, gamma = gamma,
-            penloglik = a0$penloglik, loglik=a0$loglik)
-
-  phi1.tau[[j]] <- c(a[[1]], h = h)
-  loglik.tau <- sapply(a, "[[", "loglik")    # extract loglik at k=1,2,3
-  penloglik.tau <- sapply(a, "[[", "penloglik")    # extract penloglik at k=1,2,3
-#   print(loglik.tau)
-#    print(penloglik.tau)
-  loglik.tau.all[j,] <- loglik.tau  
-  penloglik.tau.all[j,] <- penloglik.tau  
-} # end for (j in 1:3)
-
-#   print(loglik.tau.all)
-#    print(penloglik.tau.all)
-  loglik.tau.max <- apply(loglik.tau.all, 2, max)  # 3 by 1 vector
-  penloglik.tau.max <- apply(penloglik.tau.all, 2, max)  # 3 by 1 vector
-
-#  phi1[[h]] <- c(a[[1]], h = h)
-#  loglik.h <- sapply(a, "[[", "loglik")    # extract loglik at k=1,2,3
-#  loglik.all[h,] <- loglik.h
-
-  loglik.all[h,] <- t(loglik.tau.max)
-  penloglik.all[h,] <- t(penloglik.tau.max)
-
-  loglik <- apply(loglik.all, 2, max)  # 3 by 1 vector
-  penloglik <- apply(penloglik.all, 2, max)  # 3 by 1 vector
-
-} # end for (h in 1:m)
-
-out <- list(loglik = loglik, penloglik = penloglik)
-# out <- list(loglik = loglik, phi1 = phi1, notcg = a0$notcg)
-
-out
-
-}  # end normalmixMaxPhi
-
+                  penloglik = a0$penloglik, loglik=a0$loglik)
+  
+  phi1 <- c(a[[1]], h = h)
+  loglik <- sapply(a, "[[", "loglik")    # extract loglik at k=1,2,3
+  penloglik <- sapply(a, "[[", "penloglik")    # extract penloglik at k=1,2,3
+  
+  return (list(phi1 = phi1, loglik = loglik, penloglik = penloglik))
+}
 
 normalmixPhi2 <- function (y, z = NULL, par0, sigma0, h, tau, an) {
 # Starting from a parameter estimate, take two EM steps to compute the
