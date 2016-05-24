@@ -389,7 +389,7 @@ penloglik.all <- matrix(0,nrow=m*length(tauset),ncol=3)
 
 if (parallel.method == "do") {
   if (is.null(cl))
-    cl <- makeCluster(detectCores())
+    cl <- doParallel::makeCluster(detectCores())
   registerDoParallel(cl)
   results <- foreach (t = 1:length(tauset),
                       .export = 'regmixPhiStep', .combine = c)  %:%
@@ -400,7 +400,7 @@ if (parallel.method == "do") {
                            epsilon.short, epsilon,
                            maxit.short, maxit,
                            verb) }
-  on.exit(cl)
+  doParallel::on.exit(cl)
   loglik.all <- t(sapply(results, "[[", "loglik"))
   penloglik.all <- t(sapply(results, "[[", "penloglik"))
 }

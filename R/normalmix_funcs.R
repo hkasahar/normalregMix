@@ -622,7 +622,7 @@ penloglik.all <- matrix(0,nrow=m*length(tauset),ncol=3)
 
 if (parallel.method == "do") {
   if (is.null(cl))
-    cl <- makeCluster(detectCores())
+    cl <- doParallel::makeCluster(detectCores())
   registerDoParallel(cl)
   results <- foreach (t = 1:length(tauset),
                       .export = 'normalmixMaxPhiStep', .combine = c)  %:%
