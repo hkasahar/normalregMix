@@ -9,9 +9,9 @@
    Based on normpost.c in mixtools package.  */
 extern "C" {
     void regmixpmle_z(
-        int *set, /* vector of n, m, k, p, ninits, maxit, jpvt */
+        int *set, /* vector of n, m, q1, p, ninits, maxit, jpvt */
         double *y, /* n by 1 vector of dependent varaible */
-        double *x, /* n by k matrix of explanatory variables wrt beta */
+        double *x, /* n by q1 matrix of explanatory variables wrt beta */
         double *z, /* n by p matrix of explanatory variables wrt gamma */
         double *alphaset, /* current vector of mixing parameters */
         double *mubetaset, /* current vector of regression coefficients */
@@ -20,9 +20,9 @@ extern "C" {
         double *sigma0, /* stdevs used in the penalty term */
         double *mu0,    /* estimate of mu from m-1 component model */
         double *aan, /* constant in the penalty term */
-		double *ttau,   /* the parameter that splits the h-th component */
+				double *ttau,   /* the parameter that splits the h-th component */
         int *hh, /* the component that is split into two. If =0, unconstrained PMLE is computed. */
-		int *ttaupenoption,  /* the steps in EM update. If =0, no penalty on tau. If >=1, penalty on tau. If =1, constraints are imposed on mu. */
+				int *kk,  /* the steps in EM update. If =0, no penalty on tau. If >=1, penalty on tau. If =1, constraints are imposed on mu. */
         double *lub, /* lower and upper bound on mu */
         double *work, /* 3*m-vector of workspace, which will be broken into 3 parts */
         double *post, /* n by m matrix of posterior probabilities */
@@ -30,17 +30,17 @@ extern "C" {
         double *penloglikset, /* scalar penalized loglikelihood value */
         int *notcg,  /* =1 if not convergent */
         double *ttol, /* tolerance level for exiting iteration */
-        double *wxy /* n by (k+3+p) matrix of zgamma, wy, wx, yhat, and zCopy */
+        double *wxy /* n by (q1+3+p) matrix of zgamma, wy, wx, yhat, and zCopy */
         ) {
             int *nn = set;          /* sample size */
             int *mm = set+1;        /* number of components */
-            int *kk = set+2;        /* number of explanatory variables */
+            int *qq1 = set+2;        /* number of explanatory variables */
             int *pp = set+3;        /* number of variables in z */
             int *nninits = set+4;   /* number of initial values */
             int *mmaxit = set+5;    /* maximum number of iterations */
             int *jpvt = set+6;      /* pivots used in dgelsy */
 
-            int n=*nn, m=*mm, k=*kk, p=*pp, h=*hh, taupenoption = *ttaupenoption, i, j, ii, minj=0, info, rk;
+            int n=*nn, m=*mm, q1=*qq1, p=*pp, h=*hh, k = *kk, i, j, ii, minj=0, info, rk;
             int ninits=*nninits, maxit = *mmaxit, emit, sing;
             const int np = n*p;
             double tol = *ttol, oldpenloglik;
@@ -52,15 +52,15 @@ extern "C" {
             double *zgamma = wxy;
             double *wy = wxy + n;
             double *wx = wxy + 2*n;
-            double *yhat = wxy + n*(2+k);
-            double *zCopy = wxy + n*(3+k);
+            double *yhat = wxy + n*(2+q1);
+            double *zCopy = wxy + n*(3+q1);
 
             /* First, make the query, store the result in 'nwork', and allocate the workspace. */
             double rcond = sqrt((2.2204460492503131e-16)/2);    //  2.22... is Machine epsilon
             const int iOne = 1;
             int query = -1;  // Code for "query mode"
-            if (k>=p) {
-                F77_CALL(dgelsy)(nn, kk, &iOne, x, nn, y, nn, jpvt, &rcond, &rk, &worksize, &query, &info);
+            if (q1>=p) {
+                F77_CALL(dgelsy)(nn, qq1, &iOne, x, nn, y, nn, jpvt, &rcond, &rk, &worksize, &query, &info);
             } else {
                 F77_CALL(dgelsy)(nn, pp, &iOne, z, nn, y, nn, jpvt, &rcond, &rk, &worksize, &query, &info);
             }
@@ -69,7 +69,7 @@ extern "C" {
             work2 = (double *) R_alloc(nwork, sizeof(double));
             if (work2==NULL) error("Cannot allocate workspace\n");
 
-            if (taupenoption==1) {  // If taupenoption==1, compute upper and lower bounds
+            if (k==1) {  // If k==1, compute upper and lower bounds
                 mu0[0] = R_NegInf;
                 mu0[m] = R_PosInf;
                 double *lb0 = mu0;
@@ -90,7 +90,7 @@ extern "C" {
 
             for (jn=0; jn<ninits; jn++) {
                 double *alpha = alphaset + jn*m;
-                double *mubeta = mubetaset + jn*m*k;
+                double *mubeta = mubetaset + jn*m*q1;
                 double *sigma = sigmaset + jn*m;
                 double *gamma = gammaset + jn*p;
 
@@ -117,8 +117,8 @@ extern "C" {
                     }
                     for (j=0; j<m; j++) {
                         xtheta = 0.0; // Initialize xtheta
-                        for (ii=0; ii<k; ii++) {  // Compute xtheta
-                            xtheta += x[i + n*ii]*mubeta[ii + k*j];
+                        for (ii=0; ii<q1; ii++) {  // Compute xtheta
+                            xtheta += x[i + n*ii]*mubeta[ii + q1*j];
                         }
                         r = y[i] - zgamma[i] - xtheta;
                         r = r*r;
@@ -174,8 +174,8 @@ extern "C" {
                     wxtheta = 0.0; // Initialize wxtheta
                     for (j=0; j<m; j++) {
                         xtheta = 0.0; // Initialize xtheta
-                        for (ii=0; ii<k; ii++) {  // Compute xtheta
-                            xtheta += x[i + n*ii]*mubeta[ii + k*j];
+                        for (ii=0; ii<q1; ii++) {  // Compute xtheta
+                            xtheta += x[i + n*ii]*mubeta[ii + q1*j];
                         }
                         wxtheta += post[i + n*j]*xtheta;
                     }
@@ -208,33 +208,33 @@ extern "C" {
                             zgamma[i] += z[i + n*ii]*gamma[ii];
                         }
                         wy[i] = sqrt(post[i + n*j])*(y[i] - zgamma[i]);
-                        for (ii=0; ii<k; ii++) {
+                        for (ii=0; ii<q1; ii++) {
                             wx[i + ii*n] = sqrt(post[i + n*j])*x[i + n*ii];
                         }
                     }
                     /* initialize jpvt */
-                    for (ii=0; ii<k; ii++) {
+                    for (ii=0; ii<q1; ii++) {
                         jpvt[ii] = 0;
                     }
 
                     /* Update mubeta */
-                    F77_CALL(dgelsy)(nn, kk, &iOne, wx, nn, wy, nn, jpvt, &rcond, &rk, work2, &nwork, &info);
+                    F77_CALL(dgelsy)(nn, qq1, &iOne, wx, nn, wy, nn, jpvt, &rcond, &rk, work2, &nwork, &info);
                     if (info!=0) error("Error: info=%d\n",info);
 
-                    for (ii=0; ii<k; ii++) {
-                        mubeta[ii + k*j] = wy[ii];    // Store the value of updated mubeta
+                    for (ii=0; ii<q1; ii++) {
+                        mubeta[ii + q1*j] = wy[ii];    // Store the value of updated mubeta
                     }
                     /* If h!=0, impose upper and lower bound */
                     if (h!=0) {
-                        mubeta[k*j] = fmax(mubeta[k*j],lb[j]);
-                        mubeta[k*j] = fmin(mubeta[k*j],ub[j]);
+                        mubeta[q1*j] = fmax(mubeta[q1*j],lb[j]);
+                        mubeta[q1*j] = fmin(mubeta[q1*j],ub[j]);
                     }
 
                     /*  Compute the residuals and newsigma. Note that 'theta_hat' values are now in 'wy'. */
                     ssr_j = 0.0;
                     for (i=0; i<n; i++) {
                         xtheta = 0.0; // Initialize and reuse xtheta
-                        for (ii=0; ii<k; ii++) {
+                        for (ii=0; ii<q1; ii++) {
                             xtheta += x[i + n*ii]*wy[ii];
                         }
                         r = y[i] - xtheta - zgamma[i];
@@ -245,11 +245,11 @@ extern "C" {
                     sigma[j] = fmax(sigma[j],0.01*sigma0[j]);
                 }   /* end for j=0; j<m; j++ loop updating alpha, mubeta and sigma */
 
-				/* if taupenoption!=0, update alpha and/or tau */
-				if (taupenoption!=0){
+				/* if k!=0, update alpha and/or tau */
+				if (k!=0){
 					alphah = (alpha[h-1]+alpha[h]);
-					/* If taupenoption!=1, update tau. If taupenoption==1, no update of tau. */
-					if (taupenoption!=1) {
+					/* If k!=1, update tau. If k==1, no update of tau. */
+					if (k!=1) {
 						tauhat = alpha[h-1]/(alpha[h-1]+alpha[h]);
 						if (tauhat <= 0.5) {
 							tau = fmin((alpha[h-1]*n + 1.0)/(alpha[h-1]*n + alpha[h]*n + 1.0), 0.5);
@@ -284,8 +284,8 @@ extern "C" {
                 alphaset[jn*m+j] = alpha[j];
                 sigmaset[jn*m+j] = sigma[j];
             }
-            for (j=0; j<k*m; j++) {
-                mubetaset[jn*m*k+j] = mubeta[j];
+            for (j=0; j<q1*m; j++) {
+                mubetaset[jn*m*q1+j] = mubeta[j];
             }
 
         } /* end for (jn=0; jn<ninits; jn++) loop */

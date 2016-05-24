@@ -633,7 +633,7 @@ if (parallel.method == "do") {
                            epsilon.short, epsilon,
                            maxit.short, maxit,
                            verb) }
-  on.exit(cl)
+  doParallel::on.exit(cl)
   loglik.all <- t(sapply(results, "[[", "loglik"))
   penloglik.all <- t(sapply(results, "[[", "penloglik"))
 }
