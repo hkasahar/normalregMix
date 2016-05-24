@@ -566,7 +566,6 @@ par1  <- normalmixMaxPhi(y=y, par0=par0$parlist, z=z,
 
 emstat  <- 2*(par1$penloglik - loglik0)
 # emstat  <- 2*(par1$loglik - loglik0)
-# print(par1)
 
 if (crit.method == "asy"){
   result  <- normalmixCrit(y=y, parlist=par0$parlist, z=z, values=emstat)
@@ -622,8 +621,9 @@ penloglik.all <- matrix(0,nrow=m*length(tauset),ncol=3)
 # phi1 <- vector('list',m*length(tauset))
 
 if (parallel.method == "do") {
-  # TODO: Assign or check with cl, if possible.
-  registerDoParallel()
+  if (is.null(cl))
+    cl <- makeCluster(detectCores())
+  registerDoParallel(cl)
   results <- foreach (t = 1:length(tauset),
                       .export = 'normalmixMaxPhiStep', .combine = c)  %:%
     foreach (h = 1:m) %dopar% {
@@ -633,6 +633,7 @@ if (parallel.method == "do") {
                            epsilon.short, epsilon,
                            maxit.short, maxit,
                            verb) }
+  on.exit(cl)
   loglik.all <- t(sapply(results, "[[", "loglik"))
   penloglik.all <- t(sapply(results, "[[", "penloglik"))
 }

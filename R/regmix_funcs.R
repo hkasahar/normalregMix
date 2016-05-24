@@ -337,10 +337,10 @@ emstat  <- 2*(par1$penloglik-loglik0)
 
 if (crit.method == "asy"){
   result  <- regmixCrit(y=y, x=x, parlist=par0$parlist, z=z, values=emstat,
-                        parallel=parallel, cl=cl, nrep=1000, ninits.crit=25)
+                        parallel=(!parallel.method == "none"), cl=cl, nrep=1000, ninits.crit=25)
 } else if (crit.method == "boot") {
   result  <- regmixCritBoot(y=y, x=x, parlist=par0$parlist, z=z, values=emstat,
-                        ninits=ninits, nbtsp=nbtsp, parallel=parallel, cl=cl)
+                        ninits=ninits, nbtsp=nbtsp, parallel=(!parallel.method == "none"), cl=cl)
 } else {
   result <- list()
   result$crit <- result$pvals <- rep(NA,3)
@@ -388,8 +388,9 @@ loglik.all <- matrix(0,nrow=m*length(tauset),ncol=3)
 penloglik.all <- matrix(0,nrow=m*length(tauset),ncol=3)
 
 if (parallel.method == "do") {
-  # TODO: Assign or check with cl, if possible.
-  registerDoParallel()
+  if (is.null(cl))
+    cl <- makeCluster(detectCores())
+  registerDoParallel(cl)
   results <- foreach (t = 1:length(tauset),
                       .export = 'regmixPhiStep', .combine = c)  %:%
     foreach (h = 1:m) %dopar% {
@@ -399,6 +400,7 @@ if (parallel.method == "do") {
                            epsilon.short, epsilon,
                            maxit.short, maxit,
                            verb) }
+  on.exit(cl)
   loglik.all <- t(sapply(results, "[[", "loglik"))
   penloglik.all <- t(sapply(results, "[[", "penloglik"))
 }

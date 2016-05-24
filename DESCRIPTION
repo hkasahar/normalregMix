@@ -5,6 +5,6 @@ Version: 1.0
 Date: 2015-03-23
 Author: Hiroyuki Kasahara and Katsumi Shimotsu
 Maintainer: Katsumi Shimotsu <shimotsu@e.u-tokyo.ac.jp>
-Depends: R (>= 2.14.0), parallel, minpack.lm
+Depends: R (>= 2.14.0), parallel, minpack.lm, doParallel, snow
 Description: More about what it does (maybe more than one line)
 License: GPL (>= 2)
