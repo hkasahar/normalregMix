@@ -389,7 +389,7 @@ penloglik.all <- matrix(0,nrow=m*length(tauset),ncol=3)
 
 if (parallel.method == "do") {
   if (is.null(cl))
-    cl <- makeCluster(detectCores())
+    cl <- doParallel::makeCluster(detectCores())
   registerDoParallel(cl)
   results <- foreach (t = 1:length(tauset),
                       .export = 'regmixPhiStep', .combine = c)  %:%
@@ -400,14 +400,13 @@ if (parallel.method == "do") {
                            epsilon.short, epsilon,
                            maxit.short, maxit,
                            verb) }
-  on.exit(cl)
+  doParallel::on.exit(cl)
   loglik.all <- t(sapply(results, "[[", "loglik"))
   penloglik.all <- t(sapply(results, "[[", "penloglik"))
 }
 else if (parallel.method == "snow") {
   if (is.null(cl))
     cl <- snow::makeCluster(detectCores(), type = "SOCK")
-  
   # causes an error in snow package, running on %d.
   htaupairs <- expand.grid(h = seq(1,m), tau = tauset)
   results <- snow::parApply(cl, htaupairs, 1, regmixPhiStep,
