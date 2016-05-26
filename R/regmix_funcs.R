@@ -60,7 +60,7 @@ mu0     <- double(m)  # dummy
 an      <- 1/n  # penalty term for variance
 h       <- 0
 tau     <- 0.5
-taupenoption <- 0 
+k <- 0 
 epsilon <- 1e-08
 jpvt    <- integer(max(q1,p))    # pivots used in dgelsy
 
@@ -68,7 +68,7 @@ if (is.null(z)) {
   setting <- c(n, m, q1, 1, 1, jpvt)
   out.p <- .C("regmixpmle", as.integer(setting), as.double(y), as.double(x1),
             alphaset = as.double(alpha), mubetaset = as.double(mubeta), sigmaset = as.double(sigma),
-            as.double(sigma0), as.double(mu0), as.double(an), tau, as.integer(h), taupenoption, lub = double(2*m),
+            as.double(sigma0), as.double(mu0), as.double(an), tau, as.integer(h), k, lub = double(2*m),
             double(3*m), post = double(n*m),
             loglikset = double(1), penloglikset = double(1),
             notcg = integer(1), as.double(epsilon), double(n*(q1+1)), package = "normalregMix")
@@ -76,7 +76,7 @@ if (is.null(z)) {
   setting.z <- c(n, m, q1, p, 1, 1, jpvt)
   out.p <- .C("regmixpmle_z", as.integer(setting.z), as.double(y), as.double(x1), as.double(z),
             alphaset = as.double(alpha), mubetaset = as.double(mubeta), sigmaset = as.double(sigma), gammaset = as.double(gamma),
-            as.double(sigma0), as.double(mu0), as.double(an), tau, as.integer(h), taupenoption, lub = double(2*m),
+            as.double(sigma0), as.double(mu0), as.double(an), tau, as.integer(h), k, lub = double(2*m),
             double(3*m), post = double(n*m),
             loglikset = double(1), penloglikset = double(1),
             notcg = integer(1), as.double(epsilon), double(n*(q1+3+p)), package = "normalregMix")
@@ -461,7 +461,7 @@ regmixPhiStep<- function (htaupair, y, x, par0, z = NULL, p, jpvt,
   n      <- length(y)
   h      <- as.numeric(htaupair[1])
   tau    <- as.numeric(htaupair[2])
-  taupenoption <- 1
+  k <- 1
   
   mubeta0 <- par0$mubeta
   mu0h <- c(0,mubeta0[1,],0)        # m+1 by 1
@@ -484,7 +484,7 @@ regmixPhiStep<- function (htaupair, y, x, par0, z = NULL, p, jpvt,
     out.short <- .C("regmixpmle", as.integer(setting), as.double(y), as.double(x1),
                     alphaset = as.double(alphaset.s), mubetaset = as.double(mubetaset.s), sigmaset = as.double(sigmaset.s),
                     as.double(sigma0h), as.double(mu0h), as.double(an), 
-                    as.double(tau), as.integer(h), as.integer(taupenoption), lub = double(2*m1),
+                    as.double(tau), as.integer(h), as.integer(k), lub = double(2*m1),
                     double(3*m1), post = double(n*m1),
                     loglikset = double(ninits.short), penloglikset = double(ninits.short),
                     notcg = integer(ninits.short), as.double(epsilon.short), double(n*(q1+1)))
@@ -493,7 +493,7 @@ regmixPhiStep<- function (htaupair, y, x, par0, z = NULL, p, jpvt,
     out.short <- .C("regmixpmle_z", as.integer(setting.z), as.double(y), as.double(x1), as.double(z),
                     alphaset = as.double(alphaset.s), mubetaset = as.double(mubetaset.s), sigmaset = as.double(sigmaset.s), gammaset = as.double(gammaset.s),
                     as.double(sigma0h), as.double(mu0h), as.double(an), 
-                    as.double(tau), as.integer(h), as.integer(taupenoption), lub = double(2*m1),
+                    as.double(tau), as.integer(h), as.integer(k), lub = double(2*m1),
                     double(3*m1), post = double(n*m1),
                     loglikset = double(ninits.short), penloglikset = double(ninits.short),
                     notcg = integer(ninits.short), as.double(epsilon.short), double(n*(q1+3+p)))
@@ -518,7 +518,7 @@ regmixPhiStep<- function (htaupair, y, x, par0, z = NULL, p, jpvt,
     out <- .C("regmixpmle", as.integer(setting), as.double(y), as.double(x1),
               alphaset = as.double(alphaset), mubetaset = as.double(mubetaset), sigmaset = as.double(sigmaset),
               as.double(sigma0h), as.double(mu0h), as.double(an), 
-              as.double(tau), as.integer(h), as.integer(taupenoption), lub = double(2*m1),
+              as.double(tau), as.integer(h), as.integer(k), lub = double(2*m1),
               double(3*m1), post = double(n*m1),
               loglikset = double(ninits), penloglikset = double(ninits),
               notcg = integer(ninits), as.double(epsilon), double(n*(q1+1)))
@@ -528,7 +528,7 @@ regmixPhiStep<- function (htaupair, y, x, par0, z = NULL, p, jpvt,
     out <- .C("regmixpmle_z", as.integer(setting.z), as.double(y), as.double(x1), as.double(z),
               alphaset = as.double(alphaset), mubetaset = as.double(mubetaset), sigmaset = as.double(sigmaset), gammaset = as.double(gammaset),
               as.double(sigma0h), as.double(mu0h), as.double(an), 
-              as.double(tau), as.integer(h), as.integer(taupenoption), lub = double(2*m1),
+              as.double(tau), as.integer(h), as.integer(k), lub = double(2*m1),
               double(3*m1), post = double(n*m1),
               loglikset = double(ninits), penloglikset = double(ninits),
               notcg = integer(ninits), as.double(epsilon), double(n*(q1+3+p)))
@@ -821,7 +821,7 @@ if (m == 1) {
     out <- .C("regmixpmle", as.integer(setting), as.double(y), as.double(x1),
               alphaset = as.double(alphaset), mubetaset = as.double(mubetaset), sigmaset = as.double(sigmaset),
               as.double(sigma0), as.double(mu0), as.double(an), 
-              as.double(tau), as.integer(h), as.integer(taupenoption), 
+              as.double(tau), as.integer(h), as.integer(k), 
               lub = double(2*m),
               double(3*m), post = double(n*m),
               loglikset = double(ninits), penloglikset = double(ninits),
@@ -832,7 +832,7 @@ if (m == 1) {
     out <- .C("regmixpmle_z", as.integer(setting.z), as.double(y), as.double(x1), as.double(z),
               alphaset = as.double(alphaset), mubetaset = as.double(mubetaset), sigmaset = as.double(sigmaset), gammaset = as.double(gammaset),
               as.double(sigma0), as.double(mu0), as.double(an), 
-              as.double(tau), as.integer(h), as.integer(taupenoption), 
+              as.double(tau), as.integer(h), as.integer(k), 
               lub = double(2*m),
               double(3*m), post = double(n*m),
               loglikset = double(ninits), penloglikset = double(ninits),
@@ -859,7 +859,7 @@ if (m == 1) {
               alphaset = as.double(alpha), mubetaset = as.double(mubeta), 
               sigmaset = as.double(sigma),
               as.double(sigma0), as.double(mu0), as.double(an), 
-              as.double(tau), as.integer(h), as.integer(taupenoption), 
+              as.double(tau), as.integer(h), as.integer(k), 
               lub = double(2*m),
               double(3*m), post = double(n*m),
               loglikset = double(1), penloglikset = double(1),
@@ -870,7 +870,7 @@ if (m == 1) {
               alphaset = as.double(alpha), mubetaset = as.double(mubeta), 
               sigmaset = as.double(sigma), gammaset = as.double(gamma),
               as.double(sigma0), as.double(mu0), as.double(an), 
-              as.double(tau), as.integer(h), as.integer(taupenoption), 
+              as.double(tau), as.integer(h), as.integer(k), 
               lub = double(2*m),
               double(3*m), post = double(n*m),
               loglikset = double(1), penloglikset = double(1),
