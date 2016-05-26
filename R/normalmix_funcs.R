@@ -1,12 +1,25 @@
+#' Computes the variance-covariance matrix of the MLE of m-component normal mixture.
+#' @export
+#' @title normalmixVcov
+#' @name normalmixVcov
+#' @param y n by 1 vector of data
+#' @param coefficients (alpha_1, ..., alpha_m, mu_1, ..., mu_m, sigma_1, ..., sigma_m, gamma)
+#' @param z n by p matrix of regressor associated with gamma
+#' @param p Dimension of z
+#' @param vcov.method Method used to compute the variance-covariance matrix, 
+#' one of \code{"Hessian"} and \code{"OPG"}. #' The default option is \code{"Hessian"}. 
+#' When \code{method = "Hessian"}, the variance-covarince matrix is 
+#' estimated by the Hessian using the formula given in Boldea and Magnus (2009). 
+#' When \code{method = "OPG"}, the outer product of gradients is used.
+#' @return The variance-covariance matrix of the MLE of 
+#' m-component normal mixture given the data and coefficients.
+#' @references   Boldea, O. and Magnus, J. R. (2009)
+#' Maximum Likelihood Estimation of the Multivariate Normal Mixture Model,
+#' \emph{Journal of the American Statistical Association},
+#' \bold{104}, 1539--1549.
 normalmixVcov <- function(y, coefficients, z = NULL, vcov.method = c("Hessian", "OPG"))
 {
-# Computes the variance-covariance matrix of the MLE of m-component normal mixture
-# Input
-#   y : n by 1 vector of data
-#   coefficients : (alpha_1,...,alpha_m,mu_1, ...,mu_m,sigma_1, ..., sigma_m,gamma)
-#   z  : n by p matrix of regressor associated with gamma
-# Output
-#   vcov: variance-covariance matrix
+
 
 y <- as.vector(y)
 n <- length(y)
@@ -217,19 +230,25 @@ vcov
 
 }  # end function normalmixVcov
 
-
+#' Computes the bootstrap critical values of the modified EM test.
+#' @export
+#' @title normalmixCritBoot
+#' @name normalmixCritBoot
+#' @param y n by 1 vector of data
+#' @param coefficients (alpha_1, ..., alpha_m, mu_1, ..., mu_m, sigma_1, ..., sigma_m, gamma)
+#' @param z n by p matrix of regressor associated with gamma
+#' @param values vector of length 3 (k = 1, 2, 3) at which the p-values are computed
+#' @param ninits 
+#' @param nbtsp The number of bootstrap observations. By default, it is set to be 199.
+#' @param parallel Determines whether package \code{parallel} is used to compute p-values. 
+#' By default, it is set \code{TRUE}.
+#' @param cl Cluster used for parallelization (optional)
+#' @return A list with the following items:
+#' \item{crit}{3 by 3 matrix of (0.1, 0.05, 0.01 critical values), jth row corresponding to k=j}
+#' \item{pvals}{A vector of p-values at k = 1, 2, 3}
 normalmixCritBoot <- function (y, parlist, z = NULL, values = NULL, ninits = 10,
                                   nbtsp = 199, parallel = TRUE, cl = NULL) {
-# Computes the bootstrap critical values of the modified EM test
-# Input
-#  y : n by 1 vector of data
-#  coefficients : (alpha_1,...,alpha_m,mu_1, ...,mu_m,sigma_1, ..., sigma_m,gamma)
-#  z  : n by p matrix of regressor associated with gamma
-#  values: vector of length 3 (k = 1, 2, 3) at which the p-values are computed
-# Output
-#  list(crit, pvals)
-#  crit = 3 by 3 matrix of (10%, 5%, 1% critical values), jth row corresponding to k=j
-#  pvals = p-values at k = 1, 2, 3
+
 SEED <- 123456
 set.seed(SEED)
 y   <- as.vector(y)
@@ -278,7 +297,54 @@ if (!is.null(values)) { pvals <- rowMeans(emstat.b > values) }
 return(list(crit = crit, pvals = pvals))
 }  # end function normalmixCritBoot
 
-
+#' Estimates parameters of a finite mixture of univariate normals by the method of penalized maximum likelhood.
+#' @export
+#' @title normalmixPMLE
+#' @name normalmixPMLE
+#' @param y n by 1 vector of data
+#' @param m The number of components in the mixture.
+#' @param z n by p matrix of regressor associated with gamma
+#' @param vcov.method Method used to compute the variance-covariance matrix, one of \code{"Hessian"} and \code{"OPG"}.
+#' The default option is \code{"Hessian"}. When \code{method = "Hessian"}, the variance-covarince matrix is 
+#' estimated by the Hessian using the formula given in Boldea and Magnus (2009). 
+#' When \code{method = "OPG"}, the outer product of gradients is used.
+#' @param ninits The number of randomly drawn initial values.
+#' @param epsilon The convergence criterion. Convergence is declared when the penalized log-likelihood increases by less than \code{epsilon}. 
+#' @param maxit The maximum number of iterations.
+#' @param epsilon.short The convergence criterion in short EM. Convergence is declared when the penalized log-likelihood increases by less than \code{epsilon.short}.
+#' @param maxit.short The maximum number of iterations in short EM.
+#' @return  A list of class \code{normalMix} with items:
+#' \item{coefficients}{A vector of parameter estimates. Ordered as \eqn{\alpha_1,\ldots,\alpha_m,\mu_1,\ldots,\mu_m,\sigma_1,\ldots,\sigma_m,\gamma}.}
+#' \item{parlist}{The parameter estimates as a list containing alpha, mu, and sigma (and gamma if z is included in the model).}
+#' \item{vcov}{The estimated variance-covariance matrix.}
+#' \item{loglik}{The maximized value of the log-likelihood.}
+#' \item{penloglik}{The maximized value of the penalized log-likelihood.}
+#' \item{aic}{Akaike Information Criterion of the fitted model.}
+#' \item{bic}{Bayesian Information Criterion of the fitted model.}
+#' \item{postprobs}{An nxm matrix of posterior probabilities for observations.}
+#' \item{call}{The matched call.}
+#' \item{m}{The number of components in the mixture.}
+#' @note \code{normalmixPMLE} maximizes the penalized log-likelihood function 
+#' using the EM algorithm with combining short and long runs of EM steps as in Biernacki et al. (2003). 
+#' \code{normalmixPMLE} first runs the EM algorithm from \code{ninits}\eqn{* 4m(1 + p)} initial values 
+#' with the convertence criterion \code{epsilon.short} and \code{maxit.short}. 
+#' Then, \code{normalmixPMLE} uses \code{ninits} best initial values to run the EM algorithm 
+#' with the convertence criterion \code{epsilon} and \code{maxit}. 
+#' @references     Biernacki, C., Celeux, G. and Govaert, G. (2003)
+#' Choosing Starting Values for the EM Algorithm for Getting the
+#' Highest Likelihood in Multivariate Gaussian Mixture Models,
+#' \emph{Computational Statistics and Data Analysis}, \bold{41}, 561--575.
+#' 
+#' Boldea, O. and Magnus, J. R. (2009)
+#' Maximum Likelihood Estimation of the Multivariate Normal Mixture Model,
+#' \emph{Journal of the American Statistical Association},
+#' \bold{104}, 1539--1549.
+#' 
+#' Chen, J., Tan, X. and Zhang, R. (2008)
+#' Inference for Normal Mixtures in Mean and Variance,
+#' \emph{Statistica Sinica}, \bold{18}, 443--465.
+#' 
+#' McLachlan, G. J. and Peel, D. (2000) \emph{Finite Mixture Models}, John Wiley \& Sons, Inc.
 normalmixPMLE <- function (y, m = 2, z = NULL, vcov.method = c("Hessian", "OPG", "none"),
                            ninits = 25, epsilon = 1e-08, maxit = 2000,
                            epsilon.short = 1e-02, maxit.short = 500) {
@@ -678,6 +744,25 @@ out
 
 }  # end normalmixMaxPhi
 
+#' Given a pair of h and tau and data, compute ordinary & 
+#' Penalized log-likelihood ratio resulting from MEM algorithm at k=1,2,3, tailored for parallelization.
+#' @export
+#' @title normalmixMaxPhiStep
+#' @name normalmixMaxPhiStep
+#' @param htaupair A set of h and tau
+#' @param y n by 1 vector of data
+#' @param par0 A list of parameters for initialization (of class \code{normalMix})
+#' @param z n by p matrix of regressor associated with gamma
+#' @param p Dimension of z
+#' @param jpvt Pivots used in dgelsy
+#' @param an a term used for penalty function
+#' @param ninits The number of randomly drawn initial values.
+#' @param ninits.short The number of candidates used to generate an initial phi, in short MEM
+#' @param epsilon.short The convergence criterion in short EM. Convergence is declared when the penalized log-likelihood increases by less than \code{epsilon.short}.
+#' @param epsilon The convergence criterion. Convergence is declared when the penalized log-likelihood increases by less than \code{epsilon}. 
+#' @param maxit.short The maximum number of iterations in short EM.
+#' @param maxit The maximum number of iterations.
+#' @return A list of phi, log-likelihood, and penalized log-likelihood resulting from MEM algorithm.
 normalmixMaxPhiStep <- function (htaupair, y, par0, z = NULL, p, jpvt, 
                                  an,
                                  ninits, ninits.short,
@@ -802,13 +887,24 @@ normalmixMaxPhiStep <- function (htaupair, y, par0, z = NULL, p, jpvt,
   return (list(phi1 = phi1, loglik = loglik, penloglik = penloglik))
 }
 
+#' Starting from a parameter estimate, take two EM steps to compute the
+#' local modified EM test statistic for testing H_0 of m components
+#' against H_1 of m+1 at K=2,3 for a univariate normal finite mixture.
+#' @export
+#' @title normalmixPhi2
+#' @name normalmixPhi2
+#' @param htaupair A set of h and tau
+#' @param y n by 1 vector of data
+#' @param z n by p matrix of regressor associated with gamma
+#' @param par0 A list of parameters for initialization (of class \code{normalMix})
+#' @param sigma0 m by 1 vector of sigma 
+#' @param h h used as index for pivoting
+#' @param tau Tau used to split the h-th component
+#' @param an a term used for penalty function
+#' @return A list of length 2, where the first element is the local modified 
+#' MEM test statistic at k=2, the second element is 
+#' the local modified MEM test statistic at k=3
 normalmixPhi2 <- function (y, z = NULL, par0, sigma0, h, tau, an) {
-# Starting from a parameter estimate, take two EM steps to compute the
-# local modified EM test statistic for testing H_0 of m components
-# against H_1 of m+1 at K=2,3 for a univariate normal finite mixture
-# In input,
-#  y    : n by 1 vector of dependent variable
-#  z    : n by p matrix of regressor associated with gamma
 
 n     <- length(y)
 alpha <- par0$alpha
@@ -874,23 +970,24 @@ setting <- c(n,m1,1,1)
 
 }  # end function normalmixPhi2
 
-
+#' Generates initial values used by the modified EM test for mixture of normals.
+#' @export
+#' @title normalmixPhiInit
+#' @name normalmixPhiInit
+#' @param htaupair A set of h and tau
+#' @param y n by 1 vector of data
+#' @param param List of alpha, mu, sigma from an m-component model
+#' @param z n by p matrix of regressor associated with gamma
+#' @param h h used as index for pivoting
+#' @param tau Tau used to split the h-th component
+#' @param ninits number of initial values to be generated
+#' @return A list with the following items:
+#' \item{mu}{m+1 by ninits matrix for mu}
+#' \item{sigma}{m+1 by ninits matrix for sigma}
+#' \item{alpha}{m+1 by ninits matrix for alpha}
+#' \item{gamma}{m+1 by ninits matrix for gamma}
 normalmixPhiInit <- function (y, par, z = NULL, h, tau, ninits = 1)
 {
-# Generate initial values used by the modified EM test for mixture of normals
-# input is
-#  y       : data
-#  par     : list of alpha, mu, sigma from an m-component model
-#  z       : p-dimensional covariate whose coefficient is common across components
-#  h       : h in the EM test
-#  tau     : parameter used to split the h-th component
-#  ninits  : number of initial values to be generated
-# output is a list that contains
-#  mu     : m+1 by ninits matrix
-#  sigma  : m+1 by ninits matrix
-#  alpha  : m+1 by ninits matrix
-#  gamma  : p by ninits matrix
-
 n     <- length(y)
 p     <- ncol(z)
 gamma <- NULL
