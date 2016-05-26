@@ -1,10 +1,17 @@
 Package: normalregMix2
 Type: Package
-Title: Tools for analyzing normal mixture models and Gaussian regression mixture models
+Title: Tools for analyzing normal mixture models and Gaussian regression mixture
+    models
 Version: 1.0
 Date: 2015-03-23
 Author: Hiroyuki Kasahara and Katsumi Shimotsu
 Maintainer: Katsumi Shimotsu <shimotsu@e.u-tokyo.ac.jp>
-Depends: R (>= 2.14.0), parallel, minpack.lm, doParallel, snow
+Depends:
+    R (>= 2.14.0),
+    parallel,
+    minpack.lm,
+    doParallel,
+    snow
 Description: More about what it does (maybe more than one line)
 License: GPL (>= 2)
+RoxygenNote: 5.0.1
