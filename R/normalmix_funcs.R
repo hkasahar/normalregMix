@@ -235,9 +235,11 @@ vcov
 #' @title normalmixCritBoot
 #' @name normalmixCritBoot
 #' @param y n by 1 vector of data
-#' @param coefficients (alpha_1, ..., alpha_m, mu_1, ..., mu_m, sigma_1, ..., sigma_m, gamma)
+#' @param parlist The parameter estimates as a list containing alpha, mu, sigma, and gamma 
+#' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m), 
+#' sigma = (sigma_1, ..., sigma_m), gamma = (gamma_1, ..., gamma_m))
 #' @param z n by p matrix of regressor associated with gamma
-#' @param values vector of length 3 (k = 1, 2, 3) at which the p-values are computed
+#' @param values 3 by 1 Vector of length 3 (k = 1, 2, 3) at which the p-values are computed
 #' @param ninits 
 #' @param nbtsp The number of bootstrap observations. By default, it is set to be 199.
 #' @param parallel Determines whether package \code{parallel} is used to compute p-values. 
@@ -302,7 +304,7 @@ return(list(crit = crit, pvals = pvals))
 #' @title normalmixPMLE
 #' @name normalmixPMLE
 #' @param y n by 1 vector of data
-#' @param m The number of components in the mixture.
+#' @param m The number of components in the mixture
 #' @param z n by p matrix of regressor associated with gamma
 #' @param vcov.method Method used to compute the variance-covariance matrix, one of \code{"Hessian"} and \code{"OPG"}.
 #' The default option is \code{"Hessian"}. When \code{method = "Hessian"}, the variance-covarince matrix is 
@@ -974,17 +976,16 @@ setting <- c(n,m1,1,1)
 #' @export
 #' @title normalmixPhiInit
 #' @name normalmixPhiInit
-#' @param htaupair A set of h and tau
 #' @param y n by 1 vector of data
-#' @param param List of alpha, mu, sigma from an m-component model
+#' @param par List of alpha, mu, sigma from an m-component model
 #' @param z n by p matrix of regressor associated with gamma
 #' @param h h used as index for pivoting
 #' @param tau Tau used to split the h-th component
 #' @param ninits number of initial values to be generated
 #' @return A list with the following items:
+#' \item{alpha}{m+1 by ninits matrix for alpha}
 #' \item{mu}{m+1 by ninits matrix for mu}
 #' \item{sigma}{m+1 by ninits matrix for sigma}
-#' \item{alpha}{m+1 by ninits matrix for alpha}
 #' \item{gamma}{m+1 by ninits matrix for gamma}
 normalmixPhiInit <- function (y, par, z = NULL, h, tau, ninits = 1)
 {
@@ -1027,18 +1028,22 @@ list(alpha = alpha, mu = mu, sigma = sigma, gamma = gamma)
 
 }  # end function normalmixPhiInit
 
-
+#' Computes the critical values of the modified EM test.
+#' @export
+#' @title normalmixCrit
+#' @name normalmixCrit
+#' @param y n by 1 vector of data
+#' @param parlist The parameter estimates as a list containing alpha, mu, sigma, and gamma 
+#' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m), 
+#' sigma = (sigma_1, ..., sigma_m), gamma = (gamma_1, ..., gamma_m))
+#' @param z n by p matrix of regressor associated with gamma
+#' @param values 3 by 1 Vector of length 3 (k = 1, 2, 3) at which the p-values are computed
+#' @param nrep The number of replications used to compute p-values
+#' @return A list with the following items:
+#' \item{crit}{3 by 3 matrix of (0.1, 0.05, 0.01 critical values), jth row corresponding to k=j}
+#' \item{pvals}{A vector of p-values at k = 1, 2, 3}
 normalmixCrit <- function(y, parlist, z = NULL, values = NULL, nrep = 10000)
 {
-# Computes the critical values of the modified EM test
-# Input
-#  y (n by 1): data
-#  z : covariates whose coefficients are common across components
-#  coefficients:
-#  values (k by 1): values at wchich the p-values are computed
-# Output
-#  list(crit, pvals)
-#  crit = (10%, 5%, 1% critical values), pvals = p-values
 y <- as.vector(y)
 n <- length(y)
 p <- 0
@@ -1131,21 +1136,21 @@ if (!is.null(values))
 return(list(crit = crit, pvals = pvals))
 }  # end function normalmixCrit
 
-
+#' Generate initial values used by the PMLE of mixture of normals
+#' @export
+#' @title normalmixPMLEinit
+#' @name normalmixPMLEinit
+#' @param y n by 1 vector of data
+#' @param z n by p matrix of regressor associated with gamma
+#' @param ninits number of initial values to be generated
+#' @param m The number of components in the mixture
+#' @return A list with the following items:
+#' \item{alpha}{m by ninits matrix for alpha}
+#' \item{mu}{m by ninits matrix for mu}
+#' \item{sigma}{m by ninits matrix for sigma}
+#' \item{gamma}{m by ninits matrix for gamma}
 normalmixPMLEinit <- function (y, z = NULL, ninits = 1, m = 2)
 {
-# Generate initial values used by the PMLE of mixture of normals
-# input
-#  y    : data
-#  z    : p-dimensional covariate whose coefficient is common across components
-#  ninits  : number of initial values to be generated
-#  m    : number of components
-# output is a list that contains
-#  alpha  : m by ninits matrix
-#  mu     : m by ninits matrix
-#  sigma  : m by ninits matrix
-#  gamma  : p by ninits matrix
-
 n <- length(y)
 p <- ncol(z)
 gamma <- NULL
@@ -1165,6 +1170,17 @@ list(alpha = alpha, mu = mu, sigma = sigma, gamma = gamma)
 
 }  # end function normalmixPMLEinit
 
+## TODO: This has not been used. Do I remove this?
+#' Generates mixed normal random variables with regressor x
+#' @export
+#' @title rnormregmix
+#' @name rnormregmix
+#' @param n The number of observations
+#' @param x n by k-1 matrix that does NOT include a constant
+#' @param alpha m by 1 vector that represents proportions of components 
+#' @param mubeta k by m matrix that represents (mu times k regression coefficients) on x for m components
+#' @param sigma m by 1 vector that represents sd of components
+#' @return n by 1 vector that is formed by regressor x
 rnormregmix <- function (n, x = NULL, alpha, mubeta, sigma) {
 # Generates mixed normal random variables with regressor x
 # Input
@@ -1194,8 +1210,23 @@ y
 
 }  # end function rnormregmix
 
+#' Computes omega_{j|i} defined in (2.1) of Maitra and Melnykov (2010)
+#' @export
+#' @title omega.ji
+#' @name omega.ji
+#' @param alpi Alpha of i-th component
+#' @param mui Mu of i-th component
+#' @param sigi Sigma of i-th component
+#' @param alpj Alpha of j-th component
+#' @param muj Mu of j-th component
+#' @param sigj Sigma of j-th component
+#' @return omega_{j|i}
+#' @references Maitra, R., and Melnykov, V. (2010)
+#' Simulating Data to Study Performance of Finite Mixture Modeling and Model-Based Clustering Algorithms,
+#' \emph{Journal of Computational and Graphical Statistica},
+#' \bold{19}, 354--376.
 omega.ji <- function(alpi, mui, sigi, alpj, muj, sigj)
-# Computes omega_{j|i} defined in (2.1) of Maitra and Melnykov
+# 
 {
 
 if(sigi == sigj)
@@ -1219,7 +1250,18 @@ return(out)
 
 }  # end function omega.ji
 
-
+#' Computes omega_{12} for testing H_0: m=2 against H_1: m=3 defined in Maitra and Melnykov (2010)
+#' @export
+#' @title omega.12 
+#' @name omega.12
+#' @param par The parameter estimates as a list containing alpha, mu, sigma, and gamma 
+#' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m), 
+#' sigma = (sigma_1, ..., sigma_m), gamma = (gamma_1, ..., gamma_m))
+#' @return The misclassification rate omega_ij
+#' @references Maitra, R., and Melnykov, V. (2010)
+#' Simulating Data to Study Performance of Finite Mixture Modeling and Model-Based Clustering Algorithms,
+#' \emph{Journal of Computational and Graphical Statistica},
+#' \bold{19}, 354--376.
 omega.12 <- function(par)
 # Computes omega_{12} for testing H_0:m=2 against H_1:m=3
 {
@@ -1239,6 +1281,18 @@ return((part1 + part2) / 2)
 }  # end function omega.12
 
 
+#' Computes the list of omega_{12} and omega_{23} defined in Maitra and Melnykov (2010)
+#' @export
+#' @title omega.123
+#' @name omega.123
+#' @param par The parameter estimates as a list containing alpha, mu, sigma, and gamma 
+#' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m), 
+#' sigma = (sigma_1, ..., sigma_m), gamma = (gamma_1, ..., gamma_m))
+#' @return A 2 by 1 vector whose first element is omega_12 and second element is omega_23 
+#' @references Maitra, R., and Melnykov, V. (2010)
+#' Simulating Data to Study Performance of Finite Mixture Modeling and Model-Based Clustering Algorithms,
+#' \emph{Journal of Computational and Graphical Statistica},
+#' \bold{19}, 354--376.
 omega.123 <- function(par)
 {
 alp1 <- par$alpha[1]
@@ -1265,7 +1319,24 @@ return(c(w12, w23))
 
 }  # end function omega.123
 
+#' @param par The parameter estimates as a list containing alpha, mu, sigma, and gamma 
+#' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m), 
+#' sigma = (sigma_1, ..., sigma_m), gamma = (gamma_1, ..., gamma_m))
 
+#' Computes a_n based on empirical results found in Kasahara and Shimotsu (2015)
+#' @export
+#' @title anFormula
+#' @name anFormula
+#' @param par The parameter estimates as a list containing alpha, mu, sigma, and gamma 
+#' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m), 
+#' sigma = (sigma_1, ..., sigma_m), gamma = (gamma_1, ..., gamma_m))
+#' @param m The number of components in the mixture
+#' @param n The number of observations
+#' @return a_n used to initialize values
+#' @references Kasahara, H., and Shimotsu, K. (2015)
+#' Testing the Number of Components in Normal Mixture Regression Models,
+#' \emph{Journal of the American Statistical Association},
+#' \bold{110}, 1632--1645.
 anFormula <- function(par, m, n)
 # Computes a_n for testing H_0 of m components
 # against H_1 of m+1 components
@@ -1298,7 +1369,7 @@ else {
 
 }  # end function anFormula
 
-
+# TODO: This has not been used. Do I remove this? The same functions is in other_funcs.R.
 coef.to.list <- function(coefficients, z = NULL) {
 # 　Convert coefficients to list
 len     <- length(coefficients)

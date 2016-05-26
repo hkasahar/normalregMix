@@ -9,6 +9,8 @@ normalmixPhiInit(y, par, z = NULL, h, tau, ninits = 1)
 \arguments{
 \item{y}{n by 1 vector of data}
 
+\item{par}{List of alpha, mu, sigma from an m-component model}
+
 \item{z}{n by p matrix of regressor associated with gamma}
 
 \item{h}{h used as index for pivoting}
@@ -16,19 +18,15 @@ normalmixPhiInit(y, par, z = NULL, h, tau, ninits = 1)
 \item{tau}{Tau used to split the h-th component}
 
 \item{ninits}{number of initial values to be generated}
-
-\item{htaupair}{A set of h and tau}
-
-\item{param}{List of alpha, mu, sigma from an m-component model}
 }
 \value{
 A list with the following items:
+\item{alpha}{m+1 by ninits matrix for alpha}
 \item{mu}{m+1 by ninits matrix for mu}
 \item{sigma}{m+1 by ninits matrix for sigma}
-\item{alpha}{m+1 by ninits matrix for alpha}
 \item{gamma}{m+1 by ninits matrix for gamma}
 }
 \description{
-Generate initial values used by the modified EM test for mixture of normals
+Generates initial values used by the modified EM test for mixture of normals.
 }
 

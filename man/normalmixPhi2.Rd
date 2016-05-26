@@ -31,6 +31,6 @@ the local modified MEM test statistic at k=3
 \description{
 Starting from a parameter estimate, take two EM steps to compute the
 local modified EM test statistic for testing H_0 of m components
-against H_1 of m+1 at K=2,3 for a univariate normal finite mixture
+against H_1 of m+1 at K=2,3 for a univariate normal finite mixture.
 }
 

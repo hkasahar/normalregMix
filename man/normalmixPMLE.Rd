@@ -11,7 +11,7 @@ normalmixPMLE(y, m = 2, z = NULL, vcov.method = c("Hessian", "OPG",
 \arguments{
 \item{y}{n by 1 vector of data}
 
-\item{m}{The number of components in the mixture.}
+\item{m}{The number of components in the mixture}
 
 \item{z}{n by p matrix of regressor associated with gamma}
 
