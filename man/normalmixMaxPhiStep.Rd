@@ -4,7 +4,7 @@
 \alias{normalmixMaxPhiStep}
 \title{normalmixMaxPhiStep}
 \usage{
-normalmixMaxPhiStep(htaupair, y, par0, z = NULL, p, jpvt, an, ninits,
+normalmixMaxPhiStep(htaupair, y, parlist, z = NULL, p, jpvt, an, ninits,
   ninits.short, epsilon.short, epsilon, maxit.short, maxit, verb)
 }
 \arguments{
@@ -12,7 +12,9 @@ normalmixMaxPhiStep(htaupair, y, par0, z = NULL, p, jpvt, an, ninits,
 
 \item{y}{n by 1 vector of data}
 
-\item{par0}{A list of parameters for initialization (of class \code{normalMix})}
+\item{parlist}{The parameter estimates as a list containing alpha, mu, sigma, and gamma 
+in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m), 
+sigma = (sigma_1, ..., sigma_m), gamma = (gamma_1, ..., gamma_m))}
 
 \item{z}{n by p matrix of regressor associated with gamma}
 
@@ -33,6 +35,8 @@ normalmixMaxPhiStep(htaupair, y, par0, z = NULL, p, jpvt, an, ninits,
 \item{maxit.short}{The maximum number of iterations in short EM.}
 
 \item{maxit}{The maximum number of iterations.}
+
+\item{z}{n by p matrix of regressor associated with gamma}
 }
 \value{
 A list of phi, log-likelihood, and penalized log-likelihood resulting from MEM algorithm.

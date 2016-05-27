@@ -4,12 +4,14 @@
 \alias{normalmixPhiInit}
 \title{normalmixPhiInit}
 \usage{
-normalmixPhiInit(y, par, z = NULL, h, tau, ninits = 1)
+normalmixPhiInit(y, parlist, z = NULL, h, tau, ninits = 1)
 }
 \arguments{
 \item{y}{n by 1 vector of data}
 
-\item{par}{List of alpha, mu, sigma from an m-component model}
+\item{parlist}{The parameter estimates as a list containing alpha, mu, sigma, and gamma 
+in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m), 
+sigma = (sigma_1, ..., sigma_m), gamma = (gamma_1, ..., gamma_m))}
 
 \item{z}{n by p matrix of regressor associated with gamma}
 
@@ -18,6 +20,8 @@ normalmixPhiInit(y, par, z = NULL, h, tau, ninits = 1)
 \item{tau}{Tau used to split the h-th component}
 
 \item{ninits}{number of initial values to be generated}
+
+\item{z}{n by p matrix of regressor associated with gamma}
 }
 \value{
 A list with the following items:

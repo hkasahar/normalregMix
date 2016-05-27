@@ -144,3 +144,56 @@ if (x$label == "MEMtest") {
   stop("The object is not a valid normalMix object.")
 }
 }
+
+
+#' Computes a_n based on empirical results found in Kasahara and Shimotsu (2015)
+#' @export
+#' @title anFormula
+#' @name anFormula
+#' @param parlist The parameter estimates as a list containing alpha, mu, sigma, and gamma 
+#' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m), 
+#' sigma = (sigma_1, ..., sigma_m), gamma = (gamma_1, ..., gamma_m))
+#' @param m The number of components in the mixture
+#' @param n The number of observations
+#' @param q The dimension of x (by default, 0)
+#' @return a_n used to initialize values
+#' @references Kasahara, H., and Shimotsu, K. (2015)
+#' Testing the Number of Components in Normal Mixture Regression Models,
+#' \emph{Journal of the American Statistical Association},
+#' \bold{110}, 1632--1645.
+anFormula <- function(parlist, m, n, q = 0)
+  # Computes a_n for testing H_0 of m components
+  # against H_1 of m+1 components
+{
+  
+  if (q != 0) # an when the dimension of X is not zero.
+    return (switch(as.character(q), "1" = 2.2, "2" = 3.6, "3" = 4.6, "4" = 8.2, 2.2))
+  
+  
+  if (m == 1) {
+    #   an <- 1.0
+    an <- 0.40
+    #   an <- 0.25
+  }
+  else if (m == 2) {
+    omega <- omega.12(parlist)
+    omega <- pmin(pmax(omega, 1e-16), 1-1e-16)  # an becomes NaN if omega[j]=0 or 1
+    x <- exp(-1.747 - 0.297 * log(omega / (1 - omega)) - 98.35/n)  # maxa=1
+    an <- 0.9 * x / (1 + x)
+    #   x <- exp(-1.642 - 0.434 * log(omega / (1 - omega)) - 101.80/n)  # maxa=2
+    #   an <- 1.8 * x / (1 + x)
+  }
+  else if (m == 3) {
+    omega <- omega.123(parlist)
+    omega <- pmin(pmax(omega, 1e-16), 1-1e-16)  # an becomes NaN if omega[j]=0 or 1
+    t_omega <- (omega[1] * omega[2])/(1 - omega[1])/(1 - omega[2])
+    x <- exp(-1.731 - 0.162 * log(t_omega) - 144.64/n)
+    an <- 0.80 * x / (1 + x)
+    #   x <- exp(-1.678 - 0.232 * log(t_omega) - 175.50/n)
+    #   an <- 1.5 * x / (1 + x)
+  }
+  else {
+    an <- 1.0
+  }
+  
+}  # end function anFormula

@@ -4,10 +4,10 @@
 \alias{omega.12}
 \title{omega.12}
 \usage{
-omega.12(par)
+omega.12(parlist)
 }
 \arguments{
-\item{par}{The parameter estimates as a list containing alpha, mu, sigma, and gamma 
+\item{parlist}{The parameter estimates as a list containing alpha, mu, sigma, and gamma 
 in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m), 
 sigma = (sigma_1, ..., sigma_m), gamma = (gamma_1, ..., gamma_m))}
 }

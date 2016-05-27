@@ -4,14 +4,16 @@
 \alias{normalmixPhi2}
 \title{normalmixPhi2}
 \usage{
-normalmixPhi2(y, z = NULL, par0, sigma0, h, tau, an)
+normalmixPhi2(y, z = NULL, parlist, sigma0, h, tau, an)
 }
 \arguments{
 \item{y}{n by 1 vector of data}
 
 \item{z}{n by p matrix of regressor associated with gamma}
 
-\item{par0}{A list of parameters for initialization (of class \code{normalMix})}
+\item{parlist}{The parameter estimates as a list containing alpha, mu, sigma, and gamma 
+in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m), 
+sigma = (sigma_1, ..., sigma_m), gamma = (gamma_1, ..., gamma_m))}
 
 \item{sigma0}{m by 1 vector of sigma}
 
@@ -22,6 +24,8 @@ normalmixPhi2(y, z = NULL, par0, sigma0, h, tau, an)
 \item{an}{a term used for penalty function}
 
 \item{htaupair}{A set of h and tau}
+
+\item{z}{n by p matrix of regressor associated with gamma}
 }
 \value{
 A list of length 2, where the first element is the local modified 
