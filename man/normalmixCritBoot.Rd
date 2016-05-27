@@ -18,9 +18,9 @@ sigma = (sigma_1, ..., sigma_m), gamma = (gamma_1, ..., gamma_m))}
 
 \item{values}{3 by 1 Vector of length 3 (k = 1, 2, 3) at which the p-values are computed}
 
-\item{ninits}{}
+\item{ninits}{The number of initial candidates to be generated}
 
-\item{nbtsp}{The number of bootstrap observations. By default, it is set to be 199.}
+\item{nbtsp}{The number of bootstrap observations; by default, it is set to be 199.}
 
 \item{parallel}{Determines whether package \code{parallel} is used to compute p-values. 
 By default, it is set \code{TRUE}.}

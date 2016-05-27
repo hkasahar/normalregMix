@@ -1,3 +1,23 @@
+#' Computes the variance-covariance matrix of the MLE of m-component normal mixture.
+#' @export
+#' @title regmixVcov
+#' @name regmixVcov
+#' @param y n by 1 vector of data for y
+#' @param x n by q matrix of data for x
+#' @param coefficients (alpha_1, ..., alpha_m, mu_1, ..., mu_m, sigma_1, ..., sigma_m, gamma)
+#' @param z n by p matrix of regressor associated with gamma
+#' @param p Dimension of z
+#' @param vcov.method Method used to compute the variance-covariance matrix, 
+#' one of \code{"Hessian"} and \code{"OPG"}. #' The default option is \code{"Hessian"}. 
+#' When \code{method = "Hessian"}, the variance-covarince matrix is 
+#' estimated by the Hessian using the formula given in Boldea and Magnus (2009). 
+#' When \code{method = "OPG"}, the outer product of gradients is used.
+#' @return The variance-covariance matrix of the MLE of 
+#' m-component normal mixture given the data and coefficients.
+#' @references   Boldea, O. and Magnus, J. R. (2009)
+#' Maximum Likelihood Estimation of the Multivariate Normal Mixture Model,
+#' \emph{Journal of the American Statistical Association},
+#' \bold{104}, 1539--1549.
 regmixVcov <- function(y, x, coefficients, z = NULL, vcov.method = c("Hessian", "OPG")) {
   # Computes the variance-covariance matrix of the MLE of m-component normal regression mixture
   # Input
@@ -236,7 +256,25 @@ regmixVcov <- function(y, x, coefficients, z = NULL, vcov.method = c("Hessian", 
   
 }  # end function regmixVcov
 
-
+#' Computes the bootstrap critical values of the modified EM test.
+#' @export
+#' @title regmixCritBoot
+#' @name regmixCritBoot
+#' @param y n by 1 vector of data for y
+#' @param x n by q vector of data for x 
+#' @param parlist The parameter estimates as a list containing alpha, mu, sigma, and gamma 
+#' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m), 
+#' sigma = (sigma_1, ..., sigma_m), gamma = (gamma_1, ..., gamma_m))
+#' @param z n by p matrix of regressor associated with gamma
+#' @param values 3 by 1 Vector of length 3 (k = 1, 2, 3) at which the p-values are computed
+#' @param ninits The number of initial candidates to be generated
+#' @param nbtsp The number of bootstrap observations; by default, it is set to be 199
+#' @param parallel Determines whether package \code{parallel} is used to compute p-values. 
+#' By default, it is set \code{TRUE}.
+#' @param cl Cluster used for parallelization (optional)
+#' @return A list with the following items:
+#' \item{crit}{3 by 3 matrix of (0.1, 0.05, 0.01 critical values), jth row corresponding to k=j}
+#' \item{pvals}{A vector of p-values at k = 1, 2, 3}
 regmixCritBoot <- function (y, x, parlist, z = NULL, values = NULL, ninits = 100,
                             nbtsp = 199, parallel = TRUE, cl = NULL) {
   # Computes the bootstrap critical values of the modified EM test
@@ -306,8 +344,39 @@ regmixCritBoot <- function (y, x, parlist, z = NULL, values = NULL, ninits = 100
 #
 # }  # end regmixMEMtestNocrit
 
+#' Sequentially performs MEM test given the data for y and x on the null hypothesis H_0: m = m_0
+#' where m_0 is in {1, 2, ..., maxm}
+#' @export
+#' @title regmixMEMtestSeq
+#' @name regmixMEMtestSeq
+#' @param y n by 1 vector of data for y
+#' @param x n by q matrix of data for x
+#' @param z n by p matrix of regressor associated with gamma
+#' @param maxm The maximum number of components set as null hypothesis in the mixture
+#' @param ninits The number of randomly drawn initial values.
+#' @param maxit The maximum number of iterations.
+#' @param nbtsp The number of bootstrap observations; by default, it is set to be 199
+#' @param parallel.method Choice of package used for parallelization; \code{"none"} runs the code in
+#' a serial process, \code{"do"} uses \code{doParallel} package, \code{"snow"} uses \code{"snow"} 
+#' package for parallelization. 
+#' @param cl Cluster used for parallelization; if it is \code{NULL}, the system will automatically
+#' create a new one for computation accordingly.
+#' @return A list of with the following items:
+#' \item{alpha}{maxm by maxm matrix, whose i-th column is a vector of alphas estimated given the null hypothesis m_0 = i}
+#' \item{mu}{maxm by maxm matrix, whose i-th column is a vector of mus estimated given the null hypothesis m_0 = i}
+#' \item{sigma}{maxm by maxm matrix, whose i-th column is a vector of sigmas estimated given the null hypothesis m_0 = i}
+#' \item{beta}{A list of length maxm, whose i-th element is a q times i matrix of betas estimated given the null hypothesis m_0 = i}
+#' \item{gamma}{maxm by maxm matrix, whose i-th column is a vector of gammas estimated given the null hypothesis m_0 = i}
+#' \item{emstat}{A maxm vector of values of modified EM statistics of the model at m_0 = 1, 2, ..., maxm}
+#' \item{pvals}{A maxm by 3 matrix whose i-th row indicates a vector of p-values at k = 1, 2, 3}
+#' \item{aic}{A maxm vector of Akaike Information Criterion of the fitted model at m_0 = 1, 2, ..., maxm}
+#' \item{bic}{A maxm vector of Bayesian Information Criterion of the fitted model at m_0 = 1, 2, ..., maxm}
+#' \item{loglik}{A maxm vector of log-likelihood values of the model at m_0 = 1, 2, ..., maxm}
+#' \item{penloglik}{A maxm vector of penalized log-likelihood values of the model at m_0 = 1, 2, ..., maxm}
+
+
 regmixMEMtestSeq <- function (y, x, z = NULL, maxm = 3, ninits = 10, maxit = 2000,
-                              nbtsp = 199, parallel = TRUE, cl = NULL) {
+                              nbtsp = 199, parallel.method = c("none", "do", "snow"), cl = NULL) {
   # Compute the modified EM test statistic for testing H_0 of m components
   # against H_1 of m+1 components for a univariate finite mixture of normals
   
@@ -316,6 +385,8 @@ regmixMEMtestSeq <- function (y, x, z = NULL, maxm = 3, ninits = 10, maxit = 200
   n   <- length(y)
   p   <- 0
   q   <- ncol(x)
+  parallel.method <- match.arg(parallel.method)
+  
   if (!is.null(z)) {
     z <- as.matrix(z)
     p <- ncol(z)
@@ -353,9 +424,13 @@ regmixMEMtestSeq <- function (y, x, z = NULL, maxm = 3, ninits = 10, maxit = 200
     beta[m]  <- c(beta0, double(maxm - m))
     
     cat(sprintf("%d-component model estimate:\n",m))
-
+    
     
     tab = as.matrix(rbind(alpha0, mu0, sigma0, as.matrix(beta0)))
+    
+    print(tab)
+    print(beta0)
+    print(mubeta0)
     rownames(tab) <- c("alpha", "mu", "sigma", paste("beta", ".", 1:q, sep = ""))
     colnames(tab) <- c(paste("comp", ".", 1:m, sep = ""))
     print(tab, digits = 4)
@@ -377,7 +452,7 @@ regmixMEMtestSeq <- function (y, x, z = NULL, maxm = 3, ninits = 10, maxit = 200
       an    <- anFormula(parlist = parlist, m = m, n = n)
       #     print(an)
       par1  <- regmixMaxPhi(y = y, x = x, parlist = parlist, z = z, an = an, 
-                            ninits = ninits, maxit = maxit)
+                            ninits = ninits, maxit = maxit, parallel.method = parallel.method)
       #     print(loglik0)
       #     print(par1)
       emstat.m  <- 2*(par1$penloglik - loglik0)
@@ -390,7 +465,7 @@ regmixMEMtestSeq <- function (y, x, z = NULL, maxm = 3, ninits = 10, maxit = 200
       } else {
         em.out <- regmixCritBoot(y = y, x = x, parlist=parlist, z = z, 
                                  values = emstat.m, ninits = ninits, nbtsp = nbtsp, 
-                                 parallel = parallel, cl = cl)
+                                 parallel = !(parallel.method == "none"), cl = cl)
         cat(c("bootstrap p-values        ", sprintf('%.3f',em.out$pvals)),"\n \n")
       }
       # noncg.rate[m]   <- par1$noncg.rate
@@ -402,9 +477,42 @@ regmixMEMtestSeq <- function (y, x, z = NULL, maxm = 3, ninits = 10, maxit = 200
            emstat = emstat, pvals = pvals, aic = aic, bic = bic, 
            loglik = loglik, penloglik = penloglik)
   
+  a
+  
 }  # end regmixMEMtestSeq
 
-
+#' Performs MEM test given the data for y and x on the null hypothesis H_0: m = m_0.
+#' @export
+#' @title regmixMEMtest
+#' @name regmixMEMtest
+#' @param y n by 1 vector of data for y
+#' @param x n by q matrix of data for x
+#' @param m The number of components in the mixture defined by a null hypothesis, m_0
+#' @param z n by p matrix of regressor associated with gamma
+#' @param tauset A set of initial tau value candidates
+#' @param an a term used for penalty function
+#' @param ninits The number of randomly drawn initial values.
+#' @param crit.method Method used to compute the variance-covariance matrix, one of \code{"none"}, 
+#' \code{"asy"}, and \code{"boot"}. The default option is \code{"none"}. When \code{method = "asy"}, 
+#' the p-values are computed based on an asymptotic method. When \code{method = "OPG"}, 
+#' the p-values are generated by bootstrapping.
+#' @param nbtsp The number of bootstrap observations; by default, it is set to be 199
+#' @param cl Cluster used for parallelization; if it is \code{NULL}, the system will automatically
+#' create a new one for computation accordingly.
+#' @param parallel.method Choice of package used for parallelization; \code{"none"} runs the code in
+#' a serial process, \code{"do"} uses \code{doParallel} package, \code{"snow"} uses \code{"snow"} 
+#' package for parallelization. 
+#' @return A list of class \code{normalMix} with items:
+#' \item{coefficients}{A vector of parameter estimates. Ordered as \eqn{\alpha_1,\ldots,\alpha_m,\mu_1,\ldots,\mu_m,\sigma_1,\ldots,\sigma_m,\gamma}.}
+#' \item{parlist}{The parameter estimates as a list containing alpha, mu, and sigma (and gamma if z is included in the model).}
+#' \item{vcov}{The estimated variance-covariance matrix.}
+#' \item{loglik}{The maximized value of the log-likelihood.}
+#' \item{penloglik}{The maximized value of the penalized log-likelihood.}
+#' \item{aic}{Akaike Information Criterion of the fitted model.}
+#' \item{bic}{Bayesian Information Criterion of the fitted model.}
+#' \item{postprobs}{An nxm matrix of posterior probabilities for observations.}
+#' \item{call}{The matched call.}
+#' \item{m}{The number of components in the mixture.}
 regmixMEMtest <- function (y, x, m = 2, z = NULL, tauset = c(0.1,0.3,0.5), 
                            an = NULL, ninits = 100,
                            crit.method = c("none", "asy", "boot"), nbtsp = 199,
@@ -418,7 +526,7 @@ regmixMEMtest <- function (y, x, m = 2, z = NULL, tauset = c(0.1,0.3,0.5),
   crit.method <- match.arg(crit.method)
   parallel.method <- match.arg(parallel.method)
   
-
+  
   
   if (!is.null(z)) 
     z <- as.matrix(z)
@@ -457,8 +565,32 @@ regmixMEMtest <- function (y, x, m = 2, z = NULL, tauset = c(0.1,0.3,0.5),
   
 }  # end regmixMEMtest
 
-
-
+## TODO: verb is not used.
+#' Compute ordinary & penalized log-likelihood ratio resulting from MEM algorithm at k=1,2,3.
+#' @export
+#' @title regmixMaxPhi
+#' @name regmixMaxPhi
+#' @param y n by 1 vector of data for y
+#' @param x n by q matrix of data for x
+#' @param parlist The parameter estimates as a list containing alpha, mu, sigma, and gamma 
+#' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m), 
+#' sigma = (sigma_1, ..., sigma_m), gamma = (gamma_1, ..., gamma_m))
+#' @param z n by p matrix of regressor associated with gamma
+#' @param an a term used for penalty function
+#' @param tauset A set of initial tau value candidates
+#' @param ninits The number of randomly drawn initial values.
+#' @param epsilon.short The convergence criterion in short EM. Convergence is declared when the penalized log-likelihood increases by less than \code{epsilon.short}.
+#' @param epsilon The convergence criterion. Convergence is declared when the penalized log-likelihood increases by less than \code{epsilon}. 
+#' @param maxit.short The maximum number of iterations in short EM.
+#' @param maxit The maximum number of iterations.
+#' @param parallel.method Choice of package used for parallelization; \code{"none"} runs the code in
+#' a serial process, \code{"do"} uses \code{doParallel} package, \code{"snow"} uses \code{"snow"} 
+#' package for parallelization.
+#' @param cl Cluster used for parallelization; if it is \code{NULL}, the system will automatically
+#' create a new one for computation accordingly. 
+#' @return A list with items:
+#' \item{loglik}{Log-likelihood resulting from MEM algorithm at k=1,2,3.}
+#' \item{penloglik}{Penalized log-likelihood resulting from MEM algorithm at k=1,2,3.}
 regmixMaxPhi <- function (y, x, parlist, z = NULL, an, tauset = c(0.1,0.3,0.5), 
                           ninits = 100,
                           epsilon.short = 1e-02, epsilon = 1e-08,
@@ -545,6 +677,28 @@ regmixMaxPhi <- function (y, x, parlist, z = NULL, an, tauset = c(0.1,0.3,0.5),
   
 }  # end regmixMaxPhi
 
+#' Given a pair of h and tau and data, compute ordinary & 
+#' penalized log-likelihood ratio resulting from MEM algorithm at k=1,2,3, tailored for parallelization.
+#' @export
+#' @title regmixPhiStep
+#' @name regmixPhiStep
+#' @param htaupair A set of h and tau
+#' @param y n by 1 vector of data for y
+#' @param x n by q matrix of data for x
+#' @param parlist The parameter estimates as a list containing alpha, mu, sigma, and gamma 
+#' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m), 
+#' sigma = (sigma_1, ..., sigma_m), gamma = (gamma_1, ..., gamma_m))
+#' @param z n by p matrix of regressor associated with gamma
+#' @param p Dimension of z
+#' @param jpvt Pivots used in dgelsy
+#' @param an a term used for penalty function
+#' @param ninits The number of randomly drawn initial values.
+#' @param ninits.short The number of candidates used to generate an initial phi, in short MEM
+#' @param epsilon.short The convergence criterion in short EM. Convergence is declared when the penalized log-likelihood increases by less than \code{epsilon.short}.
+#' @param epsilon The convergence criterion. Convergence is declared when the penalized log-likelihood increases by less than \code{epsilon}. 
+#' @param maxit.short The maximum number of iterations in short EM.
+#' @param maxit The maximum number of iterations.
+#' @return A list of phi, log-likelihood, and penalized log-likelihood resulting from MEM algorithm.
 regmixPhiStep<- function (htaupair, y, x, parlist, z = NULL, p, jpvt, 
                           an,
                           ninits, ninits.short,
@@ -668,6 +822,25 @@ regmixPhiStep<- function (htaupair, y, x, parlist, z = NULL, p, jpvt,
   
 }
 
+#' Starting from a parameter estimate, take two EM steps to compute the
+#' local modified EM test statistic for testing H_0 of m components
+#' against H_1 of m+1 at K=2,3 for a univariate normal finite mixture.
+#' @export
+#' @title regmixPhi2
+#' @name regmixPhi2
+#' @param y n by 1 vector of data for y
+#' @param x n by q matrix of data for x
+#' @param z n by p matrix of regressor associated with gamma
+#' @param parlist The parameter estimates as a list containing alpha, mu, sigma, and gamma 
+#' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m), 
+#' sigma = (sigma_1, ..., sigma_m), gamma = (gamma_1, ..., gamma_m))
+#' @param sigma0 m by 1 vector of sigma 
+#' @param h h used as index for pivoting
+#' @param tau Tau used to split the h-th component
+#' @param an a term used for penalty function
+#' @return A list of length 2, where the first element is the local modified 
+#' MEM test statistic at k=2, the second element is 
+#' the local modified MEM test statistic at k=3
 regmixPhi2 <- function (y, x, z=NULL, parlist, sigma0, h, tau, an) {
   # Starting from a parameter estimate, take two EM steps to compute the
   # local modified EM test statistic for testing H_0 of m components
@@ -747,7 +920,25 @@ regmixPhi2 <- function (y, x, z=NULL, parlist, sigma0, h, tau, an) {
   
 }  # end function regmixPhi2
 
-
+#' Generates lists of parameters for initial candidates used by 
+#' the modified EM test for mixture of normals.
+#' @export
+#' @title regmixPhiInit
+#' @name regmixPhiInit
+#' @param y n by 1 vector of data for y
+#' @param x n by q matrix of data for x 
+#' @param parlist The parameter estimates as a list containing alpha, mu, sigma, and gamma 
+#' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m), 
+#' sigma = (sigma_1, ..., sigma_m), gamma = (gamma_1, ..., gamma_m))
+#' @param z n by p matrix of regressor associated with gamma
+#' @param h h used as index for pivoting
+#' @param tau Tau used to split the h-th component
+#' @param ninits number of initial values to be generated
+#' @return A list with the following items:
+#' \item{alpha}{m+1 by ninits matrix for alpha}
+#' \item{mubeta}{q+1 by m+1 by ninits array for mu and beta}
+#' \item{sigma}{m+1 by ninits matrix for sigma}
+#' \item{gamma}{m+1 by ninits matrix for gamma}
 regmixPhiInit <- function (y, x, z = NULL, parlist, h, tau, ninits = 1)
 {
   # Generate initial values used by the modified EM test for mixture of regressions
@@ -824,7 +1015,55 @@ regmixPhiInit <- function (y, x, z = NULL, parlist, h, tau, ninits = 1)
   
 }  # end function regmixPhiInit
 
-
+#' Estimates parameters of a finite mixture of univariate normals by the method of penalized maximum likelhood.
+#' @export
+#' @title regmixPMLE
+#' @name regmixPMLE
+#' @param y n by 1 vector of data for y
+#' @param x n by q matrix of data for x
+#' @param m The number of components in the mixture
+#' @param z n by p matrix of regressor associated with gamma
+#' @param vcov.method Method used to compute the variance-covariance matrix, one of \code{"Hessian"} and \code{"OPG"}.
+#' The default option is \code{"Hessian"}. When \code{method = "Hessian"}, the variance-covarince matrix is 
+#' estimated by the Hessian using the formula given in Boldea and Magnus (2009). 
+#' When \code{method = "OPG"}, the outer product of gradients is used.
+#' @param ninits The number of randomly drawn initial values.
+#' @param epsilon The convergence criterion. Convergence is declared when the penalized log-likelihood increases by less than \code{epsilon}. 
+#' @param maxit The maximum number of iterations.
+#' @param epsilon.short The convergence criterion in short EM. Convergence is declared when the penalized log-likelihood increases by less than \code{epsilon.short}.
+#' @param maxit.short The maximum number of iterations in short EM.
+#' @return  A list of class \code{normalMix} with items:
+#' \item{coefficients}{A vector of parameter estimates. Ordered as \eqn{\alpha_1,\ldots,\alpha_m,\mu_1,\ldots,\mu_m,\sigma_1,\ldots,\sigma_m,\gamma}.}
+#' \item{parlist}{The parameter estimates as a list containing alpha, mu, and sigma (and gamma if z is included in the model).}
+#' \item{vcov}{The estimated variance-covariance matrix.}
+#' \item{loglik}{The maximized value of the log-likelihood.}
+#' \item{penloglik}{The maximized value of the penalized log-likelihood.}
+#' \item{aic}{Akaike Information Criterion of the fitted model.}
+#' \item{bic}{Bayesian Information Criterion of the fitted model.}
+#' \item{postprobs}{An nxm matrix of posterior probabilities for observations.}
+#' \item{call}{The matched call.}
+#' \item{m}{The number of components in the mixture.}
+#' @note \code{regmixPMLE} maximizes the penalized log-likelihood function 
+#' using the EM algorithm with combining short and long runs of EM steps as in Biernacki et al. (2003). 
+#' \code{regmixPMLE} first runs the EM algorithm from \code{ninits}\eqn{* 4m(1 + p)} initial values 
+#' with the convertence criterion \code{epsilon.short} and \code{maxit.short}. 
+#' Then, \code{regmixPMLE} uses \code{ninits} best initial values to run the EM algorithm 
+#' with the convertence criterion \code{epsilon} and \code{maxit}. 
+#' @references     Biernacki, C., Celeux, G. and Govaert, G. (2003)
+#' Choosing Starting Values for the EM Algorithm for Getting the
+#' Highest Likelihood in Multivariate Gaussian Mixture Models,
+#' \emph{Computational Statistics and Data Analysis}, \bold{41}, 561--575.
+#' 
+#' Boldea, O. and Magnus, J. R. (2009)
+#' Maximum Likelihood Estimation of the Multivariate Normal Mixture Model,
+#' \emph{Journal of the American Statistical Association},
+#' \bold{104}, 1539--1549.
+#' 
+#' Chen, J., Tan, X. and Zhang, R. (2008)
+#' Inference for Normal Mixtures in Mean and Variance,
+#' \emph{Statistica Sinica}, \bold{18}, 443--465.
+#' 
+#' McLachlan, G. J. and Peel, D. (2000) \emph{Finite Mixture Models}, John Wiley \& Sons, Inc.
 regmixPMLE <- function (y, x, m = 2, z = NULL, vcov.method = c("Hessian", "OPG", "none"),
                         ninits = 100, epsilon = 1e-08, maxit = 2000,
                         epsilon.short = 1e-02, maxit.short = 500) {
@@ -1028,22 +1267,22 @@ regmixPMLE <- function (y, x, m = 2, z = NULL, vcov.method = c("Hessian", "OPG",
   
 }  # end function regmixPMLE
 
-
+#' Generate initial values used by the PMLE of mixture of normals
+#' @export
+#' @title regmixPMLEinit
+#' @name regmixPMLEinit
+#' @param y n by 1 vector of data for y
+#' @param x n by q matrix of data for x
+#' @param z n by p matrix of regressor associated with gamma
+#' @param ninits number of initial values to be generated
+#' @param m The number of components in the mixture
+#' @return A list with the following items:
+#' \item{alpha}{m by ninits matrix for alpha}
+#' \item{mubeta}{q+1 by m by ninits array for mu and beta}
+#' \item{sigma}{m by ninits matrix for sigma}
+#' \item{gamma}{m by ninits matrix for gamma}
 regmixPMLEinit <- function (y, x, z = NULL, ninits = 1, m = 2)
-{
-  # Generate initial values used by the PMLE of mixture of regressions
-  # input
-  #  y    : n by 1 vector of dependent variable
-  #  x    : n by q1-1 matrix of regressor NOT including an intercept
-  #  z    : p-dimensional covariate whose coefficient is common across components
-  #   ninits  : number of initial values to be generated
-  #  m    : number of components
-  # output is a list that contains
-  #  alpha  : m by ninits matrix
-  #  mubeta  : q1 by m by ninits array
-  #  sigma  : m by ninits matrix
-  #  gamma  : p by ninits matrix
-  
+{  
   n  <- length(y)
   q1  <- ncol(x)+1
   p  <- ncol(z)
@@ -1083,7 +1322,23 @@ regmixPMLEinit <- function (y, x, z = NULL, ninits = 1, m = 2)
   
 }  # end function regmixPMLEinit
 
-
+#' Computes the critical values of the modified EM test.
+#' @export
+#' @title regmixCrit
+#' @name regmixCrit
+#' @param y n by 1 vector of data for y
+#' @param x n by q matrix of data for x
+#' @param parlist The parameter estimates as a list containing alpha, mu, sigma, and gamma 
+#' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m), 
+#' sigma = (sigma_1, ..., sigma_m), gamma = (gamma_1, ..., gamma_m))
+#' @param z n by p matrix of regressor associated with gamma
+#' @param values 3 by 1 Vector of length 3 (k = 1, 2, 3) at which the p-values are computed
+#' @param parallel Determines whether package \code{parallel} is used for calculation
+#' @param cl Cluster used for parallelization; if it is \code{NULL}, the system will automatically
+#' @param nrep The number of replications used to compute p-values
+#' @return A list with the following items:
+#' \item{crit}{3 by 3 matrix of (0.1, 0.05, 0.01 critical values), jth row corresponding to k=j}
+#' \item{pvals}{A vector of p-values at k = 1, 2, 3}
 regmixCrit <- function(y, x, parlist, z = NULL, values = NULL, parallel = TRUE,
                        cl = NULL, nrep = 1000, ninits.crit = 25)
 {
@@ -1248,10 +1503,8 @@ regmixCrit <- function(y, x, parlist, z = NULL, values = NULL, parallel = TRUE,
   
   } # end function regmixCrit
 
-
-obj_zIz <- function(b,Z,I) {
-  # Objective function used in computing LR_2
-  
+#' Computes objective function used in computing LR_2
+obj_zIz <- function(b,Z,I) {  
   q       <- length(b)-2
   lam_mu  <- b[1]
   lam_sig <- b[2]
@@ -1276,8 +1529,8 @@ obj_zIz <- function(b,Z,I) {
   
 } # end function obj_zIz
 
+#' Computes Jacobian of the objective function used in computing LR_2
 obj_zIz.jac <- function(b,Z,I) {
-  # Jacobian of the objective function used in computing LR_2
   
   q     <- length(b)-2
   lam_mu  <- b[1]
@@ -1322,10 +1575,8 @@ obj_zIz.jac <- function(b,Z,I) {
   
 } # end function obj_zIz.jac
 
-
-LR_2.comp <- function(Z, I, q, ninits = 25) {
-  # Compute LR_2 for given Z and I, where q is dim(x)
-  
+#' Computes LR_2 for given Z and I, where q is dim(x)
+LR_2.comp <- function(Z, I, q, ninits = 25) {  
   con.nls = minpack.lm::nls.lm.control(maxit = 400)
   
   n_t <- q+2
