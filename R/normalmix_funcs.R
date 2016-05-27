@@ -261,7 +261,7 @@ mu    <- parlist$mu
 sigma <- parlist$sigma
 gamma <- parlist$gamma
 m     <- length(alpha)
-an    <- anFormula(par = parlist, m = m, n = n)
+an    <- anFormula(parlist = parlist, m = m, n = n)
 
 pvals <- NULL
 
@@ -545,14 +545,14 @@ alpha   <- mu <- sigma <- matrix(0, nrow = maxm, ncol = maxm)
 # Test H_0:m=1, H_0:m=2, ...
 
 for (m in 1:maxm){
-  par0   <- normalmixPMLE(y = y, m = m, z = z, vcov.method = "none",
+  pmle.result   <- normalmixPMLE(y = y, m = m, z = z, vcov.method = "none",
                             ninits = ninits, maxit = maxit)
-  loglik[m] <- loglik0 <- par0$loglik
-  penloglik[m] <- penloglik0 <- par0$penloglik
-  aic[m]  <- par0$aic
-  bic[m]  <- par0$bic
+  loglik[m] <- loglik0 <- pmle.result$loglik
+  penloglik[m] <- penloglik0 <- pmle.result$penloglik
+  aic[m]  <- pmle.result$aic
+  bic[m]  <- pmle.result$bic
 
-  parlist <- par0$parlist
+  parlist <- pmle.result$parlist
   alpha0  <- parlist$alpha
   mu0     <- parlist$mu
   sigma0  <- parlist$sigma
@@ -581,10 +581,10 @@ for (m in 1:maxm){
 
     cat(sprintf("Testing the null hypothesis of %d components\n", m))
   
-#     print(par0$parlist)
-    an    <- anFormula(par = parlist, m = m, n = n)
+#     print(pmle.result$parlist)
+    an    <- anFormula(parlist = parlist, m = m, n = n)
 #     print(an)
-    par1  <- normalmixMaxPhi(y = y, par0 = parlist, z = z, an = an, ninits = ninits, maxit = maxit)
+    par1  <- normalmixMaxPhi(y = y, parlist = parlist, z = z, an = an, ninits = ninits, maxit = maxit)
 #     print(loglik0)
 #     print(par1)
     emstat.m  <- 2*(par1$loglik - loglik0)
@@ -622,12 +622,12 @@ if (!is.null(z)) {z <- as.matrix(z)}
 crit.method <- match.arg(crit.method)
 parallel.method <- match.arg(parallel.method)
 
-par0    <- normalmixPMLE(y=y, m=m, z=z, vcov.method = "none", ninits=ninits)
-loglik0 <- par0$loglik
+pmle.result    <- normalmixPMLE(y=y, m=m, z=z, vcov.method = "none", ninits=ninits)
+loglik0 <- pmle.result$loglik
 
-if (is.null(an)){ an <- anFormula(par = par0$parlist, m = m, n = n) }
+if (is.null(an)){ an <- anFormula(parlist = pmle.result$parlist, m = m, n = n) }
 
-par1  <- normalmixMaxPhi(y=y, par0=par0$parlist, z=z, 
+par1  <- normalmixMaxPhi(y=y, parlist=pmle.result$parlist, z=z, 
                          an=an, tauset = tauset, ninits=ninits,
                          parallel.method = parallel.method, cl = cl)
 
@@ -636,9 +636,9 @@ emstat  <- 2*(par1$penloglik - loglik0)
 # emstat  <- 2*(par1$loglik - loglik0)
 
 if (crit.method == "asy"){
-  result  <- normalmixCrit(y=y, parlist=par0$parlist, z=z, values=emstat)
+  result  <- normalmixCrit(y=y, parlist=pmle.result$parlist, z=z, values=emstat)
 } else if (crit.method == "boot") {
-  result  <- normalmixCritBoot(y=y, parlist= par0$parlist, z=z, values=emstat,
+  result  <- normalmixCritBoot(y=y, parlist= pmle.result$parlist, z=z, values=emstat,
                             ninits=ninits, nbtsp=nbtsp, (parallel.method != "none"), cl=cl)
 } else {
   result <- list()
@@ -646,7 +646,7 @@ if (crit.method == "asy"){
 }
 
 a <- list(emstat = emstat, pvals = result$pvals, crit = result$crit, crit.method = crit.method,
-          parlist = par0$parlist, call = match.call(), m = m, label = "MEMtest")
+          parlist = pmle.result$parlist, call = match.call(), m = m, label = "MEMtest")
 
 class(a) <- "normalregMix"
 
@@ -656,7 +656,7 @@ a
 
 
 
-normalmixMaxPhi <- function (y, par0, z = NULL, an, tauset = c(0.1,0.3,0.5), 
+normalmixMaxPhi <- function (y, parlist, z = NULL, an, tauset = c(0.1,0.3,0.5), 
                              ninits = 10, epsilon.short = 1e-02, epsilon = 1e-08,
                              maxit.short = 500, maxit = 2000, 
                              verb = FALSE, 
@@ -670,7 +670,7 @@ warn  <- options(warn=-1) # Turn off warnings
 parallel.method <- match.arg(parallel.method)
 
 p <- 0
-m <- length(par0$alpha)
+m <- length(parlist$alpha)
 
 # jpvt must be specified to run SNOW package
 jpvt <- NULL
@@ -695,7 +695,7 @@ if (parallel.method == "do") {
   results <- foreach (t = 1:length(tauset),
                       .export = 'normalmixMaxPhiStep', .combine = c)  %:%
     foreach (h = 1:m) %dopar% {
-      normalmixMaxPhiStep (c(h, tauset[t]), y, par0, z = NULL, p, jpvt,
+      normalmixMaxPhiStep (c(h, tauset[t]), y, parlist, z = NULL, p, jpvt,
                            an,
                            ninits, ninits.short,
                            epsilon.short, epsilon,
@@ -712,7 +712,7 @@ else if (parallel.method == "snow") {
   # causes an error in snow package, running on %d.
   htaupairs <- expand.grid(h = seq(1,m), tau = tauset)
   results <- snow::parApply(cl, htaupairs, 1, normalmixMaxPhiStep,
-                        y, par0, z, p, jpvt,
+                        y, parlist, z, p, jpvt,
                         an,
                         ninits, ninits.short,
                         epsilon.short, epsilon,
@@ -727,7 +727,7 @@ else
     for (t in 1:length(tauset)) {
       rowindex <- (t-1)*m + h
       tau <- tauset[t]
-      result <- normalmixMaxPhiStep(c(h, tau), y, par0, z = NULL, p, jpvt, 
+      result <- normalmixMaxPhiStep(c(h, tau), y, parlist, z = NULL, p, jpvt, 
                                     an,
                                     ninits, ninits.short,
                                     epsilon.short, epsilon,
@@ -753,7 +753,10 @@ out
 #' @name normalmixMaxPhiStep
 #' @param htaupair A set of h and tau
 #' @param y n by 1 vector of data
-#' @param par0 A list of parameters for initialization (of class \code{normalMix})
+#' @param parlist The parameter estimates as a list containing alpha, mu, sigma, and gamma 
+#' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m), 
+#' sigma = (sigma_1, ..., sigma_m), gamma = (gamma_1, ..., gamma_m))
+#' @param z n by p matrix of regressor associated with gamma
 #' @param z n by p matrix of regressor associated with gamma
 #' @param p Dimension of z
 #' @param jpvt Pivots used in dgelsy
@@ -765,7 +768,7 @@ out
 #' @param maxit.short The maximum number of iterations in short EM.
 #' @param maxit The maximum number of iterations.
 #' @return A list of phi, log-likelihood, and penalized log-likelihood resulting from MEM algorithm.
-normalmixMaxPhiStep <- function (htaupair, y, par0, z = NULL, p, jpvt, 
+normalmixMaxPhiStep <- function (htaupair, y, parlist, z = NULL, p, jpvt, 
                                  an,
                                  ninits, ninits.short,
                                  epsilon.short, epsilon,
@@ -774,7 +777,7 @@ normalmixMaxPhiStep <- function (htaupair, y, par0, z = NULL, p, jpvt,
 {
   # TODO: Beautify and move some parameters to the method
   # that calls this.
-  alpha0 <- par0$alpha
+  alpha0 <- parlist$alpha
   
   m      <- length(alpha0)
   m1     <- m+1
@@ -783,14 +786,14 @@ normalmixMaxPhiStep <- function (htaupair, y, par0, z = NULL, p, jpvt,
   h      <- as.numeric(htaupair[1])
   tau    <- as.numeric(htaupair[2])
   
-  mu0    <- par0$mu
+  mu0    <- parlist$mu
   mu0h   <- c(0,mu0,0)        # m+1 by 1
-  sigma0 <- par0$sigma
+  sigma0 <- parlist$sigma
   sigma0h<- c(sigma0[1:h],sigma0[h:m])
-  gamma0 <- par0$gamma
+  gamma0 <- parlist$gamma
 
   # generate initial values
-  tmp <- normalmixPhiInit(y = y, par = par0, z = z, h=h, tau = tau, ninits = ninits.short)
+  tmp <- normalmixPhiInit(y = y, parlist = parlist, z = z, h=h, tau = tau, ninits = ninits.short)
   # tmp$alpha, tmp$sigma: m+1 by ninits matrix, tmp$mu: p by m+1 by ninits array
   # tmp$gamma: p by ninits matrix
   
@@ -898,7 +901,10 @@ normalmixMaxPhiStep <- function (htaupair, y, par0, z = NULL, p, jpvt,
 #' @param htaupair A set of h and tau
 #' @param y n by 1 vector of data
 #' @param z n by p matrix of regressor associated with gamma
-#' @param par0 A list of parameters for initialization (of class \code{normalMix})
+#' @param parlist The parameter estimates as a list containing alpha, mu, sigma, and gamma 
+#' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m), 
+#' sigma = (sigma_1, ..., sigma_m), gamma = (gamma_1, ..., gamma_m))
+#' @param z n by p matrix of regressor associated with gamma
 #' @param sigma0 m by 1 vector of sigma 
 #' @param h h used as index for pivoting
 #' @param tau Tau used to split the h-th component
@@ -906,13 +912,13 @@ normalmixMaxPhiStep <- function (htaupair, y, par0, z = NULL, p, jpvt,
 #' @return A list of length 2, where the first element is the local modified 
 #' MEM test statistic at k=2, the second element is 
 #' the local modified MEM test statistic at k=3
-normalmixPhi2 <- function (y, z = NULL, par0, sigma0, h, tau, an) {
+normalmixPhi2 <- function (y, z = NULL, parlist, sigma0, h, tau, an) {
 
 n     <- length(y)
-alpha <- par0$alpha
-mu    <- par0$mu
-sigma <- par0$sigma
-gamma <- par0$gamma
+alpha <- parlist$alpha
+mu    <- parlist$mu
+sigma <- parlist$sigma
+gamma <- parlist$gamma
 m1    <- length(alpha) # m1 = m+1
 m     <- m1-1
 sigma0h <- c(sigma0[1:h],sigma0[h:m])
@@ -977,7 +983,10 @@ setting <- c(n,m1,1,1)
 #' @title normalmixPhiInit
 #' @name normalmixPhiInit
 #' @param y n by 1 vector of data
-#' @param par List of alpha, mu, sigma from an m-component model
+#' @param parlist The parameter estimates as a list containing alpha, mu, sigma, and gamma 
+#' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m), 
+#' sigma = (sigma_1, ..., sigma_m), gamma = (gamma_1, ..., gamma_m))
+#' @param z n by p matrix of regressor associated with gamma
 #' @param z n by p matrix of regressor associated with gamma
 #' @param h h used as index for pivoting
 #' @param tau Tau used to split the h-th component
@@ -987,16 +996,16 @@ setting <- c(n,m1,1,1)
 #' \item{mu}{m+1 by ninits matrix for mu}
 #' \item{sigma}{m+1 by ninits matrix for sigma}
 #' \item{gamma}{m+1 by ninits matrix for gamma}
-normalmixPhiInit <- function (y, par, z = NULL, h, tau, ninits = 1)
+normalmixPhiInit <- function (y, parlist, z = NULL, h, tau, ninits = 1)
 {
 n     <- length(y)
 p     <- ncol(z)
 gamma <- NULL
 
-mu0      <- par$mu
-sigma0   <- par$sigma
-alpha0   <- par$alpha
-gamma0  <- par$gamma
+mu0      <- parlist$mu
+sigma0   <- parlist$sigma
+alpha0   <- parlist$alpha
+gamma0  <- parlist$gamma
 m       <- length(alpha0)
 
 if (!is.null(z)){
@@ -1254,7 +1263,7 @@ return(out)
 #' @export
 #' @title omega.12 
 #' @name omega.12
-#' @param par The parameter estimates as a list containing alpha, mu, sigma, and gamma 
+#' @param parlist The parameter estimates as a list containing alpha, mu, sigma, and gamma 
 #' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m), 
 #' sigma = (sigma_1, ..., sigma_m), gamma = (gamma_1, ..., gamma_m))
 #' @return The misclassification rate omega_ij
@@ -1262,17 +1271,17 @@ return(out)
 #' Simulating Data to Study Performance of Finite Mixture Modeling and Model-Based Clustering Algorithms,
 #' \emph{Journal of Computational and Graphical Statistica},
 #' \bold{19}, 354--376.
-omega.12 <- function(par)
+omega.12 <- function(parlist)
 # Computes omega_{12} for testing H_0:m=2 against H_1:m=3
 {
-alp1 <- par$alpha[1]
-alp2 <- par$alpha[2]
+alp1 <- parlist$alpha[1]
+alp2 <- parlist$alpha[2]
 
-mu1 <- par$mu[1]
-mu2 <- par$mu[2]
+mu1 <- parlist$mu[1]
+mu2 <- parlist$mu[2]
 
-sig1 <- par$sigma[1]
-sig2 <- par$sigma[2]
+sig1 <- parlist$sigma[1]
+sig2 <- parlist$sigma[2]
 
 part1 <- omega.ji(alp1, mu1, sig1, alp2, mu2, sig2)
 part2 <- omega.ji(alp2, mu2, sig2, alp1, mu1, sig1)
@@ -1285,7 +1294,7 @@ return((part1 + part2) / 2)
 #' @export
 #' @title omega.123
 #' @name omega.123
-#' @param par The parameter estimates as a list containing alpha, mu, sigma, and gamma 
+#' @param parlist The parameter estimates as a list containing alpha, mu, sigma, and gamma 
 #' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m), 
 #' sigma = (sigma_1, ..., sigma_m), gamma = (gamma_1, ..., gamma_m))
 #' @return A 2 by 1 vector whose first element is omega_12 and second element is omega_23 
@@ -1293,19 +1302,19 @@ return((part1 + part2) / 2)
 #' Simulating Data to Study Performance of Finite Mixture Modeling and Model-Based Clustering Algorithms,
 #' \emph{Journal of Computational and Graphical Statistica},
 #' \bold{19}, 354--376.
-omega.123 <- function(par)
+omega.123 <- function(parlist)
 {
-alp1 <- par$alpha[1]
-alp2 <- par$alpha[2]
-alp3 <- par$alpha[3]
+alp1 <- parlist$alpha[1]
+alp2 <- parlist$alpha[2]
+alp3 <- parlist$alpha[3]
 
-mu1 <- par$mu[1]
-mu2 <- par$mu[2]
-mu3 <- par$mu[3]
+mu1 <- parlist$mu[1]
+mu2 <- parlist$mu[2]
+mu3 <- parlist$mu[3]
 
-sig1 <- par$sigma[1]
-sig2 <- par$sigma[2]
-sig3 <- par$sigma[3]
+sig1 <- parlist$sigma[1]
+sig2 <- parlist$sigma[2]
+sig3 <- parlist$sigma[3]
 
 part1 <- omega.ji(alp1, mu1, sig1, alp2, mu2, sig2)
 part2 <- omega.ji(alp2, mu2, sig2, alp1, mu1, sig1)
@@ -1319,15 +1328,11 @@ return(c(w12, w23))
 
 }  # end function omega.123
 
-#' @param par The parameter estimates as a list containing alpha, mu, sigma, and gamma 
-#' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m), 
-#' sigma = (sigma_1, ..., sigma_m), gamma = (gamma_1, ..., gamma_m))
-
 #' Computes a_n based on empirical results found in Kasahara and Shimotsu (2015)
 #' @export
 #' @title anFormula
 #' @name anFormula
-#' @param par The parameter estimates as a list containing alpha, mu, sigma, and gamma 
+#' @param parlist The parameter estimates as a list containing alpha, mu, sigma, and gamma 
 #' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m), 
 #' sigma = (sigma_1, ..., sigma_m), gamma = (gamma_1, ..., gamma_m))
 #' @param m The number of components in the mixture
@@ -1337,7 +1342,7 @@ return(c(w12, w23))
 #' Testing the Number of Components in Normal Mixture Regression Models,
 #' \emph{Journal of the American Statistical Association},
 #' \bold{110}, 1632--1645.
-anFormula <- function(par, m, n)
+anFormula <- function(parlist, m, n)
 # Computes a_n for testing H_0 of m components
 # against H_1 of m+1 components
 {
@@ -1347,7 +1352,7 @@ if (m == 1) {
 #   an <- 0.25
 }
 else if (m == 2) {
-  omega <- omega.12(par)
+  omega <- omega.12(parlist)
   omega <- pmin(pmax(omega, 1e-16), 1-1e-16)  # an becomes NaN if omega[j]=0 or 1
   x <- exp(-1.747 - 0.297 * log(omega / (1 - omega)) - 98.35/n)  # maxa=1
   an <- 0.9 * x / (1 + x)
@@ -1355,7 +1360,7 @@ else if (m == 2) {
 #   an <- 1.8 * x / (1 + x)
 }
 else if (m == 3) {
-  omega <- omega.123(par)
+  omega <- omega.123(parlist)
   omega <- pmin(pmax(omega, 1e-16), 1-1e-16)  # an becomes NaN if omega[j]=0 or 1
   t_omega <- (omega[1] * omega[2])/(1 - omega[1])/(1 - omega[2])
   x <- exp(-1.731 - 0.162 * log(t_omega) - 144.64/n)

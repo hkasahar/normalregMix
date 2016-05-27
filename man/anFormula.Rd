@@ -4,10 +4,10 @@
 \alias{anFormula}
 \title{anFormula}
 \usage{
-anFormula(par, m, n)
+anFormula(parlist, m, n)
 }
 \arguments{
-\item{par}{The parameter estimates as a list containing alpha, mu, sigma, and gamma 
+\item{parlist}{The parameter estimates as a list containing alpha, mu, sigma, and gamma 
 in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m), 
 sigma = (sigma_1, ..., sigma_m), gamma = (gamma_1, ..., gamma_m))
 Computes a_n based on empirical results found in Kasahara and Shimotsu (2015)}
@@ -16,7 +16,7 @@ Computes a_n based on empirical results found in Kasahara and Shimotsu (2015)}
 
 \item{n}{The number of observations}
 
-\item{par}{The parameter estimates as a list containing alpha, mu, sigma, and gamma 
+\item{parlist}{The parameter estimates as a list containing alpha, mu, sigma, and gamma 
 in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m), 
 sigma = (sigma_1, ..., sigma_m), gamma = (gamma_1, ..., gamma_m))}
 }
