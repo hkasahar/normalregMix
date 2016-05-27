@@ -306,6 +306,104 @@ regmixCritBoot <- function (y, x, parlist, z = NULL, values = NULL, ninits = 100
 #
 # }  # end regmixMEMtestNocrit
 
+regmixMEMtestSeq <- function (y, x, z = NULL, maxm = 3, ninits = 10, maxit = 2000,
+                              nbtsp = 199, parallel = TRUE, cl = NULL) {
+  # Compute the modified EM test statistic for testing H_0 of m components
+  # against H_1 of m+1 components for a univariate finite mixture of normals
+  
+  y   <- as.vector(y)
+  x		<- as.matrix(x)
+  n   <- length(y)
+  p   <- 0
+  q   <- ncol(x)
+  if (!is.null(z)) {
+    z <- as.matrix(z)
+    p <- ncol(z)
+    gamma <- matrix(0, nrow = p, ncol = maxm)
+  }
+  
+  out   <- vector('list', length = maxm)
+  aic    <- bic <- double(maxm)
+  pvals   <- emstat <- matrix(0, nrow = maxm-1, ncol = 3)
+  loglik  <- penloglik <- double(maxm)
+  
+  alpha   <- mu <- sigma <- matrix(0, nrow = maxm, ncol = maxm)
+  beta <- list()
+  # Test H_0:m=1, H_0:m=2, ...
+  
+  for (m in 1:maxm){
+    pmle.result   <- regmixPMLE(y = y, x = x, m = m, z = z, vcov.method = "none",
+                                ninits = ninits, maxit = maxit)
+    loglik[m] <- loglik0 <- pmle.result$loglik
+    penloglik[m] <- penloglik0 <- pmle.result$penloglik
+    aic[m]  <- pmle.result$aic
+    bic[m]  <- pmle.result$bic
+    
+    parlist <- pmle.result$parlist
+    alpha0  <- parlist$alpha
+    mubeta0 <- parlist$mubeta
+    mu0			<- mubeta0[1,]
+    beta0   <- mubeta0[-1,]
+    sigma0  <- parlist$sigma
+    gamma0  <- parlist$gamma
+    
+    alpha[,m] <- c(alpha0, double(maxm - m))
+    mu[,m]    <- c(mu0, double(maxm - m))
+    sigma[,m] <- c(sigma0, double(maxm - m))
+    beta[m]  <- c(beta0, double(maxm - m))
+    
+    cat(sprintf("%d-component model estimate:\n",m))
+
+    
+    tab = as.matrix(rbind(alpha0, mu0, sigma0, as.matrix(beta0)))
+    rownames(tab) <- c("alpha", "mu", "sigma", paste("beta", ".", 1:q, sep = ""))
+    colnames(tab) <- c(paste("comp", ".", 1:m, sep = ""))
+    print(tab, digits = 4)
+    
+    if (!is.null(z)){
+      gamma[, m] <- gamma0
+      cat("gamma =", gamma0,"\n")
+    }
+    cat(sprintf("\nAIC, BIC, and loglike of 1 to %.i", m), "component models \n")
+    cat(c("AIC    =", sprintf(' %.2f', aic[1:m])), "\n")
+    cat(c("BIC    =", sprintf(' %.2f', bic[1:m])), "\n")
+    cat(c("loglik =", sprintf('%.2f', loglik[1:m])), "\n\n")
+    
+    if (m < maxm){
+      
+      cat(sprintf("Testing the null hypothesis of %d components\n", m))
+      
+      #     print(pmle.result$parlist)
+      an    <- anFormula(parlist = parlist, m = m, n = n)
+      #     print(an)
+      par1  <- regmixMaxPhi(y = y, x = x, parlist = parlist, z = z, an = an, 
+                            ninits = ninits, maxit = maxit)
+      #     print(loglik0)
+      #     print(par1)
+      emstat.m  <- 2*(par1$penloglik - loglik0)
+      
+      cat(c("modified EM-test statitic ", sprintf('%.3f',emstat.m)),"\n")
+      if (m <=3 ) {
+        em.out <- regmixCrit(y = y, x = x, parlist = parlist, z = z, 
+                             values = emstat.m)
+        cat(c("asymptotic p-values       ", sprintf('%.3f',em.out$pvals)),"\n \n")
+      } else {
+        em.out <- regmixCritBoot(y = y, x = x, parlist=parlist, z = z, 
+                                 values = emstat.m, ninits = ninits, nbtsp = nbtsp, 
+                                 parallel = parallel, cl = cl)
+        cat(c("bootstrap p-values        ", sprintf('%.3f',em.out$pvals)),"\n \n")
+      }
+      # noncg.rate[m]   <- par1$noncg.rate
+      pvals[m,]     <- em.out$pvals
+      emstat[m,]    <- emstat.m
+    }
+  }
+  a = list(alpha = alpha, mu = mu, sigma = sigma, beta = beta, gamma = gamma, 
+           emstat = emstat, pvals = pvals, aic = aic, bic = bic, 
+           loglik = loglik, penloglik = penloglik)
+  
+}  # end regmixMEMtestSeq
+
 
 regmixMEMtest <- function (y, x, m = 2, z = NULL, tauset = c(0.1,0.3,0.5), 
                            an = NULL, ninits = 100,
