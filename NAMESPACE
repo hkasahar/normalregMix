@@ -2,7 +2,7 @@ useDynLib(normalregMix2)
 
 export(normalmixCrit, normalmixCritBoot, normalmixMEMtest, normalmixMEMtestSeq,
        normalmixPMLE, normalmixVcov, rnormregmix,
-       regmixCrit, regmixCritBoot, regmixMEMtest,
+       regmixCrit, regmixCritBoot, regmixMEMtest, regmixMEMtestSeq,
        regmixPMLE, regmixVcov,        
        print.normalregMix, print.summary.normalregMix, summary.normalregMix, omega.12, omega.123)
 
