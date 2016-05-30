@@ -51,4 +51,11 @@ A list of class \code{normalMix} with items:
 \description{
 Performs MEM test given the data for y and x on the null hypothesis H_0: m = m_0.
 }
+\examples{
+n <- 200
+y <- 0.2 * rnorm(n, mean = -2, sd = 2) + 0.8 * rnorm(n, mean = 2, sd = 5)
+
+normalmixMEMtest(y = y, m = 1, crit.method = "asy")
+normalmixMEMtest(y = y, m = 2, crit.method = "asy")
+}
 

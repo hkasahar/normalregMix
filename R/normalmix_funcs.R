@@ -347,6 +347,12 @@ normalmixCritBoot <- function (y, parlist, z = NULL, values = NULL, ninits = 10,
 #' \emph{Statistica Sinica}, \bold{18}, 443--465.
 #' 
 #' McLachlan, G. J. and Peel, D. (2000) \emph{Finite Mixture Models}, John Wiley \& Sons, Inc.
+#' @examples 
+#' n <- 200
+#' y <- 0.2 * rnorm(n, mean = 0.2, sd = 2) + 0.8 * rnorm(n, mean = 1.4, sd = 5)
+#' 
+#' normalmixPMLE(y = y, m = 1)
+#' normalmixPMLE(y = y, m = 2)
 normalmixPMLE <- function (y, m = 2, z = NULL, vcov.method = c("Hessian", "OPG", "none"),
                            ninits = 25, epsilon = 1e-08, maxit = 2000,
                            epsilon.short = 1e-02, maxit.short = 500) {
@@ -548,6 +554,12 @@ normalmixPMLE <- function (y, m = 2, z = NULL, vcov.method = c("Hessian", "OPG",
 #' \item{bic}{A maxm vector of Bayesian Information Criterion of the fitted model at m_0 = 1, 2, ..., maxm}
 #' \item{loglik}{A maxm vector of log-likelihood values of the model at m_0 = 1, 2, ..., maxm}
 #' \item{penloglik}{A maxm vector of penalized log-likelihood values of the model at m_0 = 1, 2, ..., maxm}
+#' @examples 
+#' n <- 200
+#' y <- 0.4 * rnorm(n, mean = -2.5, sd = 0.6) + 0.2 * rnorm(n, sd = 1.2) +
+#'      0.4 * rnorm(n, mean = 2.5, sd = 0.6)
+#'
+#' normalmixMEMtestSeq(y = y)
 normalmixMEMtestSeq <- function (y, z = NULL,  maxm = 3, ninits = 10, maxit = 2000,
                                  nbtsp = 199, parallel.method = c("none", "do", "snow"), cl = NULL) {
   # Compute the modified EM test statistic for testing H_0 of m components
@@ -667,6 +679,12 @@ normalmixMEMtestSeq <- function (y, z = NULL,  maxm = 3, ninits = 10, maxit = 20
 #' \item{postprobs}{An nxm matrix of posterior probabilities for observations.}
 #' \item{call}{The matched call.}
 #' \item{m}{The number of components in the mixture.}
+#' @examples 
+#' n <- 200
+#' y <- 0.2 * rnorm(n, mean = -2, sd = 2) + 0.8 * rnorm(n, mean = 2, sd = 5)
+#'
+#' normalmixMEMtest(y = y, m = 1, crit.method = "asy")
+#' normalmixMEMtest(y = y, m = 2, crit.method = "asy")
 normalmixMEMtest <- function (y, m = 2, z = NULL, an = NULL, tauset = c(0.1,0.3,0.5), 
                               ninits = 10,
                               crit.method = c("asy", "boot", "none"), nbtsp = 199,

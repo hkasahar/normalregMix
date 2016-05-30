@@ -56,6 +56,14 @@ with the convertence criterion \code{epsilon.short} and \code{maxit.short}.
 Then, \code{regmixPMLE} uses \code{ninits} best initial values to run the EM algorithm 
 with the convertence criterion \code{epsilon} and \code{maxit}.
 }
+\examples{
+n <- 60
+betas <- c(-2, 1)
+
+x <- matrix(rnorm(n * 2), ncol=2)
+y <- x \%*\% betas + rnorm(n)
+regmixPMLE(y = y, x = x, m = 1)
+}
 \references{
 Biernacki, C., Celeux, G. and Govaert, G. (2003)
 Choosing Starting Values for the EM Algorithm for Getting the

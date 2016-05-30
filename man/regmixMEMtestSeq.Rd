@@ -47,4 +47,12 @@ A list of with the following items:
 Sequentially performs MEM test given the data for y and x on the null hypothesis H_0: m = m_0
 where m_0 is in {1, 2, ..., maxm}
 }
+\examples{
+n <- 20
+betas <- c(0.5, 1)
+
+x <- matrix(0.3 * rnorm(n * 2) + 0.7 * rnorm(n * 2, sd = 2), ncol=2)
+y <- x \%*\% betas + rnorm(n)
+regmixMEMtestSeq(y = y, x = x)
+}
 

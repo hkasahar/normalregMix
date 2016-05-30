@@ -54,6 +54,13 @@ with the convertence criterion \code{epsilon.short} and \code{maxit.short}.
 Then, \code{normalmixPMLE} uses \code{ninits} best initial values to run the EM algorithm 
 with the convertence criterion \code{epsilon} and \code{maxit}.
 }
+\examples{
+n <- 200
+y <- 0.2 * rnorm(n, mean = 0.2, sd = 2) + 0.8 * rnorm(n, mean = 1.4, sd = 5)
+
+normalmixPMLE(y = y, m = 1)
+normalmixPMLE(y = y, m = 2)
+}
 \references{
 Biernacki, C., Celeux, G. and Govaert, G. (2003)
 Choosing Starting Values for the EM Algorithm for Getting the
