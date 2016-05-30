@@ -15,3 +15,6 @@ Depends:
 Description: More about what it does (maybe more than one line)
 License: GPL (>= 2)
 RoxygenNote: 5.0.1
+Suggests: knitr,
+    rmarkdown
+VignetteBuilder: knitr

@@ -1,0 +1,42 @@
+---
+title: "Using normalregMix for Normal Mixture Regression Models"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+(TODO: Introduction here). This vignette document provides an introduction to users who wish to use normalregMix package to test the number of components in normal mixture regression models. The current algorithm of normalregMix is based on Kasahara and Shimotsu (2015) ^[TODO: Add citation for Kasahara and Shimotsu (2015)]. 
+
+## General settings
+Consider the following linear regression model with a $(q+1) \times 1$ parameter $\varphi = (\mu, \beta')'$:
+$$
+\begin{aligned}
+  y = \mu + x'\beta + z'\gamma + \varepsilon
+\end{aligned}
+$$
+where $x$ and $\beta$ are $q \times 1$ columns, $z$ and $\gamma$ are $p \times 1$ columns, and $\varepsilon$ follows normal distribution with zero mean and $\sigma^2$ variance. Then, the density of $y$ given $x, z, \gamma, \phi, \sigma^2$ is given by.. 
+(TODO)
+
+## Procedure in the Algorithm
+TODO: complete it.
+
+## Obtaining PMLE
+TODO: Add tutorials on obtaining pmle
+
+## Testing a Single Hypothesis Using normalMixMEMtest
+TODO: Add tutorials on obtaining test result
+
+## Sequentailly Testing Hypotheses Using normalMixMEMtestSeq
+\verb|normalmixMEMtestSeq| and \verb|regMixMEMtestSeq| allow users to test the null hypothesis against $H_0: m = m_0$ for $m_0 = 1, 2, ..., \text{maxm}$ sequentially to avoid hassles of testing each of them manually.
+
+```{r, }
+library(normalregMix2)
+n <- 300
+y <- 0.4 * rnorm(n, mean = -2.5, sd = 0.6) + 0.2 * rnorm(n, sd = 1.2) +
+     0.4 * rnorm(n, mean = 2.5, sd = 0.6)
+
+normalmixMEMtestSeq(y = y, maxm = 4)
+```
+
