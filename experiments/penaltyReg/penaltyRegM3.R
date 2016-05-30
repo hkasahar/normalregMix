@@ -135,7 +135,7 @@ GetDataForRegression <- function(aset, nset, alphasets, musets, sigmasets,
 		aterm <- GetATerm(phi)
 		misclterm <- GetMisclTerm(phi)
 		phat <- GetSimulatedTypeIError(phi$a, data, m)
-		regdata[[i]] <- list(y = log(phat/(0.1-phat)), 
+		regdata[[i]] <- list(y = log(phat/(0.15-phat)), 
 												 aterm = aterm, misclterm = misclterm, nterm = 1/n, 
 												 a=a, phat = phat)
     df <- data.frame(matrix(unlist(regdata), ncol = length(regdata[[1]]), byrow=T))

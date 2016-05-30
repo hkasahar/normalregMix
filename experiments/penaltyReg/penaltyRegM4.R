@@ -135,7 +135,7 @@ GetDataForRegression <- function(aset, nset, alphasets, musets, sigmasets,
 		aterm <- GetATerm(phi)
 		misclterm <- GetMisclTerm(phi)
 		phat <- GetSimulatedTypeIError(phi$a, data, m)
-		regdata[[i]] <- list(y = log(phat/(0.1-phat)), 
+		regdata[[i]] <- list(y = log(phat/(0.15-phat)), 
 												 aterm = aterm, misclterm = misclterm, nterm = 1/n, 
 												 a=a, phat = phat)
     df <- data.frame(matrix(unlist(regdata), ncol = length(regdata[[1]]), byrow=T))
@@ -155,7 +155,7 @@ print("workers loaded.")
 # ====== BEGIN EXPERIMENT ======
 ## 1. Initialization
 # Case when m = 4
-aset <- c(0.04, 0.07, 0.1, 0.13, 0.16)
+aset <- c(0.05, 0.07, 0.09, 0.11, 0.13)
 nset <- c(200, 400, 600)
 alphasets <- list(c(0.25, 0.25, 0.25, 0.25))
 musets 		<- list(c(-4,-1,1,4), c(-5,-1,1,5), c(-6,-2,2,6), c(-6,-1,2,5), c(-5,0,2,4), c(-6,0,2,4))
