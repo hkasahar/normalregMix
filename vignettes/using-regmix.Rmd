@@ -7,7 +7,7 @@ vignette: >
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
-(TODO: Introduction here). This vignette document provides an introduction to users who wish to use normalregMix package to test the number of components in normal mixture regression models. The current algorithm of normalregMix is based on Kasahara and Shimotsu (2015) ^[TODO: Add citation for Kasahara and Shimotsu (2015)]. 
+(TODO: Introduction here). This vignette document provides an introduction to users who wish to use normalregMix package to test the number of components in normal mixture regression models. The algorithm of normalregMix is based on Kasahara and Shimotsu (2015) ^[TODO: Add citation for Kasahara and Shimotsu (2015)]. 
 
 ## General settings
 Consider the following linear regression model with a $(q+1) \times 1$ parameter $\varphi = (\mu, \beta')'$:
@@ -16,8 +16,19 @@ $$
   y = \mu + x'\beta + z'\gamma + \varepsilon
 \end{aligned}
 $$
-where $x$ and $\beta$ are $q \times 1$ columns, $z$ and $\gamma$ are $p \times 1$ columns, and $\varepsilon$ follows normal distribution with zero mean and $\sigma^2$ variance. Then, the density of $y$ given $x, z, \gamma, \phi, \sigma^2$ is given by.. 
-(TODO)
+where $x$ and $\beta$ are $q \times 1$ columns, $z$ and $\gamma$ are $p \times 1$ columns, and $\varepsilon$ follows normal distribution with zero mean and $\sigma^2$ variance. Then, the density of $y$ given $x, z, \gamma, \phi, \sigma^2$ is given by
+$$
+\begin{aligned}
+  f(y|x,z; \gamma,\theta, \sigma) = \frac{1}{\sqrt{2\pi}\sigma}\exp \left( \frac{y-\mu - x'\beta - z'\gamma}{2\sigma^2}  \right)
+\end{aligned}
+$$
+Now, consider an $m$-component mixture model, where each $j$th ($1 \leq j \leq m$) subcomponent follows the distribution above with parameter $\theta_j = (\mu_j, \beta_j')'$ and $\sigma_j^2$ with proportion $\alpha_j$. Then, this $m$-component mixture model has a density of
+$$
+\begin{aligned}
+  f_m(y | x, z; \varphi_m) = \sum_{j=1}^m \alpha_j f(y| x, z; \gamma, \theta_j, \sigma^2_j)
+\end{aligned}
+$$
+whose parameter is specified as $\varphi = (\mathbf{\alpha}', \gamma', \theta_1', ..., \theta_m', \sigma^2_1, ..., \sigma^2_m)'$, where $\mathbf{\alpha}' = (\alpha_1,...,\alpha_{m-1})'$. Given $m_0 \in \mathbb{N}$, this package aims to test a hypothesis $H_0 : m = m_0$ against the alternative $H_A: m = m_0 + 1$.
 
 ## Procedure in the Algorithm
 TODO: complete it.
@@ -26,17 +37,29 @@ TODO: complete it.
 TODO: Add tutorials on obtaining pmle
 
 ## Testing a Single Hypothesis Using normalMixMEMtest
-TODO: Add tutorials on obtaining test result
+Suppose that you would like to test a hypothesis $H_0: m = m_0$ against the alternative $H_A: m = m_0 + 1$.
+```{r, message=F, warning=F}
+library(normalregMix2)
+data(faithful)
+attach(faithful)
+
+normalmixMEMtest(y = eruptions, m = 1)
+normalmixMEMtest(y = eruptions, m = 2)
+normalmixMEMtest(y = eruptions, m = 3)
+```
+When $q = \text{dim}(X) > 0$, $\verb|regmixMEMtest|$ can be called to follow a similar procedure. Note that given $n$ observations of $y$, the data for $x$ must be an $n \times q$ matrix. Note that critical values are not printed in a default option due to heavy computation required for $\verb|regmixMEMtest|$. Specify $\verb|crit.method = "asy"|$ in a parameter to show the results.
+
+```{r, message=F, warning=F}
+regmixMEMtest(y = eruptions, x = waiting, m = 1, crit.method = "asy")
+regmixMEMtest(y = eruptions, x = waiting, m = 2)
+```
+# Parallelization
+When $q > 0$ or the number of observations is large, computing modified EM-statistics can take more than minutes. To reduce computation time required to perform statistical tests, we provide a few options to users to choose which package would be used to implement parallel computation. The method can be specified by a parameter, $\verb|parallel.method|$.
 
 ## Sequentailly Testing Hypotheses Using normalMixMEMtestSeq
-\verb|normalmixMEMtestSeq| and \verb|regMixMEMtestSeq| allow users to test the null hypothesis against $H_0: m = m_0$ for $m_0 = 1, 2, ..., \text{maxm}$ sequentially to avoid hassles of testing each of them manually.
+$\verb|normalmixMEMtestSeq|$ and $\verb|regMixMEMtestSeq|$ allow users to test the null hypothesis against $H_0: m = m_0$ for $m_0 = 1, 2, ..., \text{maxm}$ sequentially to avoid hassles of testing each of them manually.
 
-```{r, }
-library(normalregMix2)
-n <- 300
-y <- 0.4 * rnorm(n, mean = -2.5, sd = 0.6) + 0.2 * rnorm(n, sd = 1.2) +
-     0.4 * rnorm(n, mean = 2.5, sd = 0.6)
-
-normalmixMEMtestSeq(y = y, maxm = 4)
+```{r, message=F, warning=F}
+normalmixMEMtestSeq(y = eruptions, maxm = 4)
 ```
 

@@ -374,12 +374,9 @@ regmixCritBoot <- function (y, x, parlist, z = NULL, values = NULL, ninits = 100
 #' \item{loglik}{A maxm vector of log-likelihood values of the model at m_0 = 1, 2, ..., maxm}
 #' \item{penloglik}{A maxm vector of penalized log-likelihood values of the model at m_0 = 1, 2, ..., maxm}
 #' @examples 
-#' n <- 20
-#' betas <- c(0.5, 1)
-#'
-#' x <- matrix(0.3 * rnorm(n * 2) + 0.7 * rnorm(n * 2, sd = 2), ncol=2)
-#' y <- x %*% betas + rnorm(n)
-#' regmixMEMtestSeq(y = y, x = x)
+#' data(faithful)
+#' attach(faithful)
+#' regmixMEMtestSeq(y = eruptions, x = waiting)
 regmixMEMtestSeq <- function (y, x, z = NULL, maxm = 3, ninits = 10, maxit = 2000,
                               nbtsp = 199, parallel.method = c("none", "do", "snow"), cl = NULL) {
   # Compute the modified EM test statistic for testing H_0 of m components
@@ -519,13 +516,10 @@ regmixMEMtestSeq <- function (y, x, z = NULL, maxm = 3, ninits = 10, maxit = 200
 #' \item{call}{The matched call.}
 #' \item{m}{The number of components in the mixture.}
 #' @examples 
-#' n <- 40
-#' betas <- c(0.5, 1)
-#'
-#' x <- matrix(0.3 * rnorm(n * 2) + 0.7 * rnorm(n * 2, sd = 2), ncol=2)
-#' y <- x %*% betas + rnorm(n)
-#' regmixMEMtest(y = y, x = x, m = 1, crit.method = "asy")
-#' regmixMEMtest(y = y, x = x, m = 2, crit.method = "asy")
+#' data(faithful)
+#' attach(faithful)
+#' regmixMEMtest(y = eruptions, x = waiting, m = 1, crit.method = "asy")
+#' regmixMEMtest(y = eruptions, x = waiting, m = 2)
 regmixMEMtest <- function (y, x, m = 2, z = NULL, tauset = c(0.1,0.3,0.5), 
                            an = NULL, ninits = 100,
                            crit.method = c("none", "asy", "boot"), nbtsp = 199,
@@ -1078,12 +1072,10 @@ regmixPhiInit <- function (y, x, z = NULL, parlist, h, tau, ninits = 1)
 #' 
 #' McLachlan, G. J. and Peel, D. (2000) \emph{Finite Mixture Models}, John Wiley \& Sons, Inc.
 #' @examples 
-#' n <- 60
-#' betas <- c(-2, 1)
-#'
-#' x <- matrix(rnorm(n * 2), ncol=2)
-#' y <- x %*% betas + rnorm(n)
-#' regmixPMLE(y = y, x = x, m = 1)
+#' data(faithful)
+#' attach(faithful)
+#' regmixPMLE(y = eruptions, x = waiting, m = 1)
+#' regmixPMLE(y = eruptions, x = waiting, m = 2)
 regmixPMLE <- function (y, x, m = 2, z = NULL, vcov.method = c("Hessian", "OPG", "none"),
                         ninits = 100, epsilon = 1e-08, maxit = 2000,
                         epsilon.short = 1e-02, maxit.short = 500) {
