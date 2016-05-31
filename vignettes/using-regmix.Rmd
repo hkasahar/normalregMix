@@ -33,7 +33,7 @@ whose parameter is specified as $\mathbf{\vartheta} = (\mathbf{\alpha}', \gamma'
 ## Obtaining PMLE
 $\verb|normalmixPMLE|$ and $\verb|regmixPMLE|$ (for $q = \text{dim}(X) > 1$) can be used to obtain the maximum likelihood estimator of $\mathbf{\vartheta}$ for the penalized log-liklehiood function (PMLE) defined. Running the code will also return other useful information as well, such as the values of log-likelihood and penalized log-likelihood at PMLE computed, AIC, and BIC. 
 ```{r, message=F, warning=F}
-library(normalregMix2)
+library(normalregMix)
 data(faithful)
 attach(faithful)
 

@@ -1,4 +1,4 @@
-useDynLib(normalregMix2)
+useDynLib(normalregMix)
 
 export(normalmixCrit, normalmixCritBoot, normalmixMEMtest, normalmixMEMtestSeq,
        normalmixPMLE, normalmixMaxPhi, normalmixVcov, rnormregmix,

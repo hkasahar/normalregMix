@@ -1,4 +1,4 @@
-Package: normalregMix2
+Package: normalregMix
 Type: Package
 Title: Tools for analyzing normal mixture models and Gaussian regression mixture
     models
