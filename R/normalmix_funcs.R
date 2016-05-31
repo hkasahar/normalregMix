@@ -664,7 +664,7 @@ normalmixMEMtestSeq <- function (y, z = NULL,  maxm = 3, ninits = 10, maxit = 20
 #' @param cl Cluster used for parallelization; if it is \code{NULL}, the system will automatically
 #' create a new one for computation accordingly.
 #' @param parallel.method Choice of package used for parallelization; \code{"none"} runs the code in
-#' a serial process, \code{"do"} uses \code{doParallel} package, \code{"snow"} uses \code{"snow"} 
+#' a serial process, \code{"do"} uses \code{doParallel} package, \code{"snow"} uses \code{snow} 
 #' package for parallelization. 
 #' @return A list of class \code{normalMix} with items:
 #' \item{coefficients}{A vector of parameter estimates. Ordered as \eqn{\alpha_1,\ldots,\alpha_m,\mu_1,\ldots,\mu_m,\sigma_1,\ldots,\sigma_m,\gamma}.}
@@ -746,7 +746,7 @@ normalmixMEMtest <- function (y, m = 2, z = NULL, an = NULL, tauset = c(0.1,0.3,
 #' @param maxit.short The maximum number of iterations in short EM.
 #' @param maxit The maximum number of iterations.
 #' @param parallel.method Choice of package used for parallelization; \code{"none"} runs the code in
-#' a serial process, \code{"do"} uses \code{doParallel} package, \code{"snow"} uses \code{"snow"} 
+#' a serial process, \code{"do"} uses \code{doParallel} package, \code{"snow"} uses \code{snow} 
 #' package for parallelization.
 #' @param cl Cluster used for parallelization; if it is \code{NULL}, the system will automatically
 #' create a new one for computation accordingly. 

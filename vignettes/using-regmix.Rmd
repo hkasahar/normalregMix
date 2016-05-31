@@ -7,7 +7,7 @@ vignette: >
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
-(TODO: Introduction here). This vignette document provides an introduction to users who wish to use normalregMix package to test the number of components in normal mixture regression models. The algorithm of normalregMix is based on Kasahara and Shimotsu (2015) ^[TODO: Add citation for Kasahara and Shimotsu (2015)]. 
+This vignette document provides an introduction to users who wish to use normalregMix package to test the number of components in normal mixture regression models. The algorithm of normalregMix is based on Kasahara and Shimotsu (2015).^[Kasahara, H. and Shimotsu, K. (2015), Testing the Number of Components in Normal Mixture Regression Models, Journal of the American Statistical Association, 110:512, 1632-1645.]
 
 ## General settings
 Consider the following linear regression model with a $(q+1) \times 1$ parameter $\varphi = (\mu, \beta')'$:
@@ -28,38 +28,39 @@ $$
   f_m(y | x, z; \varphi_m) = \sum_{j=1}^m \alpha_j f(y| x, z; \gamma, \theta_j, \sigma^2_j)
 \end{aligned}
 $$
-whose parameter is specified as $\varphi = (\mathbf{\alpha}', \gamma', \theta_1', ..., \theta_m', \sigma^2_1, ..., \sigma^2_m)'$, where $\mathbf{\alpha}' = (\alpha_1,...,\alpha_{m-1})'$. Given $m_0 \in \mathbb{N}$, this package aims to test a hypothesis $H_0 : m = m_0$ against the alternative $H_A: m = m_0 + 1$.
-
-## Procedure in the Algorithm
-TODO: complete it.
+whose parameter is specified as $\mathbf{\vartheta} = (\mathbf{\alpha}', \gamma', \theta_1', ..., \theta_m', \sigma^2_1, ..., \sigma^2_m)'$, where $\mathbf{\alpha}' = (\alpha_1,...,\alpha_{m-1})'$. Given $m_0 \in \mathbb{N}$, this package aims to test a hypothesis $H_0 : m = m_0$ against the alternative $H_A: m = m_0 + 1$.
 
 ## Obtaining PMLE
-TODO: Add tutorials on obtaining pmle
-
-## Testing a Single Hypothesis Using normalMixMEMtest
-Suppose that you would like to test a hypothesis $H_0: m = m_0$ against the alternative $H_A: m = m_0 + 1$.
+$\verb|normalmixPMLE|$ and $\verb|regmixPMLE|$ (for $q = \text{dim}(X) > 1$) can be used to obtain the maximum likelihood estimator of $\mathbf{\vartheta}$ for the penalized log-liklehiood function (PMLE) defined. Running the code will also return other useful information as well, such as the values of log-likelihood and penalized log-likelihood at PMLE computed, AIC, and BIC. 
 ```{r, message=F, warning=F}
 library(normalregMix2)
 data(faithful)
 attach(faithful)
 
+normalmixPMLE(y = eruptions, m = 1)
+regmixPMLE(y = eruptions, x = waiting, m = 2)
+```
+
+## Testing a Single Hypothesis Using normalMixMEMtest
+Suppose that you would like to test a hypothesis $H_0: m = m_0$ against the alternative $H_A: m = m_0 + 1$.
+```{r, message=F, warning=F, eval=FALSE}
 normalmixMEMtest(y = eruptions, m = 1)
 normalmixMEMtest(y = eruptions, m = 2)
 normalmixMEMtest(y = eruptions, m = 3)
 ```
-When $q = \text{dim}(X) > 0$, $\verb|regmixMEMtest|$ can be called to follow a similar procedure. Note that given $n$ observations of $y$, the data for $x$ must be an $n \times q$ matrix. Note that critical values are not printed in a default option due to heavy computation required for $\verb|regmixMEMtest|$. Specify $\verb|crit.method = "asy"|$ in a parameter to show the results.
+When $q > 0$, $\verb|regmixMEMtest|$ can be called to follow a similar procedure. Note that given $n$ observations of $y$, the data for $x$ must be an $n \times q$ matrix. Note that critical values are not printed in a default option due to heavy computation required for $\verb|regmixMEMtest|$. Specify $\verb|crit.method = "asy"|$ in a parameter to show the results.
 
-```{r, message=F, warning=F}
+```{r, message=F, warning=F, eval=FALSE}
 regmixMEMtest(y = eruptions, x = waiting, m = 1, crit.method = "asy")
 regmixMEMtest(y = eruptions, x = waiting, m = 2)
 ```
 # Parallelization
-When $q > 0$ or the number of observations is large, computing modified EM-statistics can take more than minutes. To reduce computation time required to perform statistical tests, we provide a few options to users to choose which package would be used to implement parallel computation. The method can be specified by a parameter, $\verb|parallel.method|$.
+When $q > 0$ or the number of observations is large, computing modified EM-statistics can take more than minutes. To reduce computation time required to perform statistical tests, we provide a few options to users to choose which package is going to be used to implement parallel computation. The package can be specified by a parameter, $\verb|parallel.method|$. Setting $\verb|"none"|$ runs the code in a serial process, $\verb|"do"|$ uses $\verb|doParallel|$ package, $\verb|"snow"|$ uses $\verb|snow|$ package for parallelization. Both packages show different performance depending on OS installed in a local computer, so users might want to run a small experiment to do benchmarking across different methods.
 
 ## Sequentailly Testing Hypotheses Using normalMixMEMtestSeq
-$\verb|normalmixMEMtestSeq|$ and $\verb|regMixMEMtestSeq|$ allow users to test the null hypothesis against $H_0: m = m_0$ for $m_0 = 1, 2, ..., \text{maxm}$ sequentially to avoid hassles of testing each of them manually.
+$\verb|normalmixMEMtestSeq|$ and $\verb|regMixMEMtestSeq|$ allow users to test the null hypothesis against $H_0: m = m_0$ for $m_0 = 1, 2, ..., \verb|maxm|$ sequentially to avoid hassles of testing each of them manually.
 
-```{r, message=F, warning=F}
-normalmixMEMtestSeq(y = eruptions, maxm = 4)
+```{r, message=F, warning=F, eval=FALSE}
+normalmixMEMtestSeq(y = eruptions)
 ```
 
