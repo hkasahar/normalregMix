@@ -119,7 +119,8 @@ anset <- seq(anlb,anub,length.out = ancount+2)[1:ancount+1]
 betaset <- rep(0.5, dimx)
 
 # generate data
-phiset <- expand.grid(n=c(100,300), crit = c(0.01,0.05), betaset = betaset)
+phiset <- expand.grid(n=c(100,300), crit = c(0.01,0.05))
+phiset$betasets <- lapply(1:nrow(phiset), function(j) betaset)
 pairs <- GeneratePhiDataPairs(phiset) 
 
 ## 2. Create a row for a table.
