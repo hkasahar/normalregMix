@@ -37,34 +37,31 @@ PerformEMtests <- function (an, data, crit = 0.05, q = 1, m = 1,
 	print(list(an, K2 = mean(pvals[2,] < crit), K3 = mean(pvals[3,] < crit)))
   return (list(K2 = mean(pvals[2,] < crit), K3 = mean(pvals[3,] < crit)))
 }
-
 # Returns data set of rejection frequency rate corresponding to each an,
 # the value of optimal an that is closest to given sig. level (0.05 by default), and
 # the frequency of rejection according to the optimal an.
 FindOptimal1vs2an <- function (phidatapair, anset, m = 1,
-												parallel.method = c("none", "do", "snow"), rmpi = TRUE) {
+                               parallel.method = c("none", "do", "snow"), rmpi = TRUE) {
   parallel.method <- match.arg(parallel.method)  
-	phi  <- phidatapair$phi
-	data <- phidatapair$data
-	crit <- phi$crit
-	q		 <- length(phi$betaset)
-
+  phi  <- phidatapair$phi
+  data <- phidatapair$data
+  crit <- phi$crit
+  q		 <- length(phi$betaset)
+  
   # loop over each a_n.
   output <- lapply(anset, PerformEMtests, data = data, crit = crit, q = q, m = m, 
-                  parallel.method = parallel.method, rmpi = rmpi)
+                   parallel.method = parallel.method, rmpi = rmpi)
   freqsK2 <- sapply(output, "[[", "K2")
   freqsK3 <- sapply(output, "[[", "K3")
-
+  
   # show me what you've got.
   table <- data.frame(anset, freqsK2, freqsK3)
   colnames(table) <- c("an", "K=2", "K=3")
   optimal <- anset[which(abs(freqsK2-crit)==min(abs(freqsK2-crit)))]
   optimalresult <- freqsK2[which(abs(freqsK2-crit)==min(abs(freqsK2-crit)))]
-
-  out <- list(table = table, optimal = optimal, optimalresult = optimalresult,
-							n = n, crit = crit)
-
-  return (out)
+  print(table)
+  
+  return (list(optimal.value = optimal, optimal.perf = optimalresult))
 }
 ## Generate a column that represents a sample using phi given.
 # each column has the form (y x_1' x_2' ... x_n')' 
@@ -128,17 +125,17 @@ pairs <- GeneratePhiDataPairs(phiset)
 ## 2. Create a row for a table.
 cols <- list()
 for (i in 1:length(pairs)) {
-		phi <- pairs[[i]]$phi
-		data <- pairs[[i]]$data
-		n <- phi$n
-		crit <- phi$crit
-		result <- FindOptimal1vs2an(pairs[[i]], anset = anset, m = 1)
-		cols[[i]] <- list(crit, n, result)
-		df <- data.frame(matrix(unlist(regdata), ncol = length(regdata[[1]]), byrow=T))
-		colnames(df) <- c("crit", "n", "result")
-		print(df) # save every time
-	}
-print(df)
+  phi <- pairs[[i]]$phi
+  data <- pairs[[i]]$data
+  n <- phi$n
+  crit <- phi$crit
+  result <- FindOptimal1vs2an(pairs[[i]], anset = anset, m = 1)
+  cols[[i]] <- list(crit, n, result$optimal.value, result$optimal.perf)
+  df <- data.frame(matrix(unlist(cols), ncol = length(cols[[1]]), byrow=T))
+  colnames(df) <- c("crit", "n", "optimal.value", "optimal.perf")
+  print(df) # save every time
+}
+print(df) 
 
 ## ====== END EXPERIMENT ======
 # Rmpi termination
