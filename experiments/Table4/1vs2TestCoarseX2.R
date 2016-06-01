@@ -108,8 +108,8 @@ print("workers loaded.")
 # Model specification (per row of the table)
 # dim(X) = 2
 dimx <- 2
-anlb <- 1
-anub <- 5
+anlb <- 0.5
+anub <- 1.2
 ancount <- 10
 SEED <- 222222
 
