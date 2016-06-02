@@ -35,7 +35,7 @@ sigma = (sigma_1, ..., sigma_m), gamma = (gamma_1, ..., gamma_m))}
 \item{maxit}{The maximum number of iterations.}
 
 \item{parallel.method}{Choice of package used for parallelization; \code{"none"} runs the code in
-a serial process, \code{"do"} uses \code{doParallel} package, \code{"snow"} uses \code{"snow"} 
+a serial process, \code{"do"} uses \code{doParallel} package, \code{"snow"} uses \code{snow} 
 package for parallelization.}
 
 \item{cl}{Cluster used for parallelization; if it is \code{NULL}, the system will automatically

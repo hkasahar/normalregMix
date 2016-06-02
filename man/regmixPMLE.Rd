@@ -57,12 +57,10 @@ Then, \code{regmixPMLE} uses \code{ninits} best initial values to run the EM alg
 with the convertence criterion \code{epsilon} and \code{maxit}.
 }
 \examples{
-n <- 60
-betas <- c(-2, 1)
-
-x <- matrix(rnorm(n * 2), ncol=2)
-y <- x \%*\% betas + rnorm(n)
-regmixPMLE(y = y, x = x, m = 1)
+data(faithful)
+attach(faithful)
+regmixPMLE(y = eruptions, x = waiting, m = 1)
+regmixPMLE(y = eruptions, x = waiting, m = 2)
 }
 \references{
 Biernacki, C., Celeux, G. and Govaert, G. (2003)

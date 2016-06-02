@@ -46,10 +46,8 @@ Sequentially performs MEM test given the data for y and x on the null hypothesis
 where m_0 is in {1, 2, ..., maxm}
 }
 \examples{
-n <- 200
-y <- 0.4 * rnorm(n, mean = -2.5, sd = 0.6) + 0.2 * rnorm(n, sd = 1.2) +
-     0.4 * rnorm(n, mean = 2.5, sd = 0.6)
-
-normalmixMEMtestSeq(y = y)
+data(faithful)
+attach(faithful)
+normalmixMEMtestSeq(y = eruptions)
 }
 

@@ -4,20 +4,12 @@
 \alias{omega.ji}
 \title{omega.ji}
 \usage{
-omega.ji(alpi, mui, sigi, alpj, muj, sigj)
+omega.ji(phi_i, phi_j)
 }
 \arguments{
-\item{alpi}{Alpha of i-th component}
+\item{phi_i}{3 by 1 column consisting of alpha, mu, sigma of ith component}
 
-\item{mui}{Mu of i-th component}
-
-\item{sigi}{Sigma of i-th component}
-
-\item{alpj}{Alpha of j-th component}
-
-\item{muj}{Mu of j-th component}
-
-\item{sigj}{Sigma of j-th component}
+\item{phi_j}{3 by 1 column consisting of alpha, mu, sigma of jth component}
 }
 \value{
 omega_{j|i}

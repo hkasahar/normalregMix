@@ -15,7 +15,7 @@ sigma = (sigma_1, ..., sigma_m), gamma = (gamma_1, ..., gamma_m))}
 The misclassification rate omega_ij
 }
 \description{
-Computes omega_{12} for testing H_0: m=2 against H_1: m=3 defined in Maitra and Melnykov (2010)
+Computes omega_{12} defined in Maitra and Melnykov (2010)
 }
 \references{
 Maitra, R., and Melnykov, V. (2010)

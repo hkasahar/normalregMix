@@ -55,11 +55,11 @@ Then, \code{normalmixPMLE} uses \code{ninits} best initial values to run the EM 
 with the convertence criterion \code{epsilon} and \code{maxit}.
 }
 \examples{
-n <- 200
-y <- 0.2 * rnorm(n, mean = 0.2, sd = 2) + 0.8 * rnorm(n, mean = 1.4, sd = 5)
+data(faithful)
+attach(faithful)
 
-normalmixPMLE(y = y, m = 1)
-normalmixPMLE(y = y, m = 2)
+normalmixPMLE(y = eruptions, m = 1)
+normalmixPMLE(y = eruptions, m = 2)
 }
 \references{
 Biernacki, C., Celeux, G. and Govaert, G. (2003)

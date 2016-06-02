@@ -1314,47 +1314,56 @@ rnormregmix <- function (n, x = NULL, alpha, mubeta, sigma) {
   
 }  # end function rnormregmix
 
+
+
 #' Computes omega_{j|i} defined in (2.1) of Maitra and Melnykov (2010)
 #' @export
 #' @title omega.ji
 #' @name omega.ji
-#' @param alpi Alpha of i-th component
-#' @param mui Mu of i-th component
-#' @param sigi Sigma of i-th component
-#' @param alpj Alpha of j-th component
-#' @param muj Mu of j-th component
-#' @param sigj Sigma of j-th component
+#' @param phi_i 3 by 1 column consisting of alpha, mu, sigma of ith component 
+#' @param phi_j 3 by 1 column consisting of alpha, mu, sigma of jth component
 #' @return omega_{j|i}
 #' @references Maitra, R., and Melnykov, V. (2010)
 #' Simulating Data to Study Performance of Finite Mixture Modeling and Model-Based Clustering Algorithms,
 #' \emph{Journal of Computational and Graphical Statistica},
 #' \bold{19}, 354--376.
-omega.ji <- function(alpi, mui, sigi, alpj, muj, sigj)
-  # 
-{
+# Returns a misclassification rate omega_ji given two components i, j,
+# i.e. the probability of choosing component j where
+# the true model is ith component.  
+omega.ji <- function(phi_i, phi_j) {
+  alpha_i <- phi_i[1]
+  alpha_j <- phi_j[1]
+  mu_i <- phi_i[2]
+  mu_j <- phi_j[2]
+  sigma_i <- phi_i[3]
+  sigma_j <- phi_j[3]
   
-  if(sigi == sigj)
-  {
-    delta <- abs(mui - muj) / sigi
-    out <- pnorm(-delta / 2 + log(alpj / alpi) / delta, 0, 1)
-  }
+  a <- (1/sigma_j^2 - 1/sigma_i^2)
+  b <- mu_i / sigma_i^2 - mu_j / sigma_j^2
+  c <- mu_j^2 / sigma_j^2 - mu_i^2 / sigma_i^2
+  
+  if (sigma_i == sigma_j)
+    if (mu_i > mu_j)
+      omega_ji = pnorm((2 * log(alpha_j/alpha_i) - c)/(2*b), 
+                       mean = mu_i, sd = sigma_i)
   else
-  {
-    ncp <- (mui - muj)*sigi / (sigi^2 - sigj^2)
-    
-    value <- sigj^2 * (mui - muj)^2 / (sigj^2 - sigi^2)^2
-    - sigj^2 / (sigi^2 - sigj^2) * log(alpi^2 * sigj^2 / alpj^2 / sigi^2 )
-    sqrt.value <- sqrt(max(value,0))
-    
-    ind <- as.numeric(sigi<sigj)
-    out <- ind + (-1)^ind * (pnorm(sqrt.value - ncp,0,1) - pnorm(-sqrt.value - ncp,0,1))
+    omega_ji = 1 - pnorm((2 * log(alpha_j/alpha_i) - c)/(2*b), 
+                         mean = mu_i, sd = sigma_i)
+  else {
+    d <- 2 * log(alpha_j * sigma_i / (alpha_i * sigma_j)) - c + (b^2 / a)
+    da <- max(d/a, 0)
+    if (sigma_i > sigma_j)
+      omega_ji = pnorm(sqrt(da)-b/a, mean = mu_i, sd = sigma_i) -
+      pnorm(-sqrt(da)-b/a, mean = mu_i, sd = sigma_i)
+    else 
+      omega_ji = 1 + 
+      pnorm(-sqrt(da)-b/a, mean = mu_i, sd = sigma_i) -
+      pnorm(sqrt(da)-b/a, mean = mu_i, sd = sigma_i)
   }
-  
-  return(out)
-  
-}  # end function omega.ji
+  return (omega_ji)
+}
 
-#' Computes omega_{12} for testing H_0: m=2 against H_1: m=3 defined in Maitra and Melnykov (2010)
+#' Computes omega_{12} defined in Maitra and Melnykov (2010)
 #' @export
 #' @title omega.12 
 #' @name omega.12
@@ -1369,23 +1378,17 @@ omega.ji <- function(alpi, mui, sigi, alpj, muj, sigj)
 omega.12 <- function(parlist)
   # Computes omega_{12} for testing H_0:m=2 against H_1:m=3
 {
-  alp1 <- parlist$alpha[1]
-  alp2 <- parlist$alpha[2]
+  phi1 <- c(alpha = parlist$alpha[1], mu = parlist$mu[1], sigma = parlist$sigma[1])
+  phi2 <- c(alpha = parlist$alpha[2], mu = parlist$mu[2], sigma = parlist$sigma[2])
   
-  mu1 <- parlist$mu[1]
-  mu2 <- parlist$mu[2]
-  
-  sig1 <- parlist$sigma[1]
-  sig2 <- parlist$sigma[2]
-  
-  part1 <- omega.ji(alp1, mu1, sig1, alp2, mu2, sig2)
-  part2 <- omega.ji(alp2, mu2, sig2, alp1, mu1, sig1)
+  part1 <- omega.ji(phi1, phi2)
+  part2 <- omega.ji(phi2, phi1)
   
   return((part1 + part2) / 2)
 }  # end function omega.12
 
 
-#' Computes the list of omega_{12} and omega_{23} defined in Maitra and Melnykov (2010)
+#' Computes omega_{12} and omega_{23} defined in Maitra and Melnykov (2010)
 #' @export
 #' @title omega.123
 #' @name omega.123
@@ -1399,30 +1402,56 @@ omega.12 <- function(parlist)
 #' \bold{19}, 354--376.
 omega.123 <- function(parlist)
 {
-  alp1 <- parlist$alpha[1]
-  alp2 <- parlist$alpha[2]
-  alp3 <- parlist$alpha[3]
+  phi1 <- c(alpha = parlist$alpha[1], mu = parlist$mu[1], sigma = parlist$sigma[1])
+  phi2 <- c(alpha = parlist$alpha[2], mu = parlist$mu[2], sigma = parlist$sigma[2])
+  phi3 <- c(alpha = parlist$alpha[3], mu = parlist$mu[3], sigma = parlist$sigma[3])
   
-  mu1 <- parlist$mu[1]
-  mu2 <- parlist$mu[2]
-  mu3 <- parlist$mu[3]
-  
-  sig1 <- parlist$sigma[1]
-  sig2 <- parlist$sigma[2]
-  sig3 <- parlist$sigma[3]
-  
-  part1 <- omega.ji(alp1, mu1, sig1, alp2, mu2, sig2)
-  part2 <- omega.ji(alp2, mu2, sig2, alp1, mu1, sig1)
+  part1 <- omega.ji(phi1, phi2)
+  part2 <- omega.ji(phi2, phi1)
   w12 <- (part1 + part2)/2
   
-  part3 <- omega.ji(alp2, mu2, sig2, alp3, mu3, sig3)
-  part4 <- omega.ji(alp3, mu3, sig3, alp2, mu2, sig2)
+  part3 <- omega.ji(phi2, phi3)
+  part4 <- omega.ji(phi3, phi2)
   w23 <- (part3 + part4)/2
   
   return(c(w12, w23))
   
 }  # end function omega.123
 
+#' Computes omega_{12}, omega_{23}, and omega_{34} defined in Maitra and Melnykov (2010)
+#' @export
+#' @title omega.1234
+#' @name omega.1234
+#' @param parlist The parameter estimates as a list containing alpha, mu, sigma, and gamma 
+#' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m), 
+#' sigma = (sigma_1, ..., sigma_m), gamma = (gamma_1, ..., gamma_m))
+#' @return A 3 by 1 vector consisting of omega_12, omega_23, and omega_34
+#' @references Maitra, R., and Melnykov, V. (2010)
+#' Simulating Data to Study Performance of Finite Mixture Modeling and Model-Based Clustering Algorithms,
+#' \emph{Journal of Computational and Graphical Statistica},
+#' \bold{19}, 354--376.
+omega.1234 <- function(parlist)
+{
+  phi1 <- c(alpha = parlist$alpha[1], mu = parlist$mu[1], sigma = parlist$sigma[1])
+  phi2 <- c(alpha = parlist$alpha[2], mu = parlist$mu[2], sigma = parlist$sigma[2])
+  phi3 <- c(alpha = parlist$alpha[3], mu = parlist$mu[3], sigma = parlist$sigma[3])
+  phi4 <- c(alpha = parlist$alpha[4], mu = parlist$mu[4], sigma = parlist$sigma[4])
+  
+  part1 <- omega.ji(phi1, phi2)
+  part2 <- omega.ji(phi2, phi1)
+  w12 <- (part1 + part2)/2
+  
+  part3 <- omega.ji(phi2, phi3)
+  part4 <- omega.ji(phi3, phi2)
+  w23 <- (part3 + part4)/2
+  
+  part5 <- omega.ji(phi3, phi4)
+  part6 <- omega.ji(phi4, phi3)
+  w34 <- (part5 + part6)/2
+  
+  return(c(w12, w23, w34))
+  
+}  # end function omega.1234
 
 # TODO: This has not been used. Do I remove this? The same functions is in other_funcs.R.
 coef.to.list <- function(coefficients, z = NULL) {
