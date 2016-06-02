@@ -1,12 +1,12 @@
-#install.packages("normalregMix2Test_1.0.tar.gz", repos = NULL, type="source")
+#install.packages("normalregMix_1.0.tar.gz", repos = NULL, type="source")
 library(snow)
 library(doParallel)
 library(Rmpi)
-library(normalregMix2Test)
+library(normalregMix)
 ## Generates EM test result according to the dimension of X
 PerformEMtest <- function (sample, q, an, m = 1, z = NULL, parallel.method) {
   library(doParallel) # workers might need information
-  library(normalregMix2Test)  # workers might need information
+  library(normalregMix)  # workers might need information
   
 	n <- as.integer(length(sample)/(q+1))
   y <- sample[1:n] # first n elements represents y data 
@@ -95,6 +95,9 @@ GeneratePhiDataPair <- function(phi, replication) {
 GeneratePhiDataPairs <- function(phiset, replication = 200) {
 	apply(phiset, 1, GeneratePhiDataPair, replication = replication) # list of (phi data)
 }
+
+## Experiment setup
+testMode(TRUE)
 
 ## Rmpi setup 
 print("collecting workers..")
