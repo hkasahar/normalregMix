@@ -7,7 +7,8 @@ library(normalregMix)
 PerformEMtest <- function (sample, q, an, m = 1, z = NULL, parallel.method) {
   library(doParallel) # workers might need information
   library(normalregMix)  # workers might need information
-  
+  testMode(TRUE) # for replication
+	
 	n <- as.integer(length(sample)/(q+1))
   y <- sample[1:n] # first n elements represents y data 
   if (q <= 0)
@@ -95,9 +96,6 @@ GeneratePhiDataPair <- function(phi, replication) {
 GeneratePhiDataPairs <- function(phiset, replication = 200) {
 	apply(phiset, 1, GeneratePhiDataPair, replication = replication) # list of (phi data)
 }
-
-## Experiment setup
-testMode(TRUE)
 
 ## Rmpi setup 
 print("collecting workers..")

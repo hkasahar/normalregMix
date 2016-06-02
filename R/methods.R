@@ -11,7 +11,7 @@ test.seed <- 8888577
 #' for users who would like to replicate experiments. By default, the test mode is turned off.  
 #' @param on Option to turn on the test mode
 #' @param seed The random seed to be used for initialization
-testMode <- function(on, seed = 8888577)
+testMode <- function(on = FALSE, seed = 8888577)
 {
   unlockBinding("test.on", getNamespace("normalregMix"))
   unlockBinding("test.seed", getNamespace("normalregMix"))

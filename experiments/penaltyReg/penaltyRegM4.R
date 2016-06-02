@@ -45,6 +45,7 @@ performEMtest <- function (sample, an, m)
 {
   library(doParallel) # workers might need information
   library(normalregMix)  # workers might need information
+	testMode(TRUE) # for replication
   return (normalmixMEMtest (sample, m = m, z = NULL, an = an, c(0.1,0.3,0.5),
                               crit.method = "asy",  parallel.method = "none"))
 }
@@ -117,9 +118,6 @@ GetDataForRegression <- function(aset, nset, alphasets, musets, sigmasets,
   }
   return (regdata)
 }
-
-# Experiment setup
-testMode(TRUE) # for replication
 
 # Rmpi setup 
 print("collecting workers..")
