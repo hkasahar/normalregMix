@@ -4,7 +4,7 @@
 \alias{testMode}
 \title{testMode}
 \usage{
-testMode(on, seed = 654321)
+testMode(on, seed = 8888577)
 }
 \arguments{
 \item{on}{Option to turn on the test mode}

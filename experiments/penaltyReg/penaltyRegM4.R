@@ -2,69 +2,34 @@
 library(snow)
 library(doParallel)
 library(Rmpi)
-library(normalregMix2Test)
-
-# Returns a misclassification rate omega_ji given two components i, j,
-# i.e. the probability of choosing component j where
-# the true model is ith component.  
-GetOmegaJI <- function(phi_i, phi_j) {
-  alpha_i <- phi_i[[1]
-  alpha_j <- phi_j[[1]
-  mu_i <- phi_i[2]
-  mu_j <- phi_j[2]
-  sigma_i <- phi_i[3]
-  sigma_j <- phi_j[3]
-  
-  a <- (1/sigma_j^2 - 1/sigma_i^2)
-  b <- mu_i / sigma_i^2 - mu_j / sigma_j^2
-  c <- mu_j^2 / sigma_j^2 - mu_i^2 / sigma_i^2
-
-  if (sigma_i == sigma_j)
-    if (mu_i > mu_j)
-      omega_ji = pnorm((2 * log(alpha_j/alpha_i) - c)/(2*b), 
-                       mean = mu_i, sd = sigma_i)
-    else
-      omega_ji = 1 - pnorm((2 * log(alpha_j/alpha_i) - c)/(2*b), 
-                           mean = mu_i, sd = sigma_i)
-  else {
-    d <- 2 * log(alpha_j * sigma_i / (alpha_i * sigma_j)) - c + (b^2 / a)
-    da <- max(d/a, 0)
-    if (sigma_i > sigma_j)
-      omega_ji = pnorm(sqrt(da)-b/a, mean = mu_i, sd = sigma_i) -
-                 pnorm(-sqrt(da)-b/a, mean = mu_i, sd = sigma_i)
-    else 
-      omega_ji = 1 + 
-                  pnorm(-sqrt(da)-b/a, mean = mu_i, sd = sigma_i) -
-                  pnorm(sqrt(da)-b/a, mean = mu_i, sd = sigma_i)
-  }
-  return (omega_ji)
-}
+library(normalregMix)
 
 # Returns a term involving misclassification rates given phi.
 GetMisclTerm <- function(phi) {
-  alphaset <- phi$alphaset
-  muset    <- phi$muset
-  sigmaset <- phi$sigmaset
-  m        <- length(alphaset)
-  phimat   <- cbind(alphaset, muset, sigmaset) # each row represents a component 
   
-	omega_2_1 <- GetOmegaJI(phimat[1,],phimat[2,])
-	omega_1_2 <- GetOmegaJI(phimat[2,],phimat[1,])
-	omega_12  <- (omega_1_2 + omega_2_1)/2
-	if (m == 2) # ln(omega_12 / (1-omega_12))
-		return (log(omega_12/(1-omega_12)))  
-		
-	omega_3_2 <- GetOmegaJI(phimat[2,],phimat[3,])
-	omega_2_3 <- GetOmegaJI(phimat[3,],phimat[2,])
-	omega_23  <- (omega_2_3 + omega_3_2)/2
-	if (m == 3) # ln(omega_12 omega_23 / (1-omega_12)(1-omega_23))
-		return (log(omega_12*omega_23/(1-omega_12)/(1-omega_23)))  
-	
-	omega_4_3 <- GetOmegaJI(phimat[3,],phimat[4,])
-	omega_3_4 <- GetOmegaJI(phimat[4,],phimat[3,])
-	omega_34  <- (omega_3_4 + omega_4_3)/2
-	# (m == 4) # ln(omega_12 omega_23 omega_34 / (1-omega_12)(1-omega_23)(1-omega_34))
-	return (log(omega_12*omega_23*omega_34/(1-omega_12)/(1-omega_23)/(1-omega_34)))
+  parlist <- list(alpha = phi$alphaset, mu = phi$muset, sigma = phi$sigmaset)
+  m <- length(phi$alphaset) 
+  
+  if (m == 2) 
+  {
+    omega.12  <- omega.12(parlist)
+    return (log(omega.12 /(1-omega.12)))
+  }
+  
+  if (m == 3) # ln(omega_12 omega_23 / (1-omega_12)(1-omega_23))
+  {
+    omega.123 <- omega.123(parlist)
+    omega.12 <- omega.123[1]
+    omega.23 <- omega.123[2]
+    return (log(omega.12 * omega.23 / ((1-omega.12)*(1-omega.23))))
+  }
+  omega.1234 <- omega.1234(parlist)
+  omega.12 <- omega.1234[1]
+  omega.23 <- omega.1234[2]
+  omega.34 <- omega.1234[3]
+  # (m == 4) # ln(omega_12 omega_23 omega_34 / (1-omega_12)(1-omega_23)(1-omega_34))
+  return (log(omega.12 * omega.23 * omega.34 / 
+                ((1-omega.12)*(1-omega.23)*(1-omega.34))))
   
 }
 
@@ -79,7 +44,7 @@ GetATerm <- function(phi) {
 performEMtest <- function (sample, an, m)
 {
   library(doParallel) # workers might need information
-  library(normalregMix2Test)  # workers might need information
+  library(normalregMix)  # workers might need information
   return (normalmixMEMtest (sample, m = m, z = NULL, an = an, c(0.1,0.3,0.5),
                               crit.method = "asy",  parallel.method = "none"))
 }
@@ -153,13 +118,15 @@ GetDataForRegression <- function(aset, nset, alphasets, musets, sigmasets,
   return (regdata)
 }
 
+# Experiment setup
+testMode(TRUE) # for replication
+
 # Rmpi setup 
 print("collecting workers..")
     mpi.spawn.Rslaves()
     mpi.setup.rngstream()
     mpi.bcast.Robj2slave(performEMtest, all=TRUE)
 print("workers loaded.")
-
 # ====== BEGIN EXPERIMENT ======
 ## 1. Initialization
 # Case when m = 4
