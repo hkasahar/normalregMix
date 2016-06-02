@@ -250,9 +250,9 @@ normalmixVcov <- function(y, coefficients, z = NULL, vcov.method = c("Hessian", 
 #' \item{pvals}{A vector of p-values at k = 1, 2, 3}
 normalmixCritBoot <- function (y, parlist, z = NULL, values = NULL, ninits = 10,
                                nbtsp = 199, parallel = TRUE, cl = NULL) {
+  if (test.on) # initial values controlled by test.on
+    set.seed(test.seed)
   
-  SEED <- 123456
-  set.seed(SEED)
   y   <- as.vector(y)
   n   <- length(y)
   
@@ -1093,6 +1093,9 @@ normalmixPhi2 <- function (y, z = NULL, parlist, sigma0, h, tau, an) {
 #' \item{gamma}{m+1 by ninits matrix for gamma}
 normalmixPhiInit <- function (y, parlist, z = NULL, h, tau, ninits = 1)
 {
+  if (test.on) # initial values controlled by test.on
+    set.seed(test.seed)
+  
   n     <- length(y)
   p     <- ncol(z)
   gamma <- NULL
@@ -1148,6 +1151,9 @@ normalmixPhiInit <- function (y, parlist, z = NULL, h, tau, ninits = 1)
 #' \item{pvals}{A vector of p-values at k = 1, 2, 3}
 normalmixCrit <- function(y, parlist, z = NULL, values = NULL, nrep = 10000)
 {
+  if (test.on) # initial values controlled by test.on
+    set.seed(test.seed)
+  
   y <- as.vector(y)
   n <- length(y)
   p <- 0
@@ -1255,6 +1261,9 @@ normalmixCrit <- function(y, parlist, z = NULL, values = NULL, nrep = 10000)
 #' \item{gamma}{m by ninits matrix for gamma}
 normalmixPMLEinit <- function (y, z = NULL, ninits = 1, m = 2)
 {
+  if (test.on) # initial values controlled by test.on
+    set.seed(test.seed)
+  
   n <- length(y)
   p <- ncol(z)
   gamma <- NULL
@@ -1295,6 +1304,8 @@ rnormregmix <- function (n, x = NULL, alpha, mubeta, sigma) {
   #  sigma  : m-vector
   # Output
   #  y : n by 1 vector
+  if (test.on) # initial values controlled by test.on
+    set.seed(test.seed)
   
   m     <- length(alpha)
   mubeta   <- matrix(mubeta, ncol=m)

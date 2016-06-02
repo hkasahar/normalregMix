@@ -1,3 +1,31 @@
+test.on <- FALSE
+test.seed <- 8888577
+
+#' Turns on/off the test mode.
+#' @export
+#' @title testMode
+#' @name testMode
+#' @description When the modified EM-algorithm is run, initial values are randomly created
+#' based on the data given. If the test mode is turned on, these initial values 
+#' are going to be created with the random seed provided. This method would be suitable
+#' for users who would like to replicate experiments. By default, the test mode is turned off.  
+#' @param on Option to turn on the test mode
+#' @param seed The random seed to be used for initialization
+testMode <- function(on, seed = 8888577)
+{
+  unlockBinding("test.on", getNamespace("normalregMix"))
+  unlockBinding("test.seed", getNamespace("normalregMix"))
+  assign("test.on", on, getNamespace("normalregMix"))
+  assign("test.seed", seed, getNamespace("normalregMix"))
+  lockBinding("test.on", getNamespace("normalregMix"))
+  lockBinding("test.seed", getNamespace("normalregMix"))
+  
+  print(paste("The test mode is currently", 
+              switch(as.character(test.on), "TRUE" = "ON", "FALSE" = "OFF"),
+              "with seed",
+              as.character(test.seed)))
+}
+
 summary.normalregMix <- function(object, reorder = FALSE, digits = 3, ...) {
 
 if (object$label == "PMLE") {

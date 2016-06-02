@@ -277,8 +277,9 @@ regmixVcov <- function(y, x, coefficients, z = NULL, vcov.method = c("Hessian", 
 #' \item{pvals}{A vector of p-values at k = 1, 2, 3}
 regmixCritBoot <- function (y, x, parlist, z = NULL, values = NULL, ninits = 100,
                             nbtsp = 199, parallel = TRUE, cl = NULL) {
-  # Computes the bootstrap critical values of the modified EM test
-  set.seed(123456)
+  if (test.on) # initial values controlled by test.on
+    set.seed(test.seed)
+  
   y  <- as.vector(y)
   n  <- length(y)
   x  <- as.matrix(x)
@@ -961,6 +962,8 @@ regmixPhiInit <- function (y, x, z = NULL, parlist, h, tau, ninits = 1)
   #  mubeta  : q1 by m+1 by ninits array
   #  sigma  : m+1 by ninits matrix
   #  gamma  : p by ninits matrix
+  if (test.on) # initial values controlled by test.on
+    set.seed(test.seed)
   
   y  <- as.vector(y)
   n   <- length(y)
@@ -1295,6 +1298,9 @@ regmixPMLE <- function (y, x, m = 2, z = NULL, vcov.method = c("Hessian", "OPG",
 #' \item{gamma}{m by ninits matrix for gamma}
 regmixPMLEinit <- function (y, x, z = NULL, ninits = 1, m = 2)
 {  
+  if (test.on) # initial values controlled by test.on
+    set.seed(test.seed)
+  
   n  <- length(y)
   q1  <- ncol(x)+1
   p  <- ncol(z)
@@ -1364,6 +1370,8 @@ regmixCrit <- function(y, x, parlist, z = NULL, values = NULL, parallel = TRUE,
   # Output
   #   list(crit,pvals)
   #   crit = (10%, 5%, 1% critical values), pvals = p-values
+  if (test.on) # initial values controlled by test.on
+    set.seed(test.seed)
   
   y  <- as.vector(y)
   n  <- length(y)
@@ -1589,6 +1597,9 @@ obj_zIz.jac <- function(b,Z,I) {
 
 #' Computes LR_2 for given Z and I, where q is dim(x)
 LR_2.comp <- function(Z, I, q, ninits = 25) {  
+  if (test.on) # initial values controlled by test.on
+    set.seed(test.seed)
+  
   con.nls = minpack.lm::nls.lm.control(maxit = 400)
   
   n_t <- q+2
