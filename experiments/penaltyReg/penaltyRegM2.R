@@ -4,32 +4,40 @@ library(doParallel)
 library(Rmpi)
 library(normalregMix2Test)
 
-# Returns a misclassification rate given two components i, j(=i+1)
-# where phi_i = c(alpha_i, mu_i, sigma_i) 
-GetOmegaIJ <- function(phi_i, phi_j) {
-	alpha_i <- phi_i[1]
-	alpha_j <- phi_j[1]
-	mu_i <- phi_i[2]
-	mu_j <- phi_j[2]
-	sigma_i <- phi_i[3]
-	sigma_j <- phi_j[3]
-	
-	c1 <- sigma_j*(mu_j - mu_i)/(sigma_j^2-sigma_i^2)
-	c2 <- sigma_i^2*(mu_j - mu_i)^2/(sigma_j^2-sigma_i^2)^2
-	c2 <- sigma_i^2/(sigma_j^2 - sigma_i^2)*2*log(alpha_i*sigma_j/alpha_j/sigma_i) + c2
-	sq_c2 = sqrt(max(c2,0))
-	
-	# WARNING: What is normp? according to one MATLAB package description,
-  # it is the cdf of a standard normal. If that's the case, this should work.  
-	if (sigma_i == sigma_j) {
-		delta = abs(mu_j-mu_i)/sigma_j;
-		omega_ij = pnorm(-delta/2 + log(alpha_i/alpha_j)/delta)
-	}
-	else if (sigma_j > sigma_i)
-		omega_ij = pnorm(-c1+sq_c2) - pnorm(-c1-sq_c2)
-	else
-		omega_ij = pnorm(-c1-sq_c2) + 1 - pnorm(-c1+sq_c2)
-	return (omega_ij)
+# Returns a misclassification rate omega_ji given two components i, j,
+# i.e. the probability of choosing component j where
+# the true model is ith component.  
+GetOmegaJI <- function(phi_i, phi_j) {
+  alpha_i <- phi_i[[1]
+  alpha_j <- phi_j[[1]
+  mu_i <- phi_i[2]
+  mu_j <- phi_j[2]
+  sigma_i <- phi_i[3]
+  sigma_j <- phi_j[3]
+  
+  a <- (1/sigma_j^2 - 1/sigma_i^2)
+  b <- mu_i / sigma_i^2 - mu_j / sigma_j^2
+  c <- mu_j^2 / sigma_j^2 - mu_i^2 / sigma_i^2
+
+  if (sigma_i == sigma_j)
+    if (mu_i > mu_j)
+      omega_ji = pnorm((2 * log(alpha_j/alpha_i) - c)/(2*b), 
+                       mean = mu_i, sd = sigma_i)
+    else
+      omega_ji = 1 - pnorm((2 * log(alpha_j/alpha_i) - c)/(2*b), 
+                           mean = mu_i, sd = sigma_i)
+  else {
+    d <- 2 * log(alpha_j * sigma_i / (alpha_i * sigma_j)) - c + (b^2 / a)
+    da <- max(d/a, 0)
+    if (sigma_i > sigma_j)
+      omega_ji = pnorm(sqrt(da)-b/a, mean = mu_i, sd = sigma_i) -
+                 pnorm(-sqrt(da)-b/a, mean = mu_i, sd = sigma_i)
+    else 
+      omega_ji = 1 + 
+                  pnorm(-sqrt(da)-b/a, mean = mu_i, sd = sigma_i) -
+                  pnorm(sqrt(da)-b/a, mean = mu_i, sd = sigma_i)
+  }
+  return (omega_ji)
 }
 
 # Returns a term involving misclassification rates given phi.
@@ -40,22 +48,22 @@ GetMisclTerm <- function(phi) {
   m        <- length(alphaset)
   phimat   <- cbind(alphaset, muset, sigmaset) # each row represents a component 
   
-	omega_1_2 <- GetOmegaIJ(phimat[1,],phimat[2,])
-	omega_2_1 <- GetOmegaIJ(phimat[2,],phimat[1,])
-	omega_12 <-(omega_1_2+omega_2_1)/2
+	omega_2_1 <- GetOmegaJI(phimat[1,],phimat[2,])
+	omega_1_2 <- GetOmegaJI(phimat[2,],phimat[1,])
+	omega_12  <- (omega_1_2 + omega_2_1)/2
 	if (m == 2) # ln(omega_12 / (1-omega_12))
 		return (log(omega_12/(1-omega_12)))  
-	
-	omega_2_3 <- GetOmegaIJ(phimat[2,],phimat[3,])
-	omega_3_2 <- GetOmegaIJ(phimat[3,],phimat[2,])
-	omega_23 <-(omega_2_3+omega_3_2)/2 
-	if (m == 3) # ln(omega_12 omega_23 (1-omega_12)(1-omega_23))
+		
+	omega_3_2 <- GetOmegaJI(phimat[2,],phimat[3,])
+	omega_2_3 <- GetOmegaJI(phimat[3,],phimat[2,])
+	omega_23  <- (omega_2_3 + omega_3_2)/2
+	if (m == 3) # ln(omega_12 omega_23 / (1-omega_12)(1-omega_23))
 		return (log(omega_12*omega_23/(1-omega_12)/(1-omega_23)))  
 	
-	omega_3_4 <- GetOmegaIJ(phimat[3,],phimat[4,])
-	omega_4_3 <- GetOmegaIJ(phimat[4,],phimat[3,])
-	omega_34 <-(omega_3_4+omega_4_3)/2  
-	# (m == 4) # ln(omega_12 omega_23 omega_34 (1-omega_12)(1-omega_23)(1-omega_34))
+	omega_4_3 <- GetOmegaJI(phimat[3,],phimat[4,])
+	omega_3_4 <- GetOmegaJI(phimat[4,],phimat[3,])
+	omega_34  <- (omega_3_4 + omega_4_3)/2
+	# (m == 4) # ln(omega_12 omega_23 omega_34 / (1-omega_12)(1-omega_23)(1-omega_34))
 	return (log(omega_12*omega_23*omega_34/(1-omega_12)/(1-omega_23)/(1-omega_34)))
   
 }
@@ -100,7 +108,7 @@ GenerateSample <- function(phi)
 	# initialize phi in a matrix form; each row represents phi of a subcomponent
 	phimat <- cbind(alphaset, muset, sigmaset)  
 
-	# create an sample; each element represents n data created from a subcomponent
+	# create a sample; each element represents n data created from a subcomponent
 	sample <- apply(phimat, 1, function(row) row[1]*rnorm(n, mean = row[2], sd = row[3]))
 	sample <- apply(sample, 1, sum) # add them up to form a full model
 	
@@ -154,7 +162,6 @@ print("workers loaded.")
 
 # ====== BEGIN EXPERIMENT ======
 ## 1. Initialization
-# Test
 # Case when m = 2 
 aset <- c(0.04, 0.07, 0.1, 0.13, 0.16)
 nset <- c(100, 300, 500)
