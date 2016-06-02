@@ -20,7 +20,7 @@ sigma = (sigma_1, ..., sigma_m), gamma = (gamma_1, ..., gamma_m))}
 
 \item{values}{3 by 1 Vector of length 3 (k = 1, 2, 3) at which the p-values are computed}
 
-\item{parallel}{Determines whether package \code{parallel} is used for calculation}
+\item{parallel}{Determines whether package \code{doParallel} is used for calculation}
 
 \item{cl}{Cluster used for parallelization; if it is \code{NULL}, the system will automatically}
 

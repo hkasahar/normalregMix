@@ -6,8 +6,8 @@
 \usage{
 regmixMaxPhi(y, x, parlist, z = NULL, an, tauset = c(0.1, 0.3, 0.5),
   ninits = 100, epsilon.short = 0.01, epsilon = 1e-08,
-  maxit.short = 500, maxit = 2000, verb = FALSE,
-  parallel.method = c("none", "do", "snow"), cl = NULL)
+  maxit.short = 500, maxit = 2000, verb = FALSE, parallel = FALSE,
+  cl = NULL)
 }
 \arguments{
 \item{y}{n by 1 vector of data for y}
@@ -34,9 +34,7 @@ sigma = (sigma_1, ..., sigma_m), gamma = (gamma_1, ..., gamma_m))}
 
 \item{maxit}{The maximum number of iterations.}
 
-\item{parallel.method}{Choice of package used for parallelization; \code{"none"} runs the code in
-a serial process, \code{"do"} uses \code{doParallel} package, \code{"snow"} uses \code{snow} 
-package for parallelization.}
+\item{parallel}{Determines whether package \code{doParallel} is used for calculation}
 
 \item{cl}{Cluster used for parallelization; if it is \code{NULL}, the system will automatically
 create a new one for computation accordingly.}

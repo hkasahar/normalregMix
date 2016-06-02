@@ -5,7 +5,7 @@
 \title{normalmixMEMtestSeq}
 \usage{
 normalmixMEMtestSeq(y, z = NULL, maxm = 3, ninits = 10, maxit = 2000,
-  nbtsp = 199, parallel.method = c("none", "do", "snow"), cl = NULL)
+  nbtsp = 199, parallel = FALSE, cl = NULL)
 }
 \arguments{
 \item{y}{n by 1 vector of data for y}
@@ -20,9 +20,7 @@ normalmixMEMtestSeq(y, z = NULL, maxm = 3, ninits = 10, maxit = 2000,
 
 \item{nbtsp}{The number of bootstrap observations; by default, it is set to be 199}
 
-\item{parallel.method}{Choice of package used for parallelization; \code{"none"} runs the code in
-a serial process, \code{"do"} uses \code{doParallel} package, \code{"snow"} uses \code{"snow"} 
-package for parallelization.}
+\item{parallel}{Determines whether package \code{doParallel} is used for calculation}
 
 \item{cl}{Cluster used for parallelization; if it is \code{NULL}, the system will automatically
 create a new one for computation accordingly.}

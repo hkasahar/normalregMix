@@ -24,8 +24,7 @@ sigma = (sigma_1, ..., sigma_m), gamma = (gamma_1, ..., gamma_m))}
 
 \item{nbtsp}{The number of bootstrap observations; by default, it is set to be 199}
 
-\item{parallel}{Determines whether package \code{parallel} is used to compute p-values. 
-By default, it is set \code{TRUE}.}
+\item{parallel}{Determines whether package \code{doParallel} is used for calculation}
 
 \item{cl}{Cluster used for parallelization (optional)}
 }

@@ -242,8 +242,7 @@ normalmixVcov <- function(y, coefficients, z = NULL, vcov.method = c("Hessian", 
 #' @param values 3 by 1 Vector of length 3 (k = 1, 2, 3) at which the p-values are computed
 #' @param ninits The number of initial candidates to be generated
 #' @param nbtsp The number of bootstrap observations; by default, it is set to be 199.
-#' @param parallel Determines whether package \code{parallel} is used to compute p-values. 
-#' By default, it is set \code{TRUE}.
+#' @param parallel Determines whether package \code{doParallel} is used for calculation
 #' @param cl Cluster used for parallelization (optional)
 #' @return A list with the following items:
 #' \item{crit}{3 by 3 matrix of (0.1, 0.05, 0.01 critical values), jth row corresponding to k=j}
@@ -271,21 +270,16 @@ normalmixCritBoot <- function (y, parlist, z = NULL, values = NULL, ninits = 10,
   ybset <- matrix(ybset, nrow = n, ncol = nbtsp)
   
   if (parallel) {
-    if (is.null(cl)) {
-      ncpus <- parallel::detectCores()
-      cl <- parallel::makePSOCKcluster(rep("localhost", ncpus))
-      parallel::clusterSetRNGStream(cl, 123456)
-      out <- parallel::parCapply(cl, ybset, normalmixMEMtest, m = m, z = z, an = an,
-                                 ninits = ninits, crit.method = "none")
-      parallel::stopCluster(cl)
-    } else {
-      parallel::clusterSetRNGStream(cl, 123456)
-      out <- parallel::parCapply(cl, ybset, normalmixMEMtest, m = m, z = z, an = an,
-                                 ninits = ninits, crit.method = "none")
-    }
-  } else {
-    out <- apply(ybset, 2, normalmixMEMtest, m = m, z = z, an = an, ninits = ninits)
+    if (is.null(cl))
+      cl <- makeCluster(detectCores())
+    registerDoParallel(cl)
+    out <- foreach (i.btsp = 1:nbtsp) %dopar% {
+      normalmixMEMtest (ybset[,i.btsp], m = m,
+                        z = z, an = an, ninits = ninits, crit.method = "none") }
+    on.exit(cl)
   }
+  else
+    out <- apply(ybset, 2, normalmixMEMtest, m = m, z = z, an = an, ninits = ninits)
   
   emstat.b <- sapply(out, "[[", "emstat")  # 3 by nbstp matrix
   
@@ -537,9 +531,7 @@ normalmixPMLE <- function (y, m = 2, z = NULL, vcov.method = c("Hessian", "OPG",
 #' @param ninits The number of randomly drawn initial values.
 #' @param maxit The maximum number of iterations.
 #' @param nbtsp The number of bootstrap observations; by default, it is set to be 199
-#' @param parallel.method Choice of package used for parallelization; \code{"none"} runs the code in
-#' a serial process, \code{"do"} uses \code{doParallel} package, \code{"snow"} uses \code{"snow"} 
-#' package for parallelization. 
+#' @param parallel Determines whether package \code{doParallel} is used for calculation
 #' @param cl Cluster used for parallelization; if it is \code{NULL}, the system will automatically
 #' create a new one for computation accordingly.
 #' @return A list of with the following items:
@@ -559,7 +551,7 @@ normalmixPMLE <- function (y, m = 2, z = NULL, vcov.method = c("Hessian", "OPG",
 #' attach(faithful)
 #' normalmixMEMtestSeq(y = eruptions)
 normalmixMEMtestSeq <- function (y, z = NULL,  maxm = 3, ninits = 10, maxit = 2000,
-                                 nbtsp = 199, parallel.method = c("none", "do", "snow"), cl = NULL) {
+                                 nbtsp = 199, parallel = FALSE, cl = NULL) {
   # Compute the modified EM test statistic for testing H_0 of m components
   # against H_1 of m+1 components for a univariate finite mixture of normals
   
@@ -571,7 +563,6 @@ normalmixMEMtestSeq <- function (y, z = NULL,  maxm = 3, ninits = 10, maxit = 20
     p <- ncol(z)
     gamma <- matrix(0, nrow = p, ncol = maxm)
   }
-  parallel.method <- match.arg(parallel.method)
   
   out   <- vector('list', length = maxm)
   aic    <- bic <- double(maxm)
@@ -623,7 +614,7 @@ normalmixMEMtestSeq <- function (y, z = NULL,  maxm = 3, ninits = 10, maxit = 20
       an    <- anFormula(parlist = parlist, m = m, n = n)
       #     print(an)
       par1  <- normalmixMaxPhi(y = y, parlist = parlist, z = z, an = an, 
-                               ninits = ninits, maxit = maxit, parallel.method = parallel.method)
+                               ninits = ninits, maxit = maxit, parallel = parallel)
       #     print(loglik0)
       #     print(par1)
       emstat.m  <- 2*(par1$penloglik - loglik0)
@@ -634,7 +625,7 @@ normalmixMEMtestSeq <- function (y, z = NULL,  maxm = 3, ninits = 10, maxit = 20
         cat(c("asymptotic p-values       ", sprintf('%.3f',em.out$pvals)),"\n \n")
       } else {
         em.out <- normalmixCritBoot(y=y, parlist=parlist, z=z, values = emstat.m,
-                                    ninits = ninits, nbtsp = nbtsp, parallel = !(parallel.method == "none"), cl = cl)
+                                    ninits = ninits, nbtsp = nbtsp, parallel = parallel, cl = cl)
         cat(c("bootstrap p-values        ", sprintf('%.3f',em.out$pvals)),"\n \n")
       }
       # noncg.rate[m]   <- par1$noncg.rate
@@ -663,9 +654,7 @@ normalmixMEMtestSeq <- function (y, z = NULL,  maxm = 3, ninits = 10, maxit = 20
 #' @param nbtsp The number of bootstrap observations; by default, it is set to be 199
 #' @param cl Cluster used for parallelization; if it is \code{NULL}, the system will automatically
 #' create a new one for computation accordingly.
-#' @param parallel.method Choice of package used for parallelization; \code{"none"} runs the code in
-#' a serial process, \code{"do"} uses \code{doParallel} package, \code{"snow"} uses \code{snow} 
-#' package for parallelization. 
+#' @param parallel Determines whether package \code{doParallel} is used for calculation 
 #' @return A list of class \code{normalMix} with items:
 #' \item{coefficients}{A vector of parameter estimates. Ordered as \eqn{\alpha_1,\ldots,\alpha_m,\mu_1,\ldots,\mu_m,\sigma_1,\ldots,\sigma_m,\gamma}.}
 #' \item{parlist}{The parameter estimates as a list containing alpha, mu, and sigma (and gamma if z is included in the model).}
@@ -686,7 +675,7 @@ normalmixMEMtest <- function (y, m = 2, z = NULL, an = NULL, tauset = c(0.1,0.3,
                               ninits = 10,
                               crit.method = c("asy", "boot", "none"), nbtsp = 199,
                               cl = NULL, 
-                              parallel.method = c("none", "do", "snow")) {
+                              parallel = FALSE) {
   # Compute the modified EM test statistic for testing H_0 of m components
   # against H_1 of m+1 components for a univariate finite mixture of normals
   
@@ -694,7 +683,6 @@ normalmixMEMtest <- function (y, m = 2, z = NULL, an = NULL, tauset = c(0.1,0.3,
   n     <- length(y)
   if (!is.null(z)) {z <- as.matrix(z)}
   crit.method <- match.arg(crit.method)
-  parallel.method <- match.arg(parallel.method)
   
   pmle.result    <- normalmixPMLE(y=y, m=m, z=z, vcov.method = "none", ninits=ninits)
   loglik0 <- pmle.result$loglik
@@ -703,7 +691,7 @@ normalmixMEMtest <- function (y, m = 2, z = NULL, an = NULL, tauset = c(0.1,0.3,
   
   par1  <- normalmixMaxPhi(y=y, parlist=pmle.result$parlist, z=z, 
                            an=an, tauset = tauset, ninits=ninits,
-                           parallel.method = parallel.method, cl = cl)
+                           parallel = parallel, cl = cl)
   
   
   emstat  <- 2*(par1$penloglik - loglik0)
@@ -713,7 +701,7 @@ normalmixMEMtest <- function (y, m = 2, z = NULL, an = NULL, tauset = c(0.1,0.3,
     result  <- normalmixCrit(y=y, parlist=pmle.result$parlist, z=z, values=emstat)
   } else if (crit.method == "boot") {
     result  <- normalmixCritBoot(y=y, parlist= pmle.result$parlist, z=z, values=emstat,
-                                 ninits=ninits, nbtsp=nbtsp, (parallel.method != "none"), cl=cl)
+                                 ninits=ninits, nbtsp=nbtsp, parallel, cl=cl)
   } else {
     result <- list()
     result$crit <- result$pvals <- rep(NA,3)
@@ -745,9 +733,7 @@ normalmixMEMtest <- function (y, m = 2, z = NULL, an = NULL, tauset = c(0.1,0.3,
 #' @param epsilon The convergence criterion. Convergence is declared when the penalized log-likelihood increases by less than \code{epsilon}. 
 #' @param maxit.short The maximum number of iterations in short EM.
 #' @param maxit The maximum number of iterations.
-#' @param parallel.method Choice of package used for parallelization; \code{"none"} runs the code in
-#' a serial process, \code{"do"} uses \code{doParallel} package, \code{"snow"} uses \code{snow} 
-#' package for parallelization.
+#' @param parallel Determines whether package \code{doParallel} is used for calculation
 #' @param cl Cluster used for parallelization; if it is \code{NULL}, the system will automatically
 #' create a new one for computation accordingly. 
 #' @return A list with items:
@@ -757,14 +743,13 @@ normalmixMaxPhi <- function (y, parlist, z = NULL, an, tauset = c(0.1,0.3,0.5),
                              ninits = 10, epsilon.short = 1e-02, epsilon = 1e-08,
                              maxit.short = 500, maxit = 2000, 
                              verb = FALSE, 
-                             parallel.method = c("none", "do", "snow"),
+                             parallel = FALSE,
                              cl = NULL) {
   # Given a parameter estimate of an m component model and tuning paramter an,
   # maximize the objective function for computing the modified EM test statistic
   # for testing H_0 of m components against H_1 of m+1 for a univariate normal finite mixture
   
   warn  <- options(warn=-1) # Turn off warnings
-  parallel.method <- match.arg(parallel.method)
   
   p <- 0
   m <- length(parlist$alpha)
@@ -785,7 +770,7 @@ normalmixMaxPhi <- function (y, parlist, z = NULL, an, tauset = c(0.1,0.3,0.5),
   # Remember, you can always take phi1 back,
   # phi1 <- vector('list',m*length(tauset))
   
-  if (parallel.method == "do") {
+  if (parallel) {
     if (is.null(cl))
       cl <- makeCluster(detectCores())
     registerDoParallel(cl)
@@ -801,23 +786,6 @@ normalmixMaxPhi <- function (y, parlist, z = NULL, an, tauset = c(0.1,0.3,0.5),
     on.exit(cl)
     loglik.all <- t(sapply(results, "[[", "loglik"))
     penloglik.all <- t(sapply(results, "[[", "penloglik"))
-  }
-  else if (parallel.method == "snow") {
-    if (is.null(cl))
-      cl <- snow::makeCluster(detectCores(), type = "SOCK")
-    
-    # causes an error in snow package, running on %d.
-    htaupairs <- expand.grid(h = seq(1,m), tau = tauset)
-    results <- snow::parApply(cl, htaupairs, 1, normalmixMaxPhiStep,
-                              y, parlist, z, p, jpvt,
-                              an,
-                              ninits, ninits.short,
-                              epsilon.short, epsilon,
-                              maxit.short, maxit,
-                              verb)
-    snow::stopCluster(cl)
-    loglik.all <- t(sapply(results, "[[", "loglik"))
-    penloglik.all <- t(sapply(results, "[[", "penloglik")) 
   }
   else
     for (h in 1:m) 
