@@ -54,8 +54,17 @@ When $q > 0$, $\verb|regmixMEMtest|$ can be called to follow a similar procedure
 regmixMEMtest(y = eruptions, x = waiting, m = 1, crit.method = "asy")
 regmixMEMtest(y = eruptions, x = waiting, m = 2)
 ```
-# Parallelization
-When $q > 0$ or the number of observations is large, computing modified EM-statistics can take more than minutes. To reduce computation time required to perform statistical tests, we provide a few options to users to choose which package is going to be used to implement parallel computation. The package can be specified by a parameter, $\verb|parallel.method|$. Setting $\verb|"none"|$ runs the code in a serial process, $\verb|"do"|$ uses $\verb|doParallel|$ package, $\verb|"snow"|$ uses $\verb|snow|$ package for parallelization. Both packages show different performance depending on OS installed in a local computer, so users might want to run a small experiment to do benchmarking across different methods.
+## Parallelization
+When $q > 0$ or the number of observations is large, computing modified EM-statistics can take more than minutes. To reduce computation time required to perform statistical tests, we provide an option to users to let calculation done by parallelization. In this package, $\verb|doParallel|$ has been used to implement this feature. To enable parallel computing, set $\verb|parallel|$ as $\verb|TRUE|$.
+
+```{r, message=F, warning=F}
+system.time(result <- normalmixMEMtest(y = eruptions, m = 5, 
+                                       parallel = TRUE, crit.method = "asy"))
+result
+system.time(result <- normalmixMEMtest(y = eruptions, m = 5, 
+                                       crit.method = "asy"))
+result
+```
 
 ## Sequentailly Testing Hypotheses Using normalMixMEMtestSeq
 $\verb|normalmixMEMtestSeq|$ and $\verb|regMixMEMtestSeq|$ allow users to test the null hypothesis against $H_0: m = m_0$ for $m_0 = 1, 2, ..., \verb|maxm|$ sequentially to avoid hassles of testing each of them manually.
