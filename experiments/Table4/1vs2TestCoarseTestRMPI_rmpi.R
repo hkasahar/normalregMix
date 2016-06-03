@@ -28,12 +28,12 @@ PerformEMtests <- function (an, data, crit = 0.05, q = 1, m = 1,
   {
     # need to transform data (matrix) to a list first; each element is a column (y x_1' x_2' ... x_n')'
     ldata <- lapply(seq_len(ncol(data)), function(i) data[,i])
-    out  <- mpi.applyLB(ldata, PerformEMtest, q = q, an = an, m = m, z = NULL,
-                        parallel = parallel)
+		print(system.time(out  <- mpi.applyLB(ldata, PerformEMtest, q = q, an = an, m = m, z = NULL,
+                        parallel = parallel))
   }
   else
-    out <- apply(data, 2, PerformEMtest, q = q, an = an, m = m, z = NULL,
-                 parallel = parallel)
+    print(system.time(out <- apply(data, 2, PerformEMtest, q = q, an = an, m = m, z = NULL,
+                 parallel = parallel))
   pvals <- sapply(out, "[[", "pvals")
 	print(list(an, K2 = mean(pvals[2,] < crit), K3 = mean(pvals[3,] < crit)))
   return (list(K2 = mean(pvals[2,] < crit), K3 = mean(pvals[3,] < crit)))
@@ -42,7 +42,7 @@ PerformEMtests <- function (an, data, crit = 0.05, q = 1, m = 1,
 # the value of optimal an that is closest to given sig. level (0.05 by default), and
 # the frequency of rejection according to the optimal an.
 FindOptimal1vs2an <- function (phidatapair, anset, m = 1,
-                               parallel = FALSE, rmpi = TRUE) { 
+                               parallel = FALSE, rmpi = TRUE) {
   phi  <- phidatapair$phi
   data <- phidatapair$data
   crit <- phi$crit
@@ -92,7 +92,7 @@ GeneratePhiDataPair <- function(phi, replication) {
 }
 
 ## Create data given phiset and replication	
-GeneratePhiDataPairs <- function(phiset, replication = 200) {
+GeneratePhiDataPairs <- function(phiset, replication = 14) {
 	apply(phiset, 1, GeneratePhiDataPair, replication = replication) # list of (phi data)
 }
 
@@ -119,7 +119,7 @@ anset <- seq(anlb,anub,length.out = ancount+2)[1:ancount+1]
 betaset <- rep(0.5, dimx)
 
 # generate data
-phiset <- expand.grid(n=c(100,300), crit = c(0.01,0.05))
+phiset <- expand.grid(n=c(20,30), crit = c(0.01,0.05))
 phiset$betasets <- lapply(1:nrow(phiset), function(j) betaset)
 pairs <- GeneratePhiDataPairs(phiset) 
 

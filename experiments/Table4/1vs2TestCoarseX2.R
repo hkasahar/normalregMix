@@ -4,7 +4,7 @@ library(doParallel)
 library(Rmpi)
 library(normalregMix)
 ## Generates EM test result according to the dimension of X
-PerformEMtest <- function (sample, q, an, m = 1, z = NULL, parallel.method) {
+PerformEMtest <- function (sample, q, an, m = 1, z = NULL, parallel) {
   library(doParallel) # workers might need information
   library(normalregMix)  # workers might need information
   testMode(TRUE) # for replication
@@ -13,27 +13,27 @@ PerformEMtest <- function (sample, q, an, m = 1, z = NULL, parallel.method) {
   y <- sample[1:n] # first n elements represents y data 
   if (q <= 0)
     return (normalmixMEMtest(y, m = m, z = z, an = an, crit.method = "asy", 
-														 parallel.method = parallel.method))
+														 parallel = parallel))
   # the other part consists of n chuck of q-length x data
   x <- matrix(sample[(n+1):length(sample)], nrow = n, byrow = TRUE)
   return (regmixMEMtest(y, x, m = m, z = z, an = an, crit.method = "asy",  
-                        parallel.method =  parallel.method))
+                        parallel =  parallel))
 }
 
 ## Returns frequency that the null H0: m=1 is rejected
 # out of replications of given an and data that consists of columns of samples
 PerformEMtests <- function (an, data, crit = 0.05, q = 1, m = 1, 
-                            parallel.method, rmpi) {
+                            parallel, rmpi) {
   if (rmpi)
   {
     # need to transform data (matrix) to a list first; each element is a column (y x_1' x_2' ... x_n')'
     ldata <- lapply(seq_len(ncol(data)), function(i) data[,i])
     out  <- mpi.applyLB(ldata, PerformEMtest, q = q, an = an, m = m, z = NULL,
-                        parallel.method = parallel.method)
+                        parallel = parallel)
   }
   else
     out <- apply(data, 2, PerformEMtest, q = q, an = an, m = m, z = NULL,
-                 parallel.method = parallel.method)
+                 parallel = parallel)
   pvals <- sapply(out, "[[", "pvals")
 	print(list(an, K2 = mean(pvals[2,] < crit), K3 = mean(pvals[3,] < crit)))
   return (list(K2 = mean(pvals[2,] < crit), K3 = mean(pvals[3,] < crit)))
@@ -42,8 +42,7 @@ PerformEMtests <- function (an, data, crit = 0.05, q = 1, m = 1,
 # the value of optimal an that is closest to given sig. level (0.05 by default), and
 # the frequency of rejection according to the optimal an.
 FindOptimal1vs2an <- function (phidatapair, anset, m = 1,
-                               parallel.method = c("none", "do", "snow"), rmpi = TRUE) {
-  parallel.method <- match.arg(parallel.method)  
+                               parallel = FALSE, rmpi = TRUE) { 
   phi  <- phidatapair$phi
   data <- phidatapair$data
   crit <- phi$crit
@@ -51,7 +50,7 @@ FindOptimal1vs2an <- function (phidatapair, anset, m = 1,
   
   # loop over each a_n.
   output <- lapply(anset, PerformEMtests, data = data, crit = crit, q = q, m = m, 
-                   parallel.method = parallel.method, rmpi = rmpi)
+                   parallel = parallel, rmpi = rmpi)
   freqsK2 <- sapply(output, "[[", "K2")
   freqsK3 <- sapply(output, "[[", "K3")
   
