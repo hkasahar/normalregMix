@@ -504,7 +504,9 @@ regmixMEMtestSeq <- function (y, x, z = NULL, maxm = 3, ninits = 10, maxit = 200
 #' \item{penloglik}{The maximized value of the penalized log-likelihood.}
 #' \item{aic}{Akaike Information Criterion of the fitted model.}
 #' \item{bic}{Bayesian Information Criterion of the fitted model.}
-#' \item{postprobs}{An nxm matrix of posterior probabilities for observations.}
+#' \item{postprobs}{n by m matrix of posterior probabilities for observations}
+#' \item{indices}{n by 1 vector of integers that indicates the indices of components 
+#' each observation belongs to based on computed posterior probabilities}
 #' \item{call}{The matched call.}
 #' \item{m}{The number of components in the mixture.}
 #' @examples 
@@ -1017,7 +1019,9 @@ regmixPhiInit <- function (y, x, z = NULL, parlist, h, tau, ninits = 1)
 #' \item{penloglik}{The maximized value of the penalized log-likelihood.}
 #' \item{aic}{Akaike Information Criterion of the fitted model.}
 #' \item{bic}{Bayesian Information Criterion of the fitted model.}
-#' \item{postprobs}{An nxm matrix of posterior probabilities for observations.}
+#' \item{postprobs}{n by m matrix of posterior probabilities for observations}
+#' \item{indices}{n by 1 vector of integers that indicates the indices of components 
+#' each observation belongs to based on computed posterior probabilities}
 #' \item{call}{The matched call.}
 #' \item{m}{The number of components in the mixture.}
 #' @note \code{regmixPMLE} maximizes the penalized log-likelihood function 
@@ -1241,6 +1245,7 @@ regmixPMLE <- function (y, x, m = 2, z = NULL, vcov.method = c("Hessian", "OPG",
   
   a <- list(coefficients = coefficients, parlist = parlist, vcov = vcov, loglik = loglik,
             penloglik = penloglik, aic = aic, bic = bic, postprobs = postprobs,
+            indices = apply(postprobs, 1, function(i) (which(i==max(i)))),
             call = match.call(), m = m, label = "PMLE")
   
   class(a) <- "normalregMix"
