@@ -452,15 +452,13 @@ normalmixPMLE <- function (y, m = 2, z = NULL, vcov.method = c("Hessian", "OPG",
   
   a <- list(coefficients = coefficients, parlist = parlist, vcov = vcov, loglik = loglik,
             penloglik = penloglik, aic = aic, bic = bic, postprobs = postprobs,
-            ,
+            indices = getComponentIndices(postprobs),
             call = match.call(), m = m, label = "PMLE")
   
   class(a) <- "normalregMix"
   
   a
-  
 }  # end function normalmixPMLE
-
 
 #' Compute ordinary & penalized log-likelihood ratio resulting from MEM algorithm at k=1,2,3.
 #' @export

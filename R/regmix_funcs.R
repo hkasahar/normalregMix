@@ -682,7 +682,7 @@ regmixPMLE <- function (y, x, m = 2, z = NULL, vcov.method = c("Hessian", "OPG",
   
   a <- list(coefficients = coefficients, parlist = parlist, vcov = vcov, loglik = loglik,
             penloglik = penloglik, aic = aic, bic = bic, postprobs = postprobs,
-            indices = apply(postprobs, 1, function(i) (which(i==max(i)))),
+            indices = getComponentIndices(postprobs),
             call = match.call(), m = m, label = "PMLE")
   
   class(a) <- "normalregMix"

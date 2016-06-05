@@ -26,6 +26,23 @@ testMode <- function(on = FALSE, seed = 8888577)
               as.character(test.seed)))
 }
 
+
+#' Generates a vector that indicates which component each observation belongs to, 
+#' based on its posterior probability
+#' @export
+#' @title getComponentIndices
+#' @name getComponentIndices
+#' @param postprobs n by m matrix of posterior probabilities for 
+#' m-component model on n observations
+#' @return n by 1 vector of indices that indicate which component each observation belongs to
+#' based on its posterior probability
+getComponentIndices <- function(postprobs)
+{
+  postprobs.mat <- as.matrix(postprobs) 
+  apply(postprobs.mat, 1, function(i) (which(i==max(i))))
+}
+
+
 summary.normalregMix <- function(object, reorder = FALSE, digits = 3, ...) {
 
 if (object$label == "PMLE") {
