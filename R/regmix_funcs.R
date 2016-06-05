@@ -1,566 +1,3 @@
-#' Computes the variance-covariance matrix of the MLE of m-component normal mixture.
-#' @export
-#' @title regmixVcov
-#' @name regmixVcov
-#' @param y n by 1 vector of data for y
-#' @param x n by q matrix of data for x
-#' @param coefficients (alpha_1, ..., alpha_m, mu_1, ..., mu_m, sigma_1, ..., sigma_m, gamma)
-#' @param z n by p matrix of regressor associated with gamma
-#' @param p Dimension of z
-#' @param vcov.method Method used to compute the variance-covariance matrix, 
-#' one of \code{"Hessian"} and \code{"OPG"}. #' The default option is \code{"Hessian"}. 
-#' When \code{method = "Hessian"}, the variance-covarince matrix is 
-#' estimated by the Hessian using the formula given in Boldea and Magnus (2009). 
-#' When \code{method = "OPG"}, the outer product of gradients is used.
-#' @return The variance-covariance matrix of the MLE of 
-#' m-component normal mixture given the data and coefficients.
-#' @references   Boldea, O. and Magnus, J. R. (2009)
-#' Maximum Likelihood Estimation of the Multivariate Normal Mixture Model,
-#' \emph{Journal of the American Statistical Association},
-#' \bold{104}, 1539--1549.
-regmixVcov <- function(y, x, coefficients, z = NULL, vcov.method = c("Hessian", "OPG")) {
-  # Computes the variance-covariance matrix of the MLE of m-component normal regression mixture
-  # Input
-  #  y  : n by 1 vector of dependent variable
-  #  x  : n by q1-1 matrix of regressor NOT including an intercept
-  #  coefficients : (alpha_1,...,alpha_m,mubeta_1^T, ...,mubeta_m^T,sigma_1, ..., sigma_m,gamma^T)
-  #  z  : n by p matrix of regressor associated with gamma
-  # Output
-  #  vcov: variance-covariance matrix
-  
-  y     <- as.vector(y)
-  n     <- length(y)
-  len   <- length(coefficients)
-  p     <- 0
-  gamma <- NULL
-  vcov.method <- match.arg(vcov.method)
-  
-  if (!is.null(z)) {
-    z <- as.matrix(z)
-    p <- ncol(z)
-    gamma <- coefficients[(len-p+1):len]
-  }
-  
-  x   <- as.matrix(x)
-  x1  <- cbind(1, x)
-  q1   <- ncol(x1)
-  q   <- ncol(x)
-  
-  m  <- (len-p)/(3+q)
-  if (round(m) != m) {
-    stop("The dimension of the coefficients is incompatible with x and z. Please check the data.")
-  }
-  
-  alpha   <- coefficients[1:m]  # m-vector
-  mubeta  <- matrix(coefficients[(m+1):((2+q)*m)], nrow=q+1, ncol=m)  # q+1 by m
-  sigma   <- coefficients[((2+q)*m+1):((3+q)*m)]  # m-vector
-  
-  if (m == 1) {
-    xz1 <- cbind(x1,z)
-    I <- matrix(0, nrow=q1+p+1, ncol=q1+p+1)
-    I[1:(q1+p), 1:(q1+p)] <- t(xz1) %*% xz1/sigma^2
-    I[(q1+p+1), (q1+p+1)] <- n*2/sigma^2
-    if (p != 0){
-      s.1 <- c(1:q1, (q1+p+1), (q1+1):(q1+p))
-      I <- I[s.1, s.1]
-    }
-    
-    vcov <- solve(I)
-    # Because the variance is parameterized as sigma^2, we convert it to sigma
-    c.mat.vec <- c(rep(1,q1),(1/sigma^(1/2))/2,rep(1,p))
-    vcov <- diag(c.mat.vec) %*% vcov %*% diag(c.mat.vec)
-    
-  } else {  # end of if (m == 1)
-    
-    # m >= 2
-    
-    # Compute posterior probabilities, and adjust y if z is present
-    sigma0  <- rep(1, m)  # dummy
-    mu0     <- double(m)  # dummy
-    an      <- 1/n  # penalty term for variance
-    h       <- 0
-    tau     <- 0.5
-    k <- 0 
-    epsilon <- 1e-08
-    jpvt    <- integer(max(q1,p))    # pivots used in dgelsy
-    
-    if (is.null(z)) {
-      setting <- c(n, m, q1, 1, 1, jpvt)
-      out.p <- .C("regmixpmle", as.integer(setting), as.double(y), as.double(x1),
-                  alphaset = as.double(alpha), mubetaset = as.double(mubeta), sigmaset = as.double(sigma),
-                  as.double(sigma0), as.double(mu0), as.double(an), tau, as.integer(h), k, lub = double(2*m),
-                  double(3*m), post = double(n*m),
-                  loglikset = double(1), penloglikset = double(1),
-                  notcg = integer(1), as.double(epsilon), double(n*(q1+1)), package = "normalregMix")
-    } else {
-      setting.z <- c(n, m, q1, p, 1, 1, jpvt)
-      out.p <- .C("regmixpmle_z", as.integer(setting.z), as.double(y), as.double(x1), as.double(z),
-                  alphaset = as.double(alpha), mubetaset = as.double(mubeta), sigmaset = as.double(sigma), gammaset = as.double(gamma),
-                  as.double(sigma0), as.double(mu0), as.double(an), tau, as.integer(h), k, lub = double(2*m),
-                  double(3*m), post = double(n*m),
-                  loglikset = double(1), penloglikset = double(1),
-                  notcg = integer(1), as.double(epsilon), double(n*(q1+3+p)), package = "normalregMix")
-      # Adjust y
-      y <- as.vector(y - z %*% gamma)
-    }
-    
-    post <- matrix(out.p$post, nrow=n)
-    
-    p2 <- seq(q1+1, (q1+1)*m, by=q1+1)  # sequence of q1+1, (q1+1)*2, ... , (q1+1)*m
-    p1 <- (1:((q1+1)*m))[-p2]        # other values from 1, ..., (q1+1)*m
-    
-    a <- diag(1/alpha[-m], nrow=m-1, ncol=m-1)
-    a <- cbind(a, -1/alpha[m])  # m-1 by m matrix of a_i's
-    abar <- a %*% t(post)  # m-1 by n
-    
-    xtheta <- x1 %*% mubeta  # n by m
-    
-    Z0 <- t(t(y-xtheta)/sigma)          # normalized data, n by m
-    f <- t(t(exp(-Z0^2/2)/sqrt(2*pi))/sigma)  # pdf, n by m
-    phi <- t(t(f)*alpha)            # n by m
-    f0 <- rowSums(phi)              # data pdf, n by 1
-    
-    vinv <- 1/(sigma*sigma)  # m-vector
-    
-    b <- t(t(Z0)/sigma)  # n by m
-    B <- t(vinv - t(b*b))  # n by m
-    
-    c0 <- array(0,dim=c(n, m, q1+1))
-    c0[, , (1:q1)] <- array(tKR(x1, b), dim=c(n, m, q1))
-    c0[, , (q1+1)] <- -B/2
-    
-    # Compute Hessian-based I
-    if (vcov.method == "Hessian") {
-      other.method = "OPG"
-      C0 <- array(0, dim=c(n, m, q1+1, q1+1))
-      x11 <- array(tKR(x1, x1), dim = c(n, q1, q1))
-      for (i in 1:m) {
-        C0[, i, (1:q1), (1:q1)] <- x11*vinv[i]
-        C0[, i, (1:q1), q1+1]   <- C0[, i, q1+1, (1:q1)] <- x1*b[, i]*vinv[i] # n by q1
-      }
-      C0[, , q1+1, q1+1] <- t((vinv - 2*t(B))*vinv)/2      # n by m
-      
-      Q.pi <- - abar %*% t(abar)  # m-1 by m-1
-      
-      Q.pi.theta <- matrix(0,nrow=m-1,ncol=(q1+1)*m)  # m-1 by (q1+1)*m
-      for (i in 1:m) {
-        zi <- a[, i] - abar  # m-1 by n
-        wi <- c0[, i, ]*post[, i]  # n by q1+1
-        Q.i <- colSums(tKR(wi, t(zi)))  # (q1+1)*(m-1) vector
-        # first q1*(m-1) elements correspond to mubeta x pi,
-        # last m-1 elements correspond to sigma x pi,
-        Q.pi.theta[,(q1*(i-1)+1):(q1*i)] <- matrix(Q.i[1:(q1*(m-1))],ncol=q1)  # m-1 by q1 matrix
-        Q.pi.theta[, q1*m+i] <- Q.i[(q1*(m-1)+1):((q1+1)*(m-1))]  # m-1 vector
-      }
-      
-      Q.theta <- matrix(0, nrow=(q1+1)*m, ncol=(q1+1)*m)
-      for (i in 2:m) {  # off-diagonal blocks
-        for (j in 1:(i-1)) {
-          wi  <- c0[, i, ]*post[, i] # n by q1+1
-          wj  <- c0[, j, ]*post[, j] # n by q1+1
-          Q.ij <- - colSums(tKR(wi, wj))  # (q1+1)*(q1+1) vector
-          Q.theta[((q1+1)*(i-1)+1):((q1+1)*i), ((q1+1)*(j-1)+1):((q1+1)*j)] = t(matrix(Q.ij, nrow=q1+1, ncol=q1+1))
-        }
-      }
-      
-      Q.theta <- Q.theta + t(Q.theta)
-      for (i in 1:m) {  # diagonal blocks
-        C.ii   <- array(C0[, i, , ], dim=c(n, q1+1, q1+1))
-        Q.ii.1   <- apply(C.ii*post[,i], c(2, 3), sum)
-        w.ii   <- tKR(c0[, i, ], c0[, i, ])*post[, i]*(1-post[, i])
-        Q.ii.2   <- matrix(colSums(w.ii), nrow=q1+1, ncol=q1+1)
-        Q.theta[((q1+1)*(i-1)+1):((q1+1)*i), ((q1+1)*(i-1)+1):((q1+1)*i)] <- -Q.ii.1 + Q.ii.2
-      }
-      
-      # q1+1,2*(q1+1),...,m*(q1+1)th rows and columns = sigma
-      # other rows and columns = mubeta
-      Q.theta <- Q.theta[c(p1, p2), c(p1, p2)]  # first block = wrt mubeta, second blosk = wrt sigma
-      
-      dimI <- m-1+(q1+1)*m
-      I <- matrix(0, nrow=dimI, ncol=dimI)
-      I[1:(m-1), 1:(m-1)] <- - Q.pi
-      I[1:(m-1), m:dimI]  <- - Q.pi.theta
-      I[m:dimI, 1:(m-1)]  <- - t(Q.pi.theta)
-      I[m:dimI, m:dimI]   <- - Q.theta
-      
-      if (!is.null(z)) {
-        dbar <-  z*rowSums(post*b)  # n by p
-        Q.gamma.theta <- matrix(0, nrow=p, ncol=(q1+1)*m)  # p by (q1+1)*m matrix
-        for (i in 1:m) {
-          C.i <- array(C0[, i, 1, ], dim=c(n, q1+1))  # n by q1+1
-          Q.i.1 <- colSums(tKR(-C.i+b[, i]*c0[, i, ], z*post[, i])) # p*(q1+1) vector
-          Q.i.2 <- colSums(tKR(c0[, i, ]*post[, i], dbar))  # p*(q1+1) vector
-          Q.gamma.theta[, ((q1+1)*(i-1)+1):((q1+1)*i)] <- matrix(Q.i.1+Q.i.2, nrow=p, ncol=q1+1)
-        }
-        
-        Q.gamma.theta <- Q.gamma.theta[, c(p1, p2), drop=FALSE]  # p by (q1+1)*m
-        w1 <- (post*b)%*%t(a) - rowSums(post*b)*t(abar)  # n by m-1
-        Q.pi.gamma.0 <- colSums(tKR(w1, z))  # (m-1)*p vector
-        Q.pi.gamma  <- matrix(Q.pi.gamma.0, nrow=m-1, ncol=p)
-        Q.gamma     <- - t(z)%*%(z*rowSums(post*B)) -
-          matrix(colSums(tKR(dbar, dbar)), nrow=p, ncol=p)
-        
-        I <- cbind(I, -rbind(Q.pi.gamma, t(Q.gamma.theta)))
-        I <- rbind(I, -cbind(t(Q.pi.gamma), Q.gamma.theta, Q.gamma))
-      }  # end if (!is.null(z))
-      
-    }  else {  # compute I with (method == "OPG")
-      other.method = "Hessian"
-      c0.a <- array(0, dim=c(n, m, 2))
-      c0.a[, , 1] <- b  # n by m
-      c0.a[, , 2] <- -B/2  # n by m
-      
-      score <- t(abar)
-      
-      for (j in 1:m) {
-        # score.o <- cbind(score.o, c0[, j, ]*post[, j])
-        score <- cbind(score, x1*c0.a[, j, 1]*post[, j], c0.a[, j, 2]*post[, j])
-        # print(all.equal(score.o, score))
-      }
-      
-      ind <- c(1:(m-1), p1+m-1, p2+m-1)
-      score <- score[, ind]
-      I <- t(score) %*% score
-      
-      if (!is.null(z))  {
-        dbar <-  z*rowSums(post*b)  # n by p
-        score <- cbind(score, dbar)
-        I <- t(score) %*% score
-      }
-      
-    }  # end if (method=="OPG")
-    
-    vcov <- try(solve(I))
-    if (class(vcov) == "try-error" || any(diag(vcov) <0) ) {
-      vcov <- matrix(NaN, nrow = (2+q1)*m-1+p, ncol = (2+q1)*m-1+p)
-      warning("Fisher information matrix is singular and/or the
-              variance is estimated to be negative. Consider using vcov.method=\"",other.method,"\".")
-    }
-    
-    # Because the variance is parameterized as sigma^2, we convert it to sigma
-    
-    c.mat.vec <- c(rep(1, m-1+m*q1), (1/sigma^(1/2))/2, rep(1, p))
-    vcov <- diag(c.mat.vec) %*% vcov %*% diag(c.mat.vec)
-    # vcov.opg <- diag(c.mat.vec) %*% vcov.opg %*% diag(c.mat.vec)
-    
-    # Add the variance of alpha_m
-    M.mat <- diag(len-1)
-    M.mat <- rbind(M.mat[1:(m-1),], c(rep(-1,m-1),rep(0,len-m)), M.mat[m:(len-1),])
-    
-    vcov <- M.mat %*% vcov %*% t(M.mat)
-    # vcov.opg <- M.mat %*% vcov.opg %*% t(M.mat)
-    
-  }   # end else (i.e., m >= 2)
-  
-  vcov
-  
-}  # end function regmixVcov
-
-#' Computes the bootstrap critical values of the modified EM test.
-#' @export
-#' @title regmixCritBoot
-#' @name regmixCritBoot
-#' @param y n by 1 vector of data for y
-#' @param x n by q vector of data for x 
-#' @param parlist The parameter estimates as a list containing alpha, mu, sigma, and gamma 
-#' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m), 
-#' sigma = (sigma_1, ..., sigma_m), gamma = (gamma_1, ..., gamma_m))
-#' @param z n by p matrix of regressor associated with gamma
-#' @param values 3 by 1 Vector of length 3 (k = 1, 2, 3) at which the p-values are computed
-#' @param ninits The number of initial candidates to be generated
-#' @param nbtsp The number of bootstrap observations; by default, it is set to be 199
-#' @param parallel Determines whether package \code{doParallel} is used for calculation
-#' @param cl Cluster used for parallelization (optional)
-#' @return A list with the following items:
-#' \item{crit}{3 by 3 matrix of (0.1, 0.05, 0.01 critical values), jth row corresponding to k=j}
-#' \item{pvals}{A vector of p-values at k = 1, 2, 3}
-regmixCritBoot <- function (y, x, parlist, z = NULL, values = NULL, ninits = 100,
-                            nbtsp = 199, parallel = TRUE, cl = NULL) {
-  if (test.on) # initial values controlled by test.on
-    set.seed(test.seed)
-  
-  y  <- as.vector(y)
-  n  <- length(y)
-  x  <- as.matrix(x)
-  
-  alpha   <- parlist$alpha
-  mubeta  <- parlist$mubeta
-  sigma   <- parlist$sigma
-  gamma   <- parlist$gamma
-  m       <- length(alpha)
-  
-  pvals <- NULL
-  
-  # Generate bootstrap observations
-  ybset <- replicate(nbtsp, rnormregmix(n = n, x = x, alpha = alpha, mubeta = mubeta, sigma = sigma))
-  
-  if (!is.null(z)) {
-    zgamma <- as.matrix(z) %*% gamma
-    ybset <- ybset + as.vector(zgamma)
-  }
-  
-  if (parallel) {
-    if (is.null(cl))
-      cl <- makeCluster(detectCores())
-    registerDoParallel(cl)
-    out <- foreach (j.btsp = 1:nbtsp) %dopar% {
-      regmixMEMtest (ybset[,j.btsp], x = x, m = m,
-                        z = z, ninits = ninits, crit.method = "none") }
-    on.exit(cl)
-  }
-  else 
-    out <- apply(ybset, 2, regmixMEMtest, x = x, m = m, z = z, 
-                 ninits = ninits, crit.method = "none")
-  
-  
-  emstat.b <- sapply(out, "[[", "emstat")  # 3 by nbstp matrix
-  
-  emstat.b <- t(apply(emstat.b, 1, sort))
-  
-  q <- ceiling(nbtsp*c(0.90,0.95,0.99))
-  crit <- emstat.b[, q]
-  
-  if (!is.null(values)) { pvals <- rowMeans(emstat.b > values) }
-  
-  return(list(crit = crit, pvals = pvals))
-}  # end function regmixCritBoot
-
-
-# regmixMEMtestNocrit <- function (y, x, m = 2, z = NULL, an = 2.2, ninits = 100) {
-# # Compute the modified EM test statistic for testing H_0 of m components
-# # against H_1 of m+1 components for a univariate finite mixture of normals
-#
-# regmix.pmle.result    <- regmixPMLE(y=y, x=x, m=m, z=z, vcov.method="none", ninits=ninits)
-# loglik0 <- regmix.pmle.result$loglik
-# par1    <- regmixMaxPhi(y=y, x=x, regmix.pmle.result=regmix.pmle.result$parlist, z=z, an=an, ninits=ninits)
-# emstat  <- 2*(par1$loglik-loglik0)
-#
-# a <- list(emstat=emstat, parlist=regmix.pmle.result$parlist)
-#
-# a
-#
-# }  # end regmixMEMtestNocrit
-
-#' Sequentially performs MEM test given the data for y and x on the null hypothesis H_0: m = m_0
-#' where m_0 is in {1, 2, ..., maxm}
-#' @export
-#' @title regmixMEMtestSeq
-#' @name regmixMEMtestSeq
-#' @param y n by 1 vector of data for y
-#' @param x n by q matrix of data for x
-#' @param z n by p matrix of regressor associated with gamma
-#' @param maxm The maximum number of components set as null hypothesis in the mixture
-#' @param ninits The number of randomly drawn initial values.
-#' @param maxit The maximum number of iterations.
-#' @param nbtsp The number of bootstrap observations; by default, it is set to be 199
-#' @param parallel Determines whether package \code{doParallel} is used for calculation
-#' @param cl Cluster used for parallelization; if it is \code{NULL}, the system will automatically
-#' create a new one for computation accordingly.
-#' @return A list of with the following items:
-#' \item{alpha}{maxm by maxm matrix, whose i-th column is a vector of alphas estimated given the null hypothesis m_0 = i}
-#' \item{mu}{maxm by maxm matrix, whose i-th column is a vector of mus estimated given the null hypothesis m_0 = i}
-#' \item{sigma}{maxm by maxm matrix, whose i-th column is a vector of sigmas estimated given the null hypothesis m_0 = i}
-#' \item{beta}{A list of length maxm, whose i-th element is a q times i matrix of betas estimated given the null hypothesis m_0 = i}
-#' \item{gamma}{maxm by maxm matrix, whose i-th column is a vector of gammas estimated given the null hypothesis m_0 = i}
-#' \item{emstat}{A maxm vector of values of modified EM statistics of the model at m_0 = 1, 2, ..., maxm}
-#' \item{pvals}{A maxm by 3 matrix whose i-th row indicates a vector of p-values at k = 1, 2, 3}
-#' \item{aic}{A maxm vector of Akaike Information Criterion of the fitted model at m_0 = 1, 2, ..., maxm}
-#' \item{bic}{A maxm vector of Bayesian Information Criterion of the fitted model at m_0 = 1, 2, ..., maxm}
-#' \item{loglik}{A maxm vector of log-likelihood values of the model at m_0 = 1, 2, ..., maxm}
-#' \item{penloglik}{A maxm vector of penalized log-likelihood values of the model at m_0 = 1, 2, ..., maxm}
-#' @examples 
-#' data(faithful)
-#' attach(faithful)
-#' regmixMEMtestSeq(y = eruptions, x = waiting)
-regmixMEMtestSeq <- function (y, x, z = NULL, maxm = 3, ninits = 10, maxit = 2000,
-                              nbtsp = 199, parallel = FALSE, cl = NULL) {
-  # Compute the modified EM test statistic for testing H_0 of m components
-  # against H_1 of m+1 components for a univariate finite mixture of normals
-  
-  y   <- as.vector(y)
-  x		<- as.matrix(x)
-  n   <- length(y)
-  p   <- 0
-  q   <- ncol(x)
-
-  if (!is.null(z)) {
-    z <- as.matrix(z)
-    p <- ncol(z)
-    gamma <- matrix(0, nrow = p, ncol = maxm)
-  }
-  
-  out   <- vector('list', length = maxm)
-  aic    <- bic <- double(maxm)
-  pvals   <- emstat <- matrix(0, nrow = maxm-1, ncol = 3)
-  loglik  <- penloglik <- double(maxm)
-  
-  alpha   <- mu <- sigma <- matrix(0, nrow = maxm, ncol = maxm)
-  beta <- list()
-  # Test H_0:m=1, H_0:m=2, ...
-  
-  for (m in 1:maxm){
-    pmle.result   <- regmixPMLE(y = y, x = x, m = m, z = z, vcov.method = "none",
-                                ninits = ninits, maxit = maxit)
-    loglik[m] <- loglik0 <- pmle.result$loglik
-    penloglik[m] <- penloglik0 <- pmle.result$penloglik
-    aic[m]  <- pmle.result$aic
-    bic[m]  <- pmle.result$bic
-    
-    parlist <- pmle.result$parlist
-    alpha0  <- parlist$alpha
-    mubeta0 <- parlist$mubeta
-    mu0			<- mubeta0[1,]
-    beta0   <- mubeta0[-1,]
-    sigma0  <- parlist$sigma
-    gamma0  <- parlist$gamma
-    
-    alpha[,m] <- c(alpha0, double(maxm - m))
-    mu[,m]    <- c(mu0, double(maxm - m))
-    sigma[,m] <- c(sigma0, double(maxm - m))
-    beta[m]  <- c(beta0, double(maxm - m))
-    
-    cat(sprintf("%d-component model estimate:\n",m))
-    
-    
-    tab = as.matrix(rbind(alpha0, mu0, sigma0, as.matrix(beta0)))
-    
-    print(tab)
-    print(beta0)
-    print(mubeta0)
-    rownames(tab) <- c("alpha", "mu", "sigma", paste("beta", ".", 1:q, sep = ""))
-    colnames(tab) <- c(paste("comp", ".", 1:m, sep = ""))
-    print(tab, digits = 4)
-    
-    if (!is.null(z)){
-      gamma[, m] <- gamma0
-      cat("gamma =", gamma0,"\n")
-    }
-    cat(sprintf("\nAIC, BIC, and loglike of 1 to %.i", m), "component models \n")
-    cat(c("AIC    =", sprintf(' %.2f', aic[1:m])), "\n")
-    cat(c("BIC    =", sprintf(' %.2f', bic[1:m])), "\n")
-    cat(c("loglik =", sprintf('%.2f', loglik[1:m])), "\n\n")
-    
-    if (m < maxm){
-      
-      cat(sprintf("Testing the null hypothesis of %d components\n", m))
-      
-      #     print(pmle.result$parlist)
-      an    <- anFormula(parlist = parlist, m = m, n = n)
-      #     print(an)
-      par1  <- regmixMaxPhi(y = y, x = x, parlist = parlist, z = z, an = an, 
-                            ninits = ninits, maxit = maxit, parallel = parallel)
-      #     print(loglik0)
-      #     print(par1)
-      emstat.m  <- 2*(par1$penloglik - loglik0)
-      
-      cat(c("modified EM-test statitic ", sprintf('%.3f',emstat.m)),"\n")
-      if (m <=3 ) {
-        em.out <- regmixCrit(y = y, x = x, parlist = parlist, z = z, 
-                             values = emstat.m)
-        cat(c("asymptotic p-values       ", sprintf('%.3f',em.out$pvals)),"\n \n")
-      } else {
-        em.out <- regmixCritBoot(y = y, x = x, parlist=parlist, z = z, 
-                                 values = emstat.m, ninits = ninits, nbtsp = nbtsp, 
-                                 parallel = parallel, cl = cl)
-        cat(c("bootstrap p-values        ", sprintf('%.3f',em.out$pvals)),"\n \n")
-      }
-      # noncg.rate[m]   <- par1$noncg.rate
-      pvals[m,]     <- em.out$pvals
-      emstat[m,]    <- emstat.m
-    }
-  }
-  a = list(alpha = alpha, mu = mu, sigma = sigma, beta = beta, gamma = gamma, 
-           emstat = emstat, pvals = pvals, aic = aic, bic = bic, 
-           loglik = loglik, penloglik = penloglik)
-  
-  a
-  
-}  # end regmixMEMtestSeq
-
-#' Performs MEM test given the data for y and x on the null hypothesis H_0: m = m_0.
-#' @export
-#' @title regmixMEMtest
-#' @name regmixMEMtest
-#' @param y n by 1 vector of data for y
-#' @param x n by q matrix of data for x
-#' @param m The number of components in the mixture defined by a null hypothesis, m_0
-#' @param z n by p matrix of regressor associated with gamma
-#' @param tauset A set of initial tau value candidates
-#' @param an a term used for penalty function
-#' @param ninits The number of randomly drawn initial values.
-#' @param crit.method Method used to compute the variance-covariance matrix, one of \code{"none"}, 
-#' \code{"asy"}, and \code{"boot"}. The default option is \code{"none"}. When \code{method = "asy"}, 
-#' the p-values are computed based on an asymptotic method. When \code{method = "OPG"}, 
-#' the p-values are generated by bootstrapping.
-#' @param nbtsp The number of bootstrap observations; by default, it is set to be 199
-#' @param cl Cluster used for parallelization; if it is \code{NULL}, the system will automatically
-#' create a new one for computation accordingly.
-#' @param parallel Determines whether package \code{doParallel} is used for calculation
-#' @return A list of class \code{normalMix} with items:
-#' \item{coefficients}{A vector of parameter estimates. Ordered as \eqn{\alpha_1,\ldots,\alpha_m,\mu_1,\ldots,\mu_m,\sigma_1,\ldots,\sigma_m,\gamma}.}
-#' \item{parlist}{The parameter estimates as a list containing alpha, mu, and sigma (and gamma if z is included in the model).}
-#' \item{vcov}{The estimated variance-covariance matrix.}
-#' \item{loglik}{The maximized value of the log-likelihood.}
-#' \item{penloglik}{The maximized value of the penalized log-likelihood.}
-#' \item{aic}{Akaike Information Criterion of the fitted model.}
-#' \item{bic}{Bayesian Information Criterion of the fitted model.}
-#' \item{postprobs}{n by m matrix of posterior probabilities for observations}
-#' \item{indices}{n by 1 vector of integers that indicates the indices of components 
-#' each observation belongs to based on computed posterior probabilities}
-#' \item{call}{The matched call.}
-#' \item{m}{The number of components in the mixture.}
-#' @examples 
-#' data(faithful)
-#' attach(faithful)
-#' regmixMEMtest(y = eruptions, x = waiting, m = 1, crit.method = "asy")
-#' regmixMEMtest(y = eruptions, x = waiting, m = 2)
-regmixMEMtest <- function (y, x, m = 2, z = NULL, tauset = c(0.1,0.3,0.5), 
-                           an = NULL, ninits = 100,
-                           crit.method = c("none", "asy", "boot"), nbtsp = 199,
-                           cl = NULL, 
-                           parallel = FALSE) {
-  # Compute the modified EM test statistic for testing H_0 of m components
-  # against H_1 of m+1 components for a univariate finite mixture of normals
-  y <- as.vector(y)
-  x <- as.matrix(x)
-  q <- ncol(x)
-  
-  if (!is.null(z)) 
-    z <- as.matrix(z)
-  
-  regmix.pmle.result    <- regmixPMLE(y=y, x=x, m=m, z=z, vcov.method="none", ninits=ninits)
-  loglik0 <- regmix.pmle.result$loglik
-  
-  if (is.null(an)) 
-    an <- anFormula(parlist = regmix.pmle.result$parlist, m = m, n = n, q = q)
-  
-  
-  par1    <- regmixMaxPhi(y=y, x=x, parlist=regmix.pmle.result$parlist, z=z, 
-                          an=an, tauset = tauset, ninits=ninits,
-                          parallel = parallel, cl = cl)
-  # use the penalized log-likelihood.
-  emstat  <- 2*(par1$penloglik-loglik0)
-  
-  if (crit.method == "asy"){
-    result  <- regmixCrit(y=y, x=x, parlist=regmix.pmle.result$parlist, z=z, values=emstat,
-                          parallel=parallel, cl=cl, nrep=1000, ninits.crit=25)
-  } else if (crit.method == "boot") {
-    result  <- regmixCritBoot(y=y, x=x, parlist=regmix.pmle.result$parlist, z=z, values=emstat,
-                              ninits=ninits, nbtsp=nbtsp, parallel=parallel, cl=cl)
-  } else {
-    result <- list()
-    result$crit <- result$pvals <- rep(NA,3)
-  }
-  
-  a <- list(emstat = emstat, pvals = result$pvals, crit = result$crit, parlist = regmix.pmle.result$parlist,
-            call = match.call(), m = m, crit.method = crit.method, nbtsp = nbtsp,
-            label = "MEMtest")
-  
-  class(a) <- "normalregMix"
-  
-  a
-  
-}  # end regmixMEMtest
 
 ## TODO: verb is not used.
 #' Compute ordinary & penalized log-likelihood ratio resulting from MEM algorithm at k=1,2,3.
@@ -1312,188 +749,264 @@ regmixPMLEinit <- function (y, x, z = NULL, ninits = 1, m = 2)
   
 }  # end function regmixPMLEinit
 
-#' Computes the critical values of the modified EM test.
+#' Computes the variance-covariance matrix of the MLE of m-component normal mixture.
 #' @export
-#' @title regmixCrit
-#' @name regmixCrit
+#' @title regmixVcov
+#' @name regmixVcov
 #' @param y n by 1 vector of data for y
 #' @param x n by q matrix of data for x
-#' @param parlist The parameter estimates as a list containing alpha, mu, sigma, and gamma 
-#' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m), 
-#' sigma = (sigma_1, ..., sigma_m), gamma = (gamma_1, ..., gamma_m))
+#' @param coefficients (alpha_1, ..., alpha_m, mu_1, ..., mu_m, sigma_1, ..., sigma_m, gamma)
 #' @param z n by p matrix of regressor associated with gamma
-#' @param values 3 by 1 Vector of length 3 (k = 1, 2, 3) at which the p-values are computed
-#' @param parallel Determines whether package \code{doParallel} is used for calculation
-#' @param cl Cluster used for parallelization; if it is \code{NULL}, the system will automatically
-#' @param nrep The number of replications used to compute p-values
-#' @return A list with the following items:
-#' \item{crit}{3 by 3 matrix of (0.1, 0.05, 0.01 critical values), jth row corresponding to k=j}
-#' \item{pvals}{A vector of p-values at k = 1, 2, 3}
-regmixCrit <- function(y, x, parlist, z = NULL, values = NULL, parallel = TRUE,
-                       cl = NULL, nrep = 1000, ninits.crit = 25)
-{
-  # Computes the critical values of the modified EM test
-  # and the estimated variance of the two-component MLE
+#' @param p Dimension of z
+#' @param vcov.method Method used to compute the variance-covariance matrix, 
+#' one of \code{"Hessian"} and \code{"OPG"}. #' The default option is \code{"Hessian"}. 
+#' When \code{method = "Hessian"}, the variance-covarince matrix is 
+#' estimated by the Hessian using the formula given in Boldea and Magnus (2009). 
+#' When \code{method = "OPG"}, the outer product of gradients is used.
+#' @return The variance-covariance matrix of the MLE of 
+#' m-component normal mixture given the data and coefficients.
+#' @references   Boldea, O. and Magnus, J. R. (2009)
+#' Maximum Likelihood Estimation of the Multivariate Normal Mixture Model,
+#' \emph{Journal of the American Statistical Association},
+#' \bold{104}, 1539--1549.
+regmixVcov <- function(y, x, coefficients, z = NULL, vcov.method = c("Hessian", "OPG")) {
+  # Computes the variance-covariance matrix of the MLE of m-component normal regression mixture
   # Input
-  #   y     : n by 1 vector of dependent variable
-  #   x     : n by (q1-1) matrix of regressor not including an intercept
-  #   parlist   : list including (alpha, mubeta, sigma)
-  #   values (q1 by 1): values at wchich the p-values are computed
+  #  y  : n by 1 vector of dependent variable
+  #  x  : n by q1-1 matrix of regressor NOT including an intercept
+  #  coefficients : (alpha_1,...,alpha_m,mubeta_1^T, ...,mubeta_m^T,sigma_1, ..., sigma_m,gamma^T)
+  #  z  : n by p matrix of regressor associated with gamma
   # Output
-  #   list(crit,pvals)
-  #   crit = (10%, 5%, 1% critical values), pvals = p-values
-  if (test.on) # initial values controlled by test.on
-    set.seed(test.seed)
+  #  vcov: variance-covariance matrix
   
-  y  <- as.vector(y)
-  n  <- length(y)
-  p  <- 0
-  
-  alpha   <- parlist$alpha
-  mubeta  <- parlist$mubeta
-  sigma   <- parlist$sigma
-  gamma   <- parlist$gamma
-  m       <- length(alpha)
+  y     <- as.vector(y)
+  n     <- length(y)
+  len   <- length(coefficients)
+  p     <- 0
+  gamma <- NULL
+  vcov.method <- match.arg(vcov.method)
   
   if (!is.null(z)) {
     z <- as.matrix(z)
     p <- ncol(z)
-    y   <- y - z %*% gamma
+    gamma <- coefficients[(len-p+1):len]
   }
   
-  pvals <- NULL
+  x   <- as.matrix(x)
+  x1  <- cbind(1, x)
+  q1   <- ncol(x1)
+  q   <- ncol(x)
   
-  x     <- as.matrix(x)
-  x1    <- cbind(1,x)
-  q     <- ncol(x)
+  m  <- (len-p)/(3+q)
+  if (round(m) != m) {
+    stop("The dimension of the coefficients is incompatible with x and z. Please check the data.")
+  }
   
-  W  <- t(t(y - x1 %*% mubeta)/sigma)       # normalized data, n by m
-  f  <- t(t(exp(-W^2/2)/sqrt(2*pi))/sigma)  # pdf, n by m
-  f0 <- colSums(t(f)*alpha)                 # data pdf, n by 1
-  
-  H <- hermite(W,sigma)
-  
-  w_m <- t(t(f)*alpha)/f0  # n by m matrix of w_{ji}
+  alpha   <- coefficients[1:m]  # m-vector
+  mubeta  <- matrix(coefficients[(m+1):((2+q)*m)], nrow=q+1, ncol=m)  # q+1 by m
+  sigma   <- coefficients[((2+q)*m+1):((3+q)*m)]  # m-vector
   
   if (m == 1) {
-    S_alpha <- NULL
-  } else {
-    S_alpha <- (f[,1:(m-1)] - f[,m])/f0
-  }
-  
-  S_mu    <- w_m*H[,,1]
-  S_beta  <- matrix(0, nrow=n, ncol=q*m)
-  
-  for (j in 1:m) {
-    S_beta[, (1+(j-1)*q):(j*q)] <- x*S_mu[, j]
-  }
-  
-  S_sigma <- w_m*H[,,2]
-  S_eta   <- cbind(S_alpha, S_mu, S_beta, S_sigma)
-  
-  if (!is.null(z)) {
-    S_gamma <- z*rowSums(S_mu)
-    S_eta <- cbind(S_eta,S_gamma)
-  }
-  
-  n_lam <- q*(q+1)/2+2*q+2
-  S_lam <- matrix(0, nrow=n, ncol=n_lam*m)
-  xx    <- matrix(0, nrow=n, ncol=q*(q+1)/2)
-  
-  xx[,1:q] <- x*x
-  
-  if (q > 1) {
-    t <- q + 1
-    for (j in 1:(q-1)) {
-      for (i in (j+1):q) {
-        xx[,t] <- 2*x[,j]*x[,i]
-        t <- t+1
-      }
+    xz1 <- cbind(x1,z)
+    I <- matrix(0, nrow=q1+p+1, ncol=q1+p+1)
+    I[1:(q1+p), 1:(q1+p)] <- t(xz1) %*% xz1/sigma^2
+    I[(q1+p+1), (q1+p+1)] <- n*2/sigma^2
+    if (p != 0){
+      s.1 <- c(1:q1, (q1+p+1), (q1+1):(q1+p))
+      I <- I[s.1, s.1]
     }
-  }
-  
-  for (j in 1:m) {
-    w_2 <- S_sigma[,j]
-    w_3 <- w_m[,j]*H[,j,3]
-    w_4 <- w_m[,j]*H[,j,4]
-    S_lam_1 <- cbind(w_3, x*w_2)
-    S_lam_2 <- cbind(w_4, x*w_3, xx*w_2)
-    S_lam[, ((j-1)*n_lam+1):(j*n_lam)] <- cbind(S_lam_1, S_lam_2)
-  }
-  
-  I_eta     <- t(S_eta) %*% S_eta/n
-  I_lam     <- t(S_lam) %*% S_lam/n
-  I_el      <- t(S_eta) %*% S_lam/n
-  if (qr(I_eta)$rank == nrow(I_eta)) {
-    I_eta_lam <- I_lam - t(I_el) %*% solve(I_eta,I_el)
-  } else {
-    stop("The critical value cannot be computed due to singularity of some matrices.
-         Please try a bootstrap version, regmixCritBoot and regmixMEMtestBoot.")
-  }
-  
-  # generate u ~ N(0,I_eta_lam)
-  set.seed(123456)
-  e <- eigen(I_eta_lam, symmetric=TRUE)  # eigenvalue decomposition is slower than chol but more stable
-  u <- t(e$vec %*% (t(e$vec) * sqrt(e$val)) %*% matrix(rnorm(nrep*n_lam*m), nrow=n_lam*m))
-  
-  q_1 <- 1+q
-  q_2 <- 1+q+q*(q+1)/2
-  
-  LR <- matrix(0, nrow=nrep, ncol=m)
-  
-  if ( (parallel) && (is.null(cl)) ) {
-    ncpus <- parallel::detectCores()
-    cl <- parallel::makePSOCKcluster(rep("localhost", ncpus))
-  }
-  
-  for (j in 1:m) {
-    I_j <- I_eta_lam[((j-1)*n_lam+1):(j*n_lam),((j-1)*n_lam+1):(j*n_lam)]
-    if (qr(I_j)$rank == nrow(I_j)) {
-      Z_j <- u[,((j-1)*n_lam+1):(j*n_lam)] %*% solve(I_j)    # nrep by n_lam matrix
-    } else {
-      stop("The critical value cannot be computed due to singularity of some matrices.
-           Please try a bootstrap version, regmixCritBoot and regmixMEMtestBoot.")
-    }
-    # Lambda_1
-    V <- solve(I_j)
-    n_v <- ncol(V)
-    V_11 <- V[1:q_1,1:q_1]
-    V_12 <- V[1:q_1,(q_1+1):n_v]
-    V_21 <- t(V_12)
-    V_22 <- V[(q_1+1):n_v,(q_1+1):n_v]
-    Z_1 <- Z_j[,1:q_1]
-    Z_2 <- Z_j[,(q_1+1):ncol(Z_j)]
-    V_1_2 <- V_11 - V_12 %*% solve(V_22,V_21)
-    Z_1_2 <- Z_1 - Z_2 %*% solve(V_22,V_21)
-    inv_V_22 <- solve(V_22)
-    Z_22 <- t(inv_V_22[1,] %*% t(Z_2))
-    LR_1 <- rowSums((Z_1_2 %*% solve(V_1_2))*Z_1_2) + (1/inv_V_22[1,1])*(Z_22^2)*(Z_22<0)
     
-    # Lambda_2
-    if (parallel) {
-      parallel::clusterSetRNGStream(cl, 123456)
-      LR_2 <- parallel::parRapply(cl, Z_j, LR_2.comp, I_j, q, ninits.crit)
+    vcov <- solve(I)
+    # Because the variance is parameterized as sigma^2, we convert it to sigma
+    c.mat.vec <- c(rep(1,q1),(1/sigma^(1/2))/2,rep(1,p))
+    vcov <- diag(c.mat.vec) %*% vcov %*% diag(c.mat.vec)
+    
+  } else {  # end of if (m == 1)
+    
+    # m >= 2
+    
+    # Compute posterior probabilities, and adjust y if z is present
+    sigma0  <- rep(1, m)  # dummy
+    mu0     <- double(m)  # dummy
+    an      <- 1/n  # penalty term for variance
+    h       <- 0
+    tau     <- 0.5
+    k <- 0 
+    epsilon <- 1e-08
+    jpvt    <- integer(max(q1,p))    # pivots used in dgelsy
+    
+    if (is.null(z)) {
+      setting <- c(n, m, q1, 1, 1, jpvt)
+      out.p <- .C("regmixpmle", as.integer(setting), as.double(y), as.double(x1),
+                  alphaset = as.double(alpha), mubetaset = as.double(mubeta), sigmaset = as.double(sigma),
+                  as.double(sigma0), as.double(mu0), as.double(an), tau, as.integer(h), k, lub = double(2*m),
+                  double(3*m), post = double(n*m),
+                  loglikset = double(1), penloglikset = double(1),
+                  notcg = integer(1), as.double(epsilon), double(n*(q1+1)), package = "normalregMix")
     } else {
-      LR_2    <- apply(Z_j, 1, LR_2.comp, I_j, q, ninits.crit)
+      setting.z <- c(n, m, q1, p, 1, 1, jpvt)
+      out.p <- .C("regmixpmle_z", as.integer(setting.z), as.double(y), as.double(x1), as.double(z),
+                  alphaset = as.double(alpha), mubetaset = as.double(mubeta), sigmaset = as.double(sigma), gammaset = as.double(gamma),
+                  as.double(sigma0), as.double(mu0), as.double(an), tau, as.integer(h), k, lub = double(2*m),
+                  double(3*m), post = double(n*m),
+                  loglikset = double(1), penloglikset = double(1),
+                  notcg = integer(1), as.double(epsilon), double(n*(q1+3+p)), package = "normalregMix")
+      # Adjust y
+      y <- as.vector(y - z %*% gamma)
     }
-    LR[,j]  <- apply(cbind(LR_1,LR_2), 1, max)
+    
+    post <- matrix(out.p$post, nrow=n)
+    
+    p2 <- seq(q1+1, (q1+1)*m, by=q1+1)  # sequence of q1+1, (q1+1)*2, ... , (q1+1)*m
+    p1 <- (1:((q1+1)*m))[-p2]        # other values from 1, ..., (q1+1)*m
+    
+    a <- diag(1/alpha[-m], nrow=m-1, ncol=m-1)
+    a <- cbind(a, -1/alpha[m])  # m-1 by m matrix of a_i's
+    abar <- a %*% t(post)  # m-1 by n
+    
+    xtheta <- x1 %*% mubeta  # n by m
+    
+    Z0 <- t(t(y-xtheta)/sigma)          # normalized data, n by m
+    f <- t(t(exp(-Z0^2/2)/sqrt(2*pi))/sigma)  # pdf, n by m
+    phi <- t(t(f)*alpha)            # n by m
+    f0 <- rowSums(phi)              # data pdf, n by 1
+    
+    vinv <- 1/(sigma*sigma)  # m-vector
+    
+    b <- t(t(Z0)/sigma)  # n by m
+    B <- t(vinv - t(b*b))  # n by m
+    
+    c0 <- array(0,dim=c(n, m, q1+1))
+    c0[, , (1:q1)] <- array(tKR(x1, b), dim=c(n, m, q1))
+    c0[, , (q1+1)] <- -B/2
+    
+    # Compute Hessian-based I
+    if (vcov.method == "Hessian") {
+      other.method = "OPG"
+      C0 <- array(0, dim=c(n, m, q1+1, q1+1))
+      x11 <- array(tKR(x1, x1), dim = c(n, q1, q1))
+      for (i in 1:m) {
+        C0[, i, (1:q1), (1:q1)] <- x11*vinv[i]
+        C0[, i, (1:q1), q1+1]   <- C0[, i, q1+1, (1:q1)] <- x1*b[, i]*vinv[i] # n by q1
+      }
+      C0[, , q1+1, q1+1] <- t((vinv - 2*t(B))*vinv)/2      # n by m
+      
+      Q.pi <- - abar %*% t(abar)  # m-1 by m-1
+      
+      Q.pi.theta <- matrix(0,nrow=m-1,ncol=(q1+1)*m)  # m-1 by (q1+1)*m
+      for (i in 1:m) {
+        zi <- a[, i] - abar  # m-1 by n
+        wi <- c0[, i, ]*post[, i]  # n by q1+1
+        Q.i <- colSums(tKR(wi, t(zi)))  # (q1+1)*(m-1) vector
+        # first q1*(m-1) elements correspond to mubeta x pi,
+        # last m-1 elements correspond to sigma x pi,
+        Q.pi.theta[,(q1*(i-1)+1):(q1*i)] <- matrix(Q.i[1:(q1*(m-1))],ncol=q1)  # m-1 by q1 matrix
+        Q.pi.theta[, q1*m+i] <- Q.i[(q1*(m-1)+1):((q1+1)*(m-1))]  # m-1 vector
+      }
+      
+      Q.theta <- matrix(0, nrow=(q1+1)*m, ncol=(q1+1)*m)
+      for (i in 2:m) {  # off-diagonal blocks
+        for (j in 1:(i-1)) {
+          wi  <- c0[, i, ]*post[, i] # n by q1+1
+          wj  <- c0[, j, ]*post[, j] # n by q1+1
+          Q.ij <- - colSums(tKR(wi, wj))  # (q1+1)*(q1+1) vector
+          Q.theta[((q1+1)*(i-1)+1):((q1+1)*i), ((q1+1)*(j-1)+1):((q1+1)*j)] = t(matrix(Q.ij, nrow=q1+1, ncol=q1+1))
+        }
+      }
+      
+      Q.theta <- Q.theta + t(Q.theta)
+      for (i in 1:m) {  # diagonal blocks
+        C.ii   <- array(C0[, i, , ], dim=c(n, q1+1, q1+1))
+        Q.ii.1   <- apply(C.ii*post[,i], c(2, 3), sum)
+        w.ii   <- tKR(c0[, i, ], c0[, i, ])*post[, i]*(1-post[, i])
+        Q.ii.2   <- matrix(colSums(w.ii), nrow=q1+1, ncol=q1+1)
+        Q.theta[((q1+1)*(i-1)+1):((q1+1)*i), ((q1+1)*(i-1)+1):((q1+1)*i)] <- -Q.ii.1 + Q.ii.2
+      }
+      
+      # q1+1,2*(q1+1),...,m*(q1+1)th rows and columns = sigma
+      # other rows and columns = mubeta
+      Q.theta <- Q.theta[c(p1, p2), c(p1, p2)]  # first block = wrt mubeta, second blosk = wrt sigma
+      
+      dimI <- m-1+(q1+1)*m
+      I <- matrix(0, nrow=dimI, ncol=dimI)
+      I[1:(m-1), 1:(m-1)] <- - Q.pi
+      I[1:(m-1), m:dimI]  <- - Q.pi.theta
+      I[m:dimI, 1:(m-1)]  <- - t(Q.pi.theta)
+      I[m:dimI, m:dimI]   <- - Q.theta
+      
+      if (!is.null(z)) {
+        dbar <-  z*rowSums(post*b)  # n by p
+        Q.gamma.theta <- matrix(0, nrow=p, ncol=(q1+1)*m)  # p by (q1+1)*m matrix
+        for (i in 1:m) {
+          C.i <- array(C0[, i, 1, ], dim=c(n, q1+1))  # n by q1+1
+          Q.i.1 <- colSums(tKR(-C.i+b[, i]*c0[, i, ], z*post[, i])) # p*(q1+1) vector
+          Q.i.2 <- colSums(tKR(c0[, i, ]*post[, i], dbar))  # p*(q1+1) vector
+          Q.gamma.theta[, ((q1+1)*(i-1)+1):((q1+1)*i)] <- matrix(Q.i.1+Q.i.2, nrow=p, ncol=q1+1)
+        }
+        
+        Q.gamma.theta <- Q.gamma.theta[, c(p1, p2), drop=FALSE]  # p by (q1+1)*m
+        w1 <- (post*b)%*%t(a) - rowSums(post*b)*t(abar)  # n by m-1
+        Q.pi.gamma.0 <- colSums(tKR(w1, z))  # (m-1)*p vector
+        Q.pi.gamma  <- matrix(Q.pi.gamma.0, nrow=m-1, ncol=p)
+        Q.gamma     <- - t(z)%*%(z*rowSums(post*B)) -
+          matrix(colSums(tKR(dbar, dbar)), nrow=p, ncol=p)
+        
+        I <- cbind(I, -rbind(Q.pi.gamma, t(Q.gamma.theta)))
+        I <- rbind(I, -cbind(t(Q.pi.gamma), Q.gamma.theta, Q.gamma))
+      }  # end if (!is.null(z))
+      
+    }  else {  # compute I with (method == "OPG")
+      other.method = "Hessian"
+      c0.a <- array(0, dim=c(n, m, 2))
+      c0.a[, , 1] <- b  # n by m
+      c0.a[, , 2] <- -B/2  # n by m
+      
+      score <- t(abar)
+      
+      for (j in 1:m) {
+        # score.o <- cbind(score.o, c0[, j, ]*post[, j])
+        score <- cbind(score, x1*c0.a[, j, 1]*post[, j], c0.a[, j, 2]*post[, j])
+        # print(all.equal(score.o, score))
+      }
+      
+      ind <- c(1:(m-1), p1+m-1, p2+m-1)
+      score <- score[, ind]
+      I <- t(score) %*% score
+      
+      if (!is.null(z))  {
+        dbar <-  z*rowSums(post*b)  # n by p
+        score <- cbind(score, dbar)
+        I <- t(score) %*% score
+      }
+      
+    }  # end if (method=="OPG")
+    
+    vcov <- try(solve(I))
+    if (class(vcov) == "try-error" || any(diag(vcov) <0) ) {
+      vcov <- matrix(NaN, nrow = (2+q1)*m-1+p, ncol = (2+q1)*m-1+p)
+      warning("Fisher information matrix is singular and/or the
+              variance is estimated to be negative. Consider using vcov.method=\"",other.method,"\".")
     }
+    
+    # Because the variance is parameterized as sigma^2, we convert it to sigma
+    
+    c.mat.vec <- c(rep(1, m-1+m*q1), (1/sigma^(1/2))/2, rep(1, p))
+    vcov <- diag(c.mat.vec) %*% vcov %*% diag(c.mat.vec)
+    # vcov.opg <- diag(c.mat.vec) %*% vcov.opg %*% diag(c.mat.vec)
+    
+    # Add the variance of alpha_m
+    M.mat <- diag(len-1)
+    M.mat <- rbind(M.mat[1:(m-1),], c(rep(-1,m-1),rep(0,len-m)), M.mat[m:(len-1),])
+    
+    vcov <- M.mat %*% vcov %*% t(M.mat)
+    # vcov.opg <- M.mat %*% vcov.opg %*% t(M.mat)
+    
+  }   # end else (i.e., m >= 2)
   
-  if (parallel) { parallel::stopCluster(cl) }
+  vcov
   
-  max_EM <- apply(LR, 1, max)
-  max_EM_sort <- sort(max_EM)
-  qc <- floor(nrep*c(0.90,0.95,0.99))
-  crit <- max_EM_sort[qc]
-  
-  if (!is.null(values)) {
-    q1 <- length(values)
-    pvals <- rowMeans(t(matrix(rep.int(max_EM_sort,q1),ncol=q1)) >= values)
-  }
-  
-  return(list(crit = crit, pvals = pvals))
-  
-  } # end function regmixCrit
+}  # end function regmixVcov
+
 
 #' Computes objective function used in computing LR_2
 obj_zIz <- function(b,Z,I) {  
