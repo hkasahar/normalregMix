@@ -81,9 +81,9 @@ x <- cbind(GDP60 = log(data.use$GDP60),
 model.m2 <- regmixMEMtest(y = y, m = 1, x = x, parallel = TRUE, crit.method = "asy") # took 6 mins in my i5 laptop
 # Test H_0: m = 2 vs H_1: m = 3 
 # (used bootstrapping instead for this case. Check for number of bootstraps for actual experiment)
-# Test for H_0: m = 2 has been rejected (p* = 0.05) when other than intermediate countries are also included. 
+# Test for H_0: m = 2 has been rejected (with p* = 0.05) when other than intermediate countries are also included. 
 model.m3 <- regmixMEMtest(y = y, m = 2, x = x, parallel = TRUE, crit.method = "boot", nbtsp = 200) 
-# Test for H_0: m = 3 has nbot been rejected when other than intermediate countries are also included. 
+# Test for H_0: m = 3 has been rejected (p = 0.30) when other than intermediate countries are also included. 
 model.m4 <- regmixMEMtest(y = y, m = 3, x = x, parallel = TRUE, crit.method = "boot", nbtsp = 200)
 
 ## Draw the Map

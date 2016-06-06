@@ -29,11 +29,11 @@ PerformEMtests <- function (an, data, crit = 0.05, q = 1, m = 1,
     # need to transform data (matrix) to a list first; each element is a column (y x_1' x_2' ... x_n')'
     ldata <- lapply(seq_len(ncol(data)), function(i) data[,i])
 		print(system.time(out  <- mpi.applyLB(ldata, PerformEMtest, q = q, an = an, m = m, z = NULL,
-                        parallel = parallel))
+                        parallel = parallel)))
   }
   else
     print(system.time(out <- apply(data, 2, PerformEMtest, q = q, an = an, m = m, z = NULL,
-                 parallel = parallel))
+                 parallel = parallel)))
   pvals <- sapply(out, "[[", "pvals")
 	print(list(an, K2 = mean(pvals[2,] < crit), K3 = mean(pvals[3,] < crit)))
   return (list(K2 = mean(pvals[2,] < crit), K3 = mean(pvals[3,] < crit)))
