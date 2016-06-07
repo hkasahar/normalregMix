@@ -11,7 +11,8 @@ test.seed <- 8888577
 #' for users who would like to replicate experiments. By default, the test mode is turned off.  
 #' @param on Option to turn on the test mode
 #' @param seed The random seed to be used for initialization
-testMode <- function(on = FALSE, seed = 8888577)
+#' @param hide.message Determines whether to print the current seed and status
+testMode <- function(on = FALSE, seed = 8888577, hide.message = FALSE)
 {
   unlockBinding("test.on", getNamespace("normalregMix"))
   unlockBinding("test.seed", getNamespace("normalregMix"))
@@ -20,10 +21,11 @@ testMode <- function(on = FALSE, seed = 8888577)
   lockBinding("test.on", getNamespace("normalregMix"))
   lockBinding("test.seed", getNamespace("normalregMix"))
   
-  print(paste("The test mode is currently", 
-              switch(as.character(test.on), "TRUE" = "ON", "FALSE" = "OFF"),
-              "with seed",
-              as.character(test.seed)))
+  if (!hide.message)
+    print(paste("The test mode is currently", 
+                switch(as.character(test.on), "TRUE" = "ON", "FALSE" = "OFF"),
+                "with seed",
+                as.character(test.seed)))
 }
 
 
