@@ -13,23 +13,23 @@ GetMisclTerm <- function(phi) {
   if (m == 2) 
   {
     omega.12  <- omega.12(parlist)
-    return (log(omega.12 /(1-omega.12)))
+    return (log(omega.12 /(0.5-omega.12)))
   }
   
-  if (m == 3) # ln(omega_12 omega_23 / (1-omega_12)(1-omega_23))
+  if (m == 3) # ln(omega_12 omega_23 / (0.5-omega_12)(0.5-omega_23))
   {
     omega.123 <- omega.123(parlist)
     omega.12 <- omega.123[1]
     omega.23 <- omega.123[2]
-    return (log(omega.12 * omega.23 / ((1-omega.12)*(1-omega.23))))
+    return (log(omega.12 * omega.23 / ((0.5-omega.12)*(0.5-omega.23))))
   }
   omega.1234 <- omega.1234(parlist)
   omega.12 <- omega.1234[1]
   omega.23 <- omega.1234[2]
   omega.34 <- omega.1234[3]
-  # (m == 4) # ln(omega_12 omega_23 omega_34 / (1-omega_12)(1-omega_23)(1-omega_34))
+  # (m == 4) # ln(omega_12 omega_23 omega_34 / (0.5-omega_12)(0.5-omega_23)(0.5-omega_34))
   return (log(omega.12 * omega.23 * omega.34 / 
-                ((1-omega.12)*(1-omega.23)*(1-omega.34))))
+                ((0.5-omega.12)*(0.5-omega.23)*(0.5-omega.34))))
   
 }
 
@@ -90,7 +90,7 @@ GeneratePhiDataPairs <- function(phi, rep) {
 
 # Generate data for regression.
 GetDataForRegression <- function(aset, nset, alphasets, musets, sigmasets, 
-																 rep = 2000, continue = 1)
+																 rep = 5000, continue = 1)
 {
   # initialization
   SEED <- 123456
