@@ -12,7 +12,7 @@ test.seed <- 8888577
 #' @param on Option to turn on the test mode
 #' @param seed The random seed to be used for initialization
 #' @param hide.message Determines whether to print the current seed and status
-testMode <- function(on = FALSE, seed = 8888577, hide.message = FALSE)
+testMode <- function(on = FALSE, seed = 8888577, hide.message = TRUE)
 {
   unlockBinding("test.on", getNamespace("normalregMix"))
   unlockBinding("test.seed", getNamespace("normalregMix"))
