@@ -27,6 +27,41 @@ testMode <- function(on = FALSE, seed = 8888577)
 }
 
 
+plotPivotRes <- function(y = y, x = x, m = 2, vcov.method = "OPG")
+{
+  dimx <- dim(as.matrix(x))[2]
+  if ((dimx <= 1) || (is.null(dimx)))
+    return (NULL)
+  
+  pivot.names <- as.character(seq(1, dimx))
+  if (!is.null(colnames(x)))
+    pivot.names <- colnames(x)
+
+  indices <- regmixPMLE(y = y, x = x, m = m, vcov.method = vcov.method)$indices
+  ivs <- as.matrix(x)
+  
+  for (j in 1:m)
+  {
+    ivs.component <- as.matrix(ivs[indices == j,])
+    ys.component <- y[indices == j]
+    for (pivot in 1:dimx)
+    {
+      pivot.name <- pivot.names[pivot]
+      ivs.pivot <- ivs.component[,pivot]
+      ivs.others <- ivs.component[,-pivot]
+      lm.y.other <- lm(ys.component ~ ivs.others)
+      lm.pivot.other <- lm(ivs.pivot ~ ivs.others)
+      plot.df <- data.frame(y.on.others = lm.y.other$residuals, 
+                            pivot.on.others = lm.pivot.other$residuals) 
+      plot <- ggplot(plot.df, aes(x=pivot.on.others, y=y.on.others))
+      plot <- plot + geom_point(shape=1) + geom_smooth(method=lm) +
+        xlab(paste("pivot.on.others (pivot on ", pivot.name, ", component ", 
+                   as.character(j), ")", sep = ""))
+      print(plot)
+    }
+  }
+}
+
 #' Generates a vector that indicates which component each observation belongs to, 
 #' based on its posterior probability
 #' @export
