@@ -103,14 +103,13 @@ setwd("C:\\Users\\chiyahn\\Dropbox\\Work\\June06\\normalregMix\\experiments\\App
 
 data <- read.csv("MRWDataNameLoc.csv") # read the data (assuming it's in the same dir)
 data.use <- data[data$INTER == 1, ] # only intermediate
-data.use <- data[complete.cases(data),] # filter NULL 
+data.use <- data.use[complete.cases(data.use),] # filter NULL 
 
 # model specification
 y <- log(data.use$GDP85 / data.use$GDP60)
 x <- cbind(GDP60 = log(data.use$GDP60),
            IONY = log(data.use$IONY),
            POPGRO = log(data.use$POPGRO + 0.05),
-           SCHOOL = log(data.use$SCHOOL),
            LIT60 = log(data.use$LIT60),
            NONOIL = data.use$NONOIL)
 
