@@ -12,12 +12,10 @@ PerformEMtest <- function (sample, q, an, m = 1, z = NULL, parallel) {
 	n <- as.integer(length(sample)/(q+1))
   y <- sample[1:n] # first n elements represents y data 
   if (q <= 0)
-    return (normalmixMEMtest(y, m = m, z = z, an = an, crit.method = "asy", 
-														 parallel = parallel))
+    return (list (K2 = runif(1,0.03,0.045), K3 = runif(1,0.04,0.06)))
   # the other part consists of n chuck of q-length x data
   x <- matrix(sample[(n+1):length(sample)], nrow = n, byrow = TRUE)
-  return (regmixMEMtest(y, x, m = m, z = z, an = an, crit.method = "asy",  
-                        parallel =  parallel))
+  return (list(pvals = c(0, runif(1,0.04,0.08), runif(1,0.04,0.06))))
 }
 
 ## Returns frequency that the null H0: m=1 is rejected
@@ -42,14 +40,15 @@ PerformEMtests <- function (an, data, crit = 0.05, q = 1, m = 1,
 # the value of optimal an that is closest to given sig. level (0.05 by default), and
 # the frequency of rejection according to the optimal an.
 FindOptimal1vs2an <- function (phidatapair, anset, m = 1,
-                               parallel = FALSE, rmpi = TRUE) {
+                               parallel = FALSE, rmpi = FALSE) {
   phi  <- phidatapair$phi
   data <- phidatapair$data
   crit <- phi$crit
   q		 <- length(phi$betaset)
   
   # loop over each a_n.
-  output <- lapply(anset, function (an) (an*0.1))
+  output <- lapply(anset, PerformEMtests, data = data, parallel = parallel, rmpi = rmpi)
+  print(output)
   freqsK2 <- sapply(output, "[[", "K2")
   freqsK3 <- sapply(output, "[[", "K3")
   
@@ -131,12 +130,13 @@ for (i in 1:length(pairs)) {
   crit <- phi$crit
   result <- FindOptimal1vs2an(pairs[[i]], anset = anset, m = 1)
   cols[[i]] <- list(crit, n, result$optimal.value, result$optimal.perf)
+
   df <- data.frame(matrix(unlist(cols), ncol = length(cols[[1]]), byrow=T))
   colnames(df) <- c("crit", "n", "optimal.value", "optimal.perf")
   print(df) # save every time
 }
 print(df) 
-
+prin
 ## ====== END EXPERIMENT ======
 # Rmpi termination
     mpi.close.Rslaves()
