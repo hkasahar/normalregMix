@@ -22,7 +22,7 @@ PerformEMtest <- function (sample, q, an, m = 1, z = NULL, parallel) {
 
 ## Returns frequency that the null H0: m=1 is rejected
 # out of replications of given an and data that consists of columns of samples
-PerformEMtests <- function (an, data, crit = 0.05, q = 1, m = 1, 
+PerformEMtests <- function (an, data, q = 1, m = 1, 
                             parallel, rmpi) {
   if (rmpi)
   {
@@ -35,8 +35,10 @@ PerformEMtests <- function (an, data, crit = 0.05, q = 1, m = 1,
     out <- apply(data, 2, PerformEMtest, q = q, an = an, m = m, z = NULL,
                  parallel = parallel)
   pvals <- sapply(out, "[[", "pvals")
-	print(list(an, K2 = mean(pvals[2,] < crit), K3 = mean(pvals[3,] < crit)))
-  return (list(K2 = mean(pvals[2,] < crit), K3 = mean(pvals[3,] < crit)))
+	print(list(an = an, reject.one.K2 = mean(pvals[2,] < 0.01), reject.one.K3 = mean(pvals[3,] < 0.01),
+	           reject.five.K2 = mean(pvals[2,] < 0.05), reject.five.K3 = mean(pvals[3,] < 0.05)))
+  return (list(reject.one.K2 = mean(pvals[2,] < 0.01), reject.one.K3 = mean(pvals[3,] < 0.01),
+               reject.five.K2 = mean(pvals[2,] < 0.05), reject.five.K3 = mean(pvals[3,] < 0.05)))
 }
 # Returns data set of rejection frequency rate corresponding to each an,
 # the value of optimal an that is closest to given sig. level (0.05 by default), and
@@ -45,23 +47,24 @@ FindOptimal1vs2an <- function (phidatapair, anset, m = 1,
                                parallel = FALSE, rmpi = TRUE) { 
   phi  <- phidatapair$phi
   data <- phidatapair$data
-  crit <- phi$crit
   q		 <- length(phi$betaset)
   
   # loop over each a_n.
-  output <- lapply(anset, PerformEMtests, data = data, crit = crit, q = q, m = m, 
+  output <- lapply(anset, PerformEMtests, data = data, q = q, m = m, 
                    parallel = parallel, rmpi = rmpi)
-  freqsK2 <- sapply(output, "[[", "K2")
-  freqsK3 <- sapply(output, "[[", "K3")
+  freqs.one.K2 <- sapply(output, "[[", "reject.one.K2")
+  freqs.one.K3 <- sapply(output, "[[", "reject.one.K3")
+  freqs.five.K2 <- sapply(output, "[[", "reject.five.K2")
+  freqs.five.K3 <- sapply(output, "[[", "reject.five.K3")
   
   # show me what you've got.
-  table <- data.frame(anset, freqsK2, freqsK3)
-  colnames(table) <- c("an", "K=2", "K=3")
-  optimal <- anset[which(abs(freqsK2-crit)==min(abs(freqsK2-crit)))]
-  optimalresult <- freqsK2[which(abs(freqsK2-crit)==min(abs(freqsK2-crit)))]
+  table <- data.frame(anset, freqs.one.K2, freqs.one.K3, freqs.five.K2, freqs.five.K3)
+  colnames(table) <- c("an", "1%, K=2", "1%, K=3", "5%, K=2", "5%, K=3")
+  optimal.value <- anset[which(abs(freqs.five.K2-0.05)==min(abs(freqs.five.K2-0.05)))][1]
+  optimal.perf <- freqs.five.K2[which(abs(freqs.five.K2-0.05)==min(abs(freqs.five.K2-0.05)))][1]
   print(table)
   
-  return (list(optimal.value = optimal, optimal.perf = optimalresult))
+  return (list(optimal.value = optimal.value, optimal.perf = optimal.perf))
 }
 ## Generate a column that represents a sample using phi given.
 # each column has the form (y x_1' x_2' ... x_n')' 
@@ -92,7 +95,7 @@ GeneratePhiDataPair <- function(phi, replication) {
 }
 
 ## Create data given phiset and replication	
-GeneratePhiDataPairs <- function(phiset, replication = 1000) {
+GeneratePhiDataPairs <- function(phiset, replication = 3) {
 	apply(phiset, 1, GeneratePhiDataPair, replication = replication) # list of (phi data)
 }
 
@@ -128,7 +131,7 @@ set.seed(SEED)
 betaset <- rep(0.5, dimx)
 
 # generate data
-phiset <- expand.grid(n=c(100,300), crit = c(0.01,0.05))
+phiset <- expand.grid(n=c(200,100))
 phiset$betasets <- lapply(1:nrow(phiset), function(j) betaset)
 pairs <- GeneratePhiDataPairs(phiset) 
 
@@ -138,11 +141,10 @@ for (i in 1:length(pairs)) {
   phi <- pairs[[i]]$phi
   data <- pairs[[i]]$data
   n <- phi$n
-  crit <- phi$crit
   result <- FindOptimal1vs2an(pairs[[i]], anset = anset, m = 1)
-  cols[[i]] <- list(crit, n, result$optimal.value, result$optimal.perf)
+  cols[[i]] <- list(n, result$optimal.value, result$optimal.perf)
   df <- data.frame(matrix(unlist(cols), ncol = length(cols[[1]]), byrow=T))
-  colnames(df) <- c("crit", "n", "optimal.value", "optimal.perf")
+  colnames(df) <- c("n", "optimal.value", "optimal.perf")
   print(df) # save every time
 }
 print(df) 
