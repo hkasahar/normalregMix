@@ -115,11 +115,11 @@ SEED <- 333333
 
 # init.
 set.seed(SEED)
-anset <- seq(anlb,anub,length.out = ancount+2)[1:ancount+1]
+anset <- seq(anlb,anub,length.out = ancount)
 betaset <- rep(0.5, dimx)
 
 # generate data
-phiset <- expand.grid(n=c(100,300), crit = c(0.01,0.05))
+phiset <- expand.grid(n=200)
 phiset$betasets <- lapply(1:nrow(phiset), function(j) betaset)
 pairs <- GeneratePhiDataPairs(phiset) 
 
@@ -129,7 +129,6 @@ for (i in 1:length(pairs)) {
   phi <- pairs[[i]]$phi
   data <- pairs[[i]]$data
   n <- phi$n
-  crit <- phi$crit
   result <- FindOptimal1vs2an(pairs[[i]], anset = anset, m = 1)
   cols[[i]] <- list(crit, n, result$optimal.value, result$optimal.perf)
   df <- data.frame(matrix(unlist(cols), ncol = length(cols[[1]]), byrow=T))
