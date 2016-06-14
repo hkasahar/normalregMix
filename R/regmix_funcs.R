@@ -35,7 +35,7 @@ regmixMaxPhi <- function (y, x, parlist, z = NULL, an, tauset = c(0.1,0.3,0.5),
   # for testing H_0 of m components against H_1 of m+1 for a univariate finite mixture of normals
   
   warn  <- options(warn=-1) # Turn off warnings
-
+  
   # q1 = dim(X) + dim(mu) = q + 1
   q1 <- ncol(x) + 1
   p <- 0
@@ -173,14 +173,17 @@ regmixPhiStep<- function (htaupair, y, x, parlist, z = NULL, p, jpvt,
   # }
   
   penloglik.short <- out.short$penloglikset    # extract the 4th argument = penloglik
-  oo <- order(penloglik.short, decreasing = TRUE)
-  oo.inits <- oo[1:ninits]
-  
   # long EM
-  
-  alphaset  <- alphaset.s[,oo.inits]
-  mubetaset <- mubetaset.s[,oo.inits]
-  sigmaset  <- sigmaset.s[,oo.inits]
+  indices <- order(penloglik.short, decreasing = TRUE)[1:ninits]
+  short.thetas <- lapply(indices, function (index) theta =
+                           list (alpha = out.short$alphaset[(m*(index-1)+1):(m*index)],
+                                 mubeta= matrix(out.short$mubetaset[(q1*m*(index-1)+1):(q1*m*index)], nrow=q1),
+                                 sigma = out.short$sigmaset[(m*(index-1)+1):(m*index)],
+                                 gamma = out.short$gammaset[(p*(index-1)+1):(p*index)]))
+  alphaset <- sapply(short.thetas, "[[", "alpha") 
+  mubetaset <- sapply(short.thetas, "[[", "mubeta")
+  sigmaset <- sapply(short.thetas, "[[", "sigma")
+  gammaset <- sapply(short.thetas, "[[", "gamma")
   
   if (is.null(z)) {
     setting <- c(n,m1,q1,ninits,maxit,jpvt)
@@ -192,7 +195,6 @@ regmixPhiStep<- function (htaupair, y, x, parlist, z = NULL, p, jpvt,
               loglikset = double(ninits), penloglikset = double(ninits),
               notcg = integer(ninits), as.double(epsilon), double(n*(q1+1)))
   } else {
-    gammaset  <- gammaset.s[,oo.inits]
     setting.z <- c(n,m1,q1,p,ninits,maxit,jpvt)
     out <- .C("regmixpmle_z", as.integer(setting.z), as.double(y), as.double(x1), as.double(z),
               alphaset = as.double(alphaset), mubetaset = as.double(mubetaset), sigmaset = as.double(sigmaset), gammaset = as.double(gammaset),
@@ -570,14 +572,17 @@ regmixPMLE <- function (y, x, m = 2, z = NULL, vcov.method = c("Hessian", "OPG",
     }
     
     penloglik.short <- out.short$penloglikset    # extract the 4th argument = penloglik
-    oo <- order(penloglik.short, decreasing = TRUE)
-    oo.inits <- oo[1:ninits]
-    
     # long EM
-    
-    alphaset  <- alphaset.s[,oo.inits]
-    mubetaset <- mubetaset.s[,oo.inits]
-    sigmaset  <- sigmaset.s[,oo.inits]
+    indices <- order(penloglik.short, decreasing = TRUE)[1:ninits]
+    short.thetas <- lapply(indices, function (index) theta =
+                             list (alpha = out.short$alphaset[(m*(index-1)+1):(m*index)],
+                                   mubeta= matrix(out.short$mubetaset[(q1*m*(index-1)+1):(q1*m*index)], nrow=q1),
+                                   sigma = out.short$sigmaset[(m*(index-1)+1):(m*index)],
+                                   gamma = out.short$gammaset[(p*(index-1)+1):(p*index)]))
+    alphaset <- sapply(short.thetas, "[[", "alpha") 
+    mubetaset <- sapply(short.thetas, "[[", "mubeta")
+    sigmaset <- sapply(short.thetas, "[[", "sigma")
+    gammaset <- sapply(short.thetas, "[[", "gamma")
     
     if (is.null(z)) {
       setting <- c(n,m,q1,ninits,maxit,jpvt)
@@ -591,7 +596,6 @@ regmixPMLE <- function (y, x, m = 2, z = NULL, vcov.method = c("Hessian", "OPG",
                 notcg = integer(ninits), as.double(epsilon), double(n*(q1+1)), package = "normalregMix")
     } else {
       setting.z <- c(n,m,q1,p,ninits,maxit,jpvt)
-      gammaset  <- gammaset.s[,oo.inits]
       out <- .C("regmixpmle_z", as.integer(setting.z), as.double(y), as.double(x1), as.double(z),
                 alphaset = as.double(alphaset), mubetaset = as.double(mubetaset), sigmaset = as.double(sigmaset), gammaset = as.double(gammaset),
                 as.double(sigma0), as.double(mu0), as.double(an), 
