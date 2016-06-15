@@ -287,6 +287,9 @@ extern "C" {
             for (j=0; j<q1*m; j++) {
                 mubetaset[jn*m*q1+j] = mubeta[j];
             }
+            for (ii=0; ii<p; ii++) {
+                gammaset[ii] = gamma[ii];
+            }
 
         } /* end for (jn=0; jn<ninits; jn++) loop */
 

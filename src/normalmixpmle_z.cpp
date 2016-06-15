@@ -42,7 +42,7 @@ extern "C" {
             int ninits=*nninits, maxit = *mmaxit, emit, sing;
             const int np = n*p;
             double tol = *ttol, oldpenloglik;
-            double wmu=0.0, r, rowsum, min=0.0, an=*aan, alphah, tau=*ttau, tauhat, worksize, ssr_j, s0j;
+            double wmu=0.0, omega=0.0, r, rowsum, min=0.0, an=*aan, alphah, tau=*ttau, tauhat, worksize, ssr_j, s0j;
             double *AlpSigRatio = work+m; /* Second 1/3 of workspace, for frequently used constants */
             double *logAlpSigRatio = work+2*m; /* Third 1/3 of workspace, for frequently used constants */
             double *lb = lub;
@@ -156,7 +156,7 @@ extern "C" {
                     }
 
                 /* If not exit, update alpha, mu, and sigma. */
-
+                    
                 /* Update gamma */
                 for (i=0; i<n; i++) {
                     wmu = 0.0; // Initialize wmu
@@ -251,6 +251,9 @@ extern "C" {
                 alphaset[jn*m+j] = alpha[j];
                 muset[jn*m+j]    = mu[j];
                 sigmaset[jn*m+j] = sigma[j];
+            }
+            for (ii=0; ii<p; ii++) {
+                gammaset[ii] = gamma[ii];
             }
 
         } /* end for (jn=0; jn<ninits; jn++) loop */
