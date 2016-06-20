@@ -99,7 +99,7 @@ GeneratePhiDataPairs <- function(phi, rep) {
 
 # Generate data for regression.
 GetDataForRegression <- function(aset, nset, alphasets, musets, sigmasets, 
-																 rep = 1000, continue = 1)
+																 rep = 2000, continue = 1)
 {
   # initialization
   SEED <- 123456
@@ -118,7 +118,7 @@ GetDataForRegression <- function(aset, nset, alphasets, musets, sigmasets,
 		aterm <- GetATerm(phi)
 		misclterm <- GetMisclTerm(phi)
 		phat <- GetSimulatedTypeIError(phi$a, data, m)
-		regdata[[i]] <- list(y = log(phat/(0.15-phat)), 
+		regdata[[i]] <- list(y = log(phat/(0.1-phat)), 
 												 aterm = aterm, misclterm = misclterm, nterm = 1/n, 
 												 a=a, phat = phat)
     df <- data.frame(matrix(unlist(regdata), ncol = length(regdata[[1]]), byrow=T))
@@ -143,19 +143,19 @@ alphasets <- list(c(0.25, 0.75))
 musets 		<- list(c(-1.5, 1.5))
 sigmasets <- list(c(1, 1), c(1.5, 0.75))
 # Case when m = 2 
-# aset <- c(0.04, 0.07, 0.1, 0.13, 0.16)
+# aset <- c(0.06, 0.09, 0.12, 0.15, 0.18)
 # nset <- c(100, 300, 500)
 # alphasets <- list(c(0.25, 0.75), c(0.5, 0.5))
 # musets 		<- list(c(-1.5, 1.5), c(-2, 2), c(-2.5, 2.5))
 # sigmasets <- list(c(1, 1), c(1.5, 0.75))
 # Case when m = 3
-# aset <- c(0.04, 0.07, 0.1, 0.13, 0.16)
+# aset <- c(0.06, 0.09, 0.12, 0.15, 0.18)
 # nset <- c(100, 300, 500)
 # alphasets <- list(c(0.33, 0.33, 0.34)) 
 # musets 		<- list(c(-4, 0, 4), c(-4, 0, 5), c(-5, 0, 5), c(-4, 0, 6), c(-5, 0, 6), c(-6, 0, 6))
 # sigmasets <- list(c(1, 1, 1), c(0.75, 1.5, 0.75))
 # Case when m = 4
-# aset <- c(0.05, 0.07, 0.09, 0.11, 0.13)
+# aset <- c(0.06, 0.09, 0.12, 0.15, 0.18)
 # nset <- c(200, 400, 600)
 # alphasets <- list(c(0.25, 0.25, 0.25, 0.25))
 # musets 		<- list(c(-4,-1,1,4), c(-5,-1,1,5), c(-6,-2,2,6), c(-6,-1,2,5), c(-5,0,2,4), c(-6,0,2,4))
