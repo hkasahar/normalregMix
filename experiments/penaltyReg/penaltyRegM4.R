@@ -37,7 +37,7 @@ GetMisclTerm <- function(phi) {
 GetATerm <- function(phi) {
   m <- length(phi$alphaset)
   a <- phi$a
-  return (log(a/(0.2-a)))
+  return (log(a/(0.25-a)))
 }
 
 # generates EM test result according to the dimension of X
@@ -118,7 +118,7 @@ GetDataForRegression <- function(aset, nset, alphasets, musets, sigmasets,
     aterm <- GetATerm(phi)
     misclterm <- GetMisclTerm(phi)
     phat <- GetSimulatedTypeIError(phi$a, datamat, m)
-    regdata[[i]] <- list(y = log(phat/(0.1-phat)), 
+    regdata[[i]] <- list(y = log(phat/(0.15-phat)), 
                          aterm = aterm, misclterm = misclterm, nterm = 1/n, 
                          a=a, phat = phat)
     df <- data.frame(matrix(unlist(regdata), ncol = length(regdata[[1]]), byrow=T))
@@ -127,6 +127,7 @@ GetDataForRegression <- function(aset, nset, alphasets, musets, sigmasets,
   }
   return (regdata)
 }
+
 
 # Rmpi setup 
 print("collecting workers..")
@@ -137,7 +138,7 @@ print("workers loaded.")
 # ====== BEGIN EXPERIMENT ======
 ## 1. Initialization
 # Case when m = 4
-aset <- c(0.06, 0.09, 0.12, 0.15, 0.18)
+aset <- c(0.02, 0.07, 0.12, 0.17, 0.22)
 nset <- c(200, 400, 600)
 alphasets <- list(c(0.25, 0.25, 0.25, 0.25))
 musets 		<- list(c(-4,-1,1,4), c(-5,-1,1,5), c(-6,-2,2,6), c(-6,-1,2,5), c(-5,0,2,4), c(-6,0,2,4))
