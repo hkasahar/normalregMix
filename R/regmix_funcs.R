@@ -490,7 +490,7 @@ regmixPhiInit <- function (y, x, z = NULL, parlist, h, tau, ninits = 1)
 #' regmixPMLE(y = eruptions, x = waiting, m = 1)
 #' regmixPMLE(y = eruptions, x = waiting, m = 2)
 regmixPMLE <- function (y, x, m = 2, z = NULL, vcov.method = c("Hessian", "OPG", "none"),
-                        ninits = 100, epsilon = 1e-08, maxit = 2000,
+                        ninits = 25, epsilon = 1e-08, maxit = 2000,
                         epsilon.short = 1e-02, maxit.short = 500) {
   y   <- as.vector(y)
   x   <- as.matrix(x)   # n by (q1-1) matrix
