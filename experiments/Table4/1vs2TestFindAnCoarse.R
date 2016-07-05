@@ -95,7 +95,7 @@ GeneratePhiDataPair <- function(phi, replication) {
 }
 
 ## Create data given phiset and replication	
-GeneratePhiDataPairs <- function(phiset, replication = 2000) { # original paper has 10000 replications
+GeneratePhiDataPairs <- function(phiset, replication = 1000) { # original paper has 10000 replications
 	apply(phiset, 1, GeneratePhiDataPair, replication = replication) # list of (phi data)
 }
 
@@ -111,27 +111,27 @@ print("workers loaded.")
 # Model specification (per row of the table)
 # dim(X) = 1
 dimx <- 1
-anlb <- 0.7
-anub <- 3.7
-ancount <- 11
+anlb <- 0.5
+anub <- 1.7
+ancount <- 5
 SEED <- 111111
 # dim(X) = 2
 dimx <- 2
-anlb <- 1.6
-anub <- 4.6
-ancount <- 11
+anlb <- 2.1
+anub <- 3.1
+ancount <- 5
 SEED <- 222222
 # dim(X) = 3
 dimx <- 3
-anlb <- 3.9
-anub <- 6.9
-ancount <- 11
+anlb <- 3
+anub <- 6
+ancount <- 5
 SEED <- 333333
 # dim(X) = 4
 dimx <- 4
-anlb <- 6.8
-anub <- 9.8
-ancount <- 11
+anlb <- 4
+anub <- 6
+ancount <- 5
 SEED <- 444444
 
 # init.
