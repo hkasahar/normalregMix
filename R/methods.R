@@ -251,7 +251,6 @@ anFormula <- function(parlist, m, n, q = 0)
   if (q != 0) # an when the dimension of X is not zero.
     return (switch(as.character(q), "1" = 2.2, "2" = 3.6, "3" = 4.6, "4" = 8.2, 2.2))
 
-
   if (m == 1) {
     #   an <- 1.0
     an <- 0.40
@@ -260,22 +259,33 @@ anFormula <- function(parlist, m, n, q = 0)
   else if (m == 2) {
     omega <- omega.12(parlist)
     omega <- pmin(pmax(omega, 1e-16), 1-1e-16)  # an becomes NaN if omega[j]=0 or 1
-    x <- exp(-1.747 - 0.297 * log(omega / (1 - omega)) - 98.35/n)  # maxa=1
-    an <- 0.9 * x / (1 + x)
+    b <- c(-0.73865, -0.33091, -0.10332, 10.22893) # coefficients of intercept, aterm, misclterm, nterm
+    x <- exp( - (b[1]-log(2)) / b[2] - (b[3]/b[2]) * log(omega / (0.5 - omega)) - (b[4]/b[2]) /n )  # maxa=1
+    an <- 0.25 * x / (1 + x)
     #   x <- exp(-1.642 - 0.434 * log(omega / (1 - omega)) - 101.80/n)  # maxa=2
     #   an <- 1.8 * x / (1 + x)
   }
   else if (m == 3) {
     omega <- omega.123(parlist)
     omega <- pmin(pmax(omega, 1e-16), 1-1e-16)  # an becomes NaN if omega[j]=0 or 1
-    t_omega <- (omega[1] * omega[2])/(1 - omega[1])/(1 - omega[2])
-    x <- exp(-1.731 - 0.162 * log(t_omega) - 144.64/n)
-    an <- 0.80 * x / (1 + x)
+    t_omega <- (omega[1] * omega[2])/(0.5 - omega[1])/(0.5 - omega[2])
+
+    b <- c(-0.65606, -0.43539, -0.04214, 28.05422)
+    x <- exp( - (b[1]-log(2)) / b[2] - (b[3]/b[2]) * log(t_omega) - (b[4]/b[2]) /n )
+    an <- 0.25 * x / (1 + x)
+    # an <- 0.80 * x / (1 + x)
     #   x <- exp(-1.678 - 0.232 * log(t_omega) - 175.50/n)
     #   an <- 1.5 * x / (1 + x)
+  } else if (m == 4) {
+    omega <- omega.1234(parlist)
+    omega <- pmin(pmax(omega, 1e-16), 1-1e-16)  # an becomes NaN if omega[j]=0 or 1
+    t_omega <- (omega[1] * omega[2] * omega[3])/(0.5 - omega[1])/(0.5 - omega[2])/(0.5 - omega[3])
+    b <- c(-1.50694, -0.48456, -0.07084, -24.04380)
+    x <- exp( - (b[1]-log(2)) / b[2] - (b[3]/b[2]) * log(t_omega) - (b[4]/b[2]) /n )
+    an <- 0.25 * x / (1 + x)
   }
-  else {
+  else 
     an <- 1.0
-  }
+  
 
 }  # end function anFormula
