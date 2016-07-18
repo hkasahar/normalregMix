@@ -3,15 +3,18 @@ Type: Package
 Title: Tools for analyzing normal mixture models and Gaussian regression mixture
     models
 Version: 1.0
-Date: 2015-03-23
+Date: 2016-06-28
 Author: Hiroyuki Kasahara and Katsumi Shimotsu
-Maintainer: Katsumi Shimotsu <shimotsu@e.u-tokyo.ac.jp>
+Maintainer: Hiroyuki Kasahara <hkasahar@mail.ubc.ca>
 Depends:
     R (>= 2.14.0),
     minpack.lm,
-    doParallel
+    doParallel,
+    RcppArmadillo
 Description: More about what it does (maybe more than one line)
 License: GPL (>= 2)
+Imports: Rcpp (>= 0.11.1), RcppArmadillo (>= 0.4.200.0)
+LinkingTo: Rcpp, RcppArmadillo 
 RoxygenNote: 5.0.1
 Suggests: knitr,
     rmarkdown

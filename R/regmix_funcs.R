@@ -1,5 +1,3 @@
-
-## TODO: verb is not used.
 #' Compute ordinary & penalized log-likelihood ratio resulting from MEM algorithm at k=1,2,3.
 #' @export
 #' @title regmixMaxPhi
@@ -24,7 +22,7 @@
 #' \item{loglik}{Log-likelihood resulting from MEM algorithm at k=1,2,3.}
 #' \item{penloglik}{Penalized log-likelihood resulting from MEM algorithm at k=1,2,3.}
 regmixMaxPhi <- function (y, x, parlist, z = NULL, an, tauset = c(0.1,0.3,0.5),
-                          ninits = 100,
+                          ninits = 10,
                           epsilon.short = 1e-02, epsilon = 1e-08,
                           maxit.short = 500, maxit = 2000,
                           verb = FALSE,
@@ -36,19 +34,21 @@ regmixMaxPhi <- function (y, x, parlist, z = NULL, an, tauset = c(0.1,0.3,0.5),
 
   warn  <- options(warn=-1) # Turn off warnings
 
-  # q1 = dim(X) + dim(mu) = q + 1
   q1 <- ncol(x) + 1
-  p <- 0
   m <- length(parlist$alpha)
 
-  if (!is.null(z))
-    p <- ncol(z)
-  jpvt  <- integer(max(q1,p))    # pivots used in dgelsy
+  if (!is.null(z)) {
+    z     <- as.matrix(z)
+    p     <- ncol(z)
+  } 
+  else
+    p <- 0
 
-  ninits.short <- ninits*4*(q1+p)*m
+  ninits.short <- ninits*10*(q1+p)*m
 
   loglik.all <- matrix(0,nrow=m*length(tauset),ncol=3)
   penloglik.all <- matrix(0,nrow=m*length(tauset),ncol=3)
+  coefficient.all <- matrix(0,nrow=m*length(tauset),ncol=((q1+2)*(m+1)+p))
 
   if (parallel) {
     if (is.null(cl))
@@ -57,7 +57,7 @@ regmixMaxPhi <- function (y, x, parlist, z = NULL, an, tauset = c(0.1,0.3,0.5),
     results <- foreach (t = 1:length(tauset),
                         .export = 'regmixPhiStep', .combine = c)  %:%
       foreach (h = 1:m) %dopar% {
-        regmixPhiStep (c(h, tauset[t]), y, x, parlist, z = NULL, p, jpvt,
+        regmixPhiStep (c(h, tauset[t]), y, x, parlist, z, p,
                        an,
                        ninits, ninits.short,
                        epsilon.short, epsilon,
@@ -66,13 +66,14 @@ regmixMaxPhi <- function (y, x, parlist, z = NULL, an, tauset = c(0.1,0.3,0.5),
     on.exit(cl)
     loglik.all <- t(sapply(results, "[[", "loglik"))
     penloglik.all <- t(sapply(results, "[[", "penloglik"))
+    coefficient.all <- t(sapply(results, "[[", "coefficient"))
   }
   else
     for (h in 1:m)
       for (t in 1:length(tauset)) {
         rowindex <- (t-1)*m + h
         tau <- tauset[t]
-        result <- regmixPhiStep(c(h, tau), y, x, parlist, z = NULL, p, jpvt,
+        result <- regmixPhiStep(c(h, tau), y, x, parlist, z, p,
                                 an,
                                 ninits, ninits.short,
                                 epsilon.short, epsilon,
@@ -80,12 +81,15 @@ regmixMaxPhi <- function (y, x, parlist, z = NULL, an, tauset = c(0.1,0.3,0.5),
                                 verb)
         loglik.all[rowindex,] <- result$loglik
         penloglik.all[rowindex,] <- result$penloglik
+        coefficient.all[rowindex,] <- result$coefficient
       }
-
+	  
   loglik <- apply(loglik.all, 2, max)  # 3 by 1 vector
   penloglik <- apply(penloglik.all, 2, max)  # 3 by 1 vector
+  index <- which.max(loglik.all[ ,3]) # a par (h,m) that gives the highest likelihood at k=3
+  coefficient <- as.vector(coefficient.all[index,])
 
-  out <- list(loglik = loglik, penloglik = penloglik)
+  out <- list(coefficient = coefficient, loglik = loglik, penloglik = penloglik)
 
   out
 
@@ -104,7 +108,6 @@ regmixMaxPhi <- function (y, x, parlist, z = NULL, an, tauset = c(0.1,0.3,0.5),
 #' sigma = (sigma_1, ..., sigma_m), gam = (gam_1, ..., gam_m))
 #' @param z n by p matrix of regressor associated with gam
 #' @param p Dimension of z
-#' @param jpvt Pivots used in dgelsy
 #' @param an a term used for penalty function
 #' @param ninits The number of randomly drawn initial values.
 #' @param ninits.short The number of candidates used to generate an initial phi, in short MEM
@@ -112,15 +115,14 @@ regmixMaxPhi <- function (y, x, parlist, z = NULL, an, tauset = c(0.1,0.3,0.5),
 #' @param epsilon The convergence criterion. Convergence is declared when the penalized log-likelihood increases by less than \code{epsilon}.
 #' @param maxit.short The maximum number of iterations in short EM.
 #' @param maxit The maximum number of iterations.
-#' @return A list of phi, log-likelihood, and penalized log-likelihood resulting from MEM algorithm.
-regmixPhiStep<- function (htaupair, y, x, parlist, z = NULL, p, jpvt,
+#' @return A list of coefficients, log-likelihood, and penalized log-likelihood resulting from MEM algorithm.
+regmixPhiStep <- function (htaupair, y, x, parlist, z = NULL, p,
                           an,
                           ninits, ninits.short,
                           epsilon.short, epsilon,
                           maxit.short, maxit,
                           verb)
 {
-
   alpha0 <- parlist$alpha
 
   x1    <- cbind(1,x)
@@ -133,208 +135,156 @@ regmixPhiStep<- function (htaupair, y, x, parlist, z = NULL, p, jpvt,
   k <- 1
 
   mubeta0 <- parlist$mubeta
-  mu0h <- c(0,mubeta0[1,],0)        # m+1 by 1
+  mu0h <- c(-1e+10,mubeta0[1,],1e+10)        # m+1 by 1
   sigma0 <- parlist$sigma
   sigma0h <- c(sigma0[1:h],sigma0[h:m])  # m+1 by 1
   gam0 <- parlist$gam
+  
+  if (is.null(z)) {
+    ztilde <- matrix(0) # dummy
+    gam <- NULL
+  } else
+    ztilde <- as.matrix(z)
 
   # generate initial values
   tmp <- regmixPhiInit(y = y, x = x, z = z, parlist=parlist, h=h, tau, ninits = ninits.short)
-  # tmp$alpha, tmp$sigma: m+1 by ninits matrix, tmp$mubeta: p by m+1 by ninits array
-  # tmp$gam: p by ninits matrix
 
-  alphaset.s   <- tmp$alpha
-  mubetaset.s <- matrix(tmp$mubeta, nrow=m1*q1)
-  sigmaset.s   <- tmp$sigma
-  gamset.s  <- tmp$gam
-
-  if (is.null(z)) {
-    setting <- c(n,m1,q1,ninits.short,maxit.short,jpvt)  # configulation parameters
-    out.short <- .C("regmixpmle", as.integer(setting), as.double(y), as.double(x1),
-                    alphaset = as.double(alphaset.s), mubetaset = as.double(mubetaset.s), sigmaset = as.double(sigmaset.s),
-                    as.double(sigma0h), as.double(mu0h), as.double(an),
-                    as.double(tau), as.integer(h), as.integer(k), lub = double(2*m1),
-                    double(3*m1), post = double(n*m1),
-                    loglikset = double(ninits.short), penloglikset = double(ninits.short),
-                    notcg = integer(ninits.short), as.double(epsilon.short), double(n*(q1+1)))
-  } else {
-    setting.z <- c(n,m1,q1,p,ninits.short,maxit.short,jpvt)  # configulation parameters
-    out.short <- .C("regmixpmle_z", as.integer(setting.z), as.double(y), as.double(x1), as.double(z),
-                    alphaset = as.double(alphaset.s), mubetaset = as.double(mubetaset.s), sigmaset = as.double(sigmaset.s), gamset = as.double(gamset.s),
-                    as.double(sigma0h), as.double(mu0h), as.double(an),
-                    as.double(tau), as.integer(h), as.integer(k), lub = double(2*m1),
-                    double(3*m1), post = double(n*m1),
-                    loglikset = double(ninits.short), penloglikset = double(ninits.short),
-                    notcg = integer(ninits.short), as.double(epsilon.short), double(n*(q1+3+p)))
-  }
-
-  # if (verb && any(out.short$notcg)) {
-  #     cat(sprintf("non-convergence rate at short-EM = %.3f\n",mean(out.short$notcg)))
-  # }
-
-  penloglik.short <- out.short$penloglikset    # extract the 4th argument = penloglik
+  # short EM
+  b0 <- as.matrix(rbind( tmp$alpha, tmp$mubeta, tmp$sigma, tmp$gam ))
+  out.short <- regmixpmle_z2(b0, y, x, ztilde, mu0h, sigma0h, m1, p, an, maxit.short,
+                             ninits.short, epsilon.short, tau, h, k)
   # long EM
-  indices <- order(penloglik.short, decreasing = TRUE)[1:ninits]
-  short.thetas <- lapply(indices, function (index) theta =
-                           list (alpha = out.short$alphaset[(m*(index-1)+1):(m*index)],
-                                 mubeta= matrix(out.short$mubetaset[(q1*m*(index-1)+1):(q1*m*index)], nrow=q1),
-                                 sigma = out.short$sigmaset[(m*(index-1)+1):(m*index)],
-                                 gam = out.short$gamset[(p*(index-1)+1):(p*index)]))
-  alphaset <- sapply(short.thetas, "[[", "alpha")
-  mubetaset <- sapply(short.thetas, "[[", "mubeta")
-  sigmaset <- sapply(short.thetas, "[[", "sigma")
-  gamset <- sapply(short.thetas, "[[", "gam")
+  indices <- order(out.short$penloglikset, decreasing = TRUE)[1:ninits]
+  b1 <- as.matrix(b0[ ,indices]) # b0 has been updated
+  out <- regmixpmle_z2(b1, y, x, ztilde, mu0h, sigma0h, m1, p, an, maxit, ninits, epsilon, tau, h, k)
 
-  if (is.null(z)) {
-    setting <- c(n,m1,q1,ninits,maxit,jpvt)
-    out <- .C("regmixpmle", as.integer(setting), as.double(y), as.double(x1),
-              alphaset = as.double(alphaset), mubetaset = as.double(mubetaset), sigmaset = as.double(sigmaset),
-              as.double(sigma0h), as.double(mu0h), as.double(an),
-              as.double(tau), as.integer(h), as.integer(k), lub = double(2*m1),
-              double(3*m1), post = double(n*m1),
-              loglikset = double(ninits), penloglikset = double(ninits),
-              notcg = integer(ninits), as.double(epsilon), double(n*(q1+1)))
-  } else {
-    setting.z <- c(n,m1,q1,p,ninits,maxit,jpvt)
-    out <- .C("regmixpmle_z", as.integer(setting.z), as.double(y), as.double(x1), as.double(z),
-              alphaset = as.double(alphaset), mubetaset = as.double(mubetaset), sigmaset = as.double(sigmaset), gamset = as.double(gamset),
-              as.double(sigma0h), as.double(mu0h), as.double(an),
-              as.double(tau), as.integer(h), as.integer(k), lub = double(2*m1),
-              double(3*m1), post = double(n*m1),
-              loglikset = double(ninits), penloglikset = double(ninits),
-              notcg = integer(ninits), as.double(epsilon), double(n*(q1+3+p)))
+  index     <- which.max(out$penloglikset)
+  alpha <- b1[1:m1,index] # b0 has been updated
+  mubeta <- matrix(b1[(1+m1):((q1+1)*m1),index],nrow=q1,ncol=m1)
+  sigma <- b1[(1+(q1+1)*m1):((q1+2)*m1),index]
+  if (!is.null(z)) {
+    gam     <- b1[((q1+2)*m1+1):((q1+2)*m1+p),index]
   }
-
-  if (any(out$notcg)) {
-    cat(sprintf("non-convergence rate = %.3f\n",mean(out$notcg)))
-  }
-
-  index    <- which.max(out$penloglikset)
-  alpha   <- out$alphaset[(m1*(index-1)+1):(m1*index)]
-  mubeta  <- matrix(out$mubetaset[(q1*m1*(index-1)+1):(q1*m1*index)], nrow=q1)
-  sigma   <- out$sigmaset[(m1*(index-1)+1):(m1*index)]
-  gam    <- out$gamset[(p*(index-1)+1):(p*index)]
-  penloglik <- out$penloglikset[index]
-  loglik     <- out$loglikset[index]
-
   mu.order  <- order(mubeta[1,])
   alpha     <- alpha[mu.order]
-  mubeta    <- mubeta[,mu.order]
-  sigma      <- sigma[mu.order]
+  mubeta    <- mubeta[ ,mu.order]
+  sigma     <- sigma[mu.order]
+  sigma0h <- sigma0h[mu.order]
+  b <- as.matrix(c(alpha,as.vector(mubeta),sigma,gam))
 
-  a0 = list(alpha = alpha, mubeta = mubeta, sigma = sigma, gam = gam,
-            penloglik = penloglik, loglik=loglik,
-            ft="normalmixEM")
+  # initilization
+  penloglik <-  vector("double", 3)
+  loglik <-  vector("double", 3)
+  coefficient <- vector("double", length(b))
 
-  a     <- regmixPhi2(y, x, z, a0, sigma0 = sigma0, h=h, tau=tau, an=an)
-  a[[1]]  <- list(alpha = alpha, mubeta = mubeta, sigma = sigma, gam = gam,
-                  penloglik = a0$penloglik, loglik=a0$loglik)
-
-  phi1 <- c(a[[1]], h = h)
-  loglik <- sapply(a, "[[", "loglik")    # extract loglik at q1=1,2,3
-  penloglik <- sapply(a, "[[", "penloglik")    # extract penloglik at q1=1,2,3
-
-  return (list(phi1 = phi1, loglik = loglik, penloglik = penloglik))
-
-}
-
-#' Starting from a parameter estimate, take two EM steps to compute the
-#' local modified EM test statistic for testing H_0 of m components
-#' against H_1 of m+1 at K=2,3 for a univariate normal finite mixture.
-#' @export
-#' @title regmixPhi2
-#' @name regmixPhi2
-#' @param y n by 1 vector of data for y
-#' @param x n by q matrix of data for x
-#' @param z n by p matrix of regressor associated with gam
-#' @param parlist The parameter estimates as a list containing alpha, mu, sigma, and gam
-#' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m),
-#' sigma = (sigma_1, ..., sigma_m), gam = (gam_1, ..., gam_m))
-#' @param sigma0 m by 1 vector of sigma
-#' @param h h used as index for pivoting
-#' @param tau Tau used to split the h-th component
-#' @param an a term used for penalty function
-#' @return A list of length 2, where the first element is the local modified
-#' MEM test statistic at k=2, the second element is
-#' the local modified MEM test statistic at k=3
-regmixPhi2 <- function (y, x, z=NULL, parlist, sigma0, h, tau, an) {
-  # Starting from a parameter estimate, take two EM steps to compute the
-  # local modified EM test statistic for testing H_0 of m components
-  # against H_1 of m+1 at q1=2,3 for a finite mixture of regressions
-  # In input,
-  #  y    : n by 1 vector of dependent variable
-  #  x    : n by q1-1 matrix of regressor NOT including an intercept
-  #  z    : n by p matrix of regressor associated with gam
-
-  n     <- length(y)
-  x1     <- cbind(1,x)
-  q1     <- ncol(x1)
-  alpha  <- parlist$alpha
-  mubeta  <- parlist$mubeta
-  sigma  <- parlist$sigma
-  gam  <- parlist$gam
-  m1     <- length(alpha) # m1 = m+1
-  m     <- m1-1
-  sigma0h <- c(sigma0[1:h],sigma0[h:m])
-  a     <- vector('list',3)
-  mu0   <- double(m1)
-  # In the old code, it used h0 as a parameter for the C code instead of h
-  # which is actually taken as a parameter in this function
-  # (in fact, h is used nowhere except configuring sigma0h)
-  # h0     <- 0
-
-  p      <- 0
-  if (!is.null(z)) {p <- ncol(z)}
-
-  jpvt    <- integer(max(q1,p))
-  setting <- c(n,m1,q1,1,1,jpvt)
-  setting.z <- c(n,m1,q1,p,1,1,jpvt)
-
+  penloglik[1] <- out$penloglikset[[index]]
+  loglik[1]    <- out$loglikset[[index]]
   for (k in 2:3) {
-    a[[k]] <- list(penloglik = -Inf, loglik = -Inf)
-  }
-
-  for (k in 2:3) {
+    ninits <- 1
+    maxit <- 2
     # Two EM steps
-    if (is.null(z)) {
-      out <- .C("regmixpmle", as.integer(setting), as.double(y), as.double(x1),
-                alpha = as.double(alpha), mubeta = as.double(mubeta),
-                sigma = as.double(sigma),
-                as.double(sigma0h), as.double(mu0), as.double(an),
-                as.double(tau), as.integer(h), as.integer(k), lub = double(2*m1),
-                double(3*m1), post = double(n*m1),
-                loglik = double(1), penloglik = double(1),
-                notcg = integer(1), tol = as.double(1e-8), double(n*(q1+1)))
-    } else {
-      out <- .C("regmixpmle_z", as.integer(setting.z), as.double(y), as.double(x1), as.double(z),
-                alpha = as.double(alpha), mubeta = as.double(mubeta),
-                sigma = as.double(sigma), gam = as.double(gam),
-                as.double(sigma0h), as.double(mu0), as.double(an),
-                as.double(tau), as.integer(h), as.integer(k), lub = double(2*m1),
-                double(3*m1), post = double(n*m1),
-                loglik = double(1), penloglik = double(1),
-                notcg = integer(1), tol = as.double(1e-8), double(n*(q1+3+p)))
+    out <- regmixpmle_z2(b, y, x, ztilde, mu0h, sigma0h, m1, p, an, maxit, ninits, epsilon, tau, h, k)
+    alpha <- b[1:m1,1] # b0 has been updated
+    mubeta <- matrix(b[(1+m1):((q1+1)*m1),1],nrow=q1,ncol=m1)
+    sigma <- b[(1+(q1+1)*m1):((q1+2)*m1),1]
+    if (!is.null(z)) {
+      gam     <- b[((q1+2)*m1+1):((q1+2)*m1+p),1]
     }
+    loglik[k]    <- out$loglik[[1]]
+    penloglik[k]   <- out$penloglik[[1]]
 
     # Check singularity: if singular, break from the loop
-    if ( any(out$sigma < 1e-06) || any(out$alpha < 1e-06) || is.na(sum(out$alpha)) ) {
+    if ( any(sigma < 1e-06) || any(alpha < 1e-06) || is.na(sum(alpha)) ) {
+      for (i in k:3) {
+        loglik[k]    <- -Inf
+        penloglik[k]   <- -Inf
+      }
       break
     }
-
-    alpha    <- out$alpha
-    mubeta  <- out$mubeta
-    sigma    <- out$sigma
-    gam    <- out$gam
-    loglik    <- out$loglik
-    penloglik <- out$penloglik
-
-    a[[k]] <- list(alpha = alpha, mubeta = mubeta, sigma = sigma, gam = gam, penloglik = penloglik, loglik = loglik)
-
+    mu.order  <- order(mubeta[1,])
+    alpha     <- alpha[mu.order]
+    mubeta    <- mubeta[ ,mu.order]
+    sigma     <- sigma[mu.order]
+    sigma0h <- sigma0h[mu.order]
   }
+  coefficient <- as.matrix(c(alpha,as.vector(mubeta),sigma,gam)) # at k=3
 
-  a
+  return (list(coefficient = coefficient, loglik = loglik, penloglik = penloglik))
+}
 
-}  # end function regmixPhi2
+#' #' Starting from a parameter estimate, take two EM steps to compute the
+#' #' local modified EM test statistic for testing H_0 of m components
+#' #' against H_1 of m+1 at K=2,3 for a univariate normal finite mixture.
+#' #' @export
+#' #' @title regmixPhi2
+#' #' @name regmixPhi2
+#' #' @param b the parameter estimates at k=1 in the form of b=(alpha_1, ..., alpha_m, mu_1, beta_1, ..., mu_m, beta_m,
+#' #' sigma_1, ..., sigma_m, gam_1, ..., gam_m)
+#' #' @param y n by 1 vector of data for y
+#' #' @param x n by q matrix of data for x
+#' #' @param z n by p matrix of regressor associated with gam
+#' #' @param sigma0 m by 1 vector of sigma
+#' #' @param m1 m in alternative
+#' #' @param h h used as index for pivoting
+#' #' @param tau Tau used to split the h-th component
+#' #' @param an a term used for penalty function
+#' #' @return A list of length 2, where the first element is the local modified
+#' #' MEM test statistic at k=2, the second element is
+#' #' the local modified MEM test statistic at k=3
+#' regmixPhi2 <- function (b, y, x, z = NULL, sigma0h, m1, h, tau, an) {
+#'   # Starting from a parameter estimate, take two EM steps to compute the
+#'   # local modified EM test statistic for testing H_0 of m components
+#'   # against H_1 of m+1 at q1=2,3 for a finite mixture of regressions
+#'   # In input,
+#'   #  y    : n by 1 vector of dependent variable
+#'   #  x    : n by q1-1 matrix of regressor NOT including an intercept
+#'   #  z    : n by p matrix of regressor associated with gam
+#'
+#'   mu0   <- double(m1+1) # dummy
+#'   q1     <- ncol(x) + 1
+#'   ninits <- 1
+#'   maxit <- 2
+#'   tol <- 1e-8
+#'
+#'   if (is.null(z)) {
+#'     ztilde <- matrix(0) # dummy
+#'     p <- 0
+#'     gam  <- NULL
+#'   } else {
+#'     ztilde <- z
+#'     p <- ncol(z)
+#'   }
+#'
+#'   a     <- vector('list',3)
+#'
+#'   for (k in 2:3) {
+#'     a[[k]] <- list(penloglik = -Inf, loglik = -Inf)
+#'   }
+#'
+#'   for (k in 2:3) {
+#'     # Two EM steps
+#'     out <- regmixpmle_z2(b, y, x, ztilde, mu0, sigma0h, m1, p, an, maxit, ninits, tol, tau, h, k)
+#'     alpha <- b[1:m1,1] # b0 has been updated
+#'     mubeta <- matrix(b[(1+m1):((q1+1)*m1),1],nrow=q1,ncol=m1)
+#'     sigma <- b[(1+(q1+1)*m1):((q1+2)*m1),1]
+#'     if (!is.null(z)) {
+#'       gam     <- b[((q1+2)*m1+1):((q1+2)*m1+p),1]
+#'     }
+#'     loglik    <- out$loglik[1]
+#'     penloglik   <- out$penloglik[1]
+#'
+#'     # Check singularity: if singular, break from the loop
+#'     if ( any(sigma < 1e-06) || any(alpha < 1e-06) || is.na(sum(alpha)) ) {
+#'       break
+#'     }
+#'
+#'     a[[k]] <- list(alpha = alpha, mubeta = mubeta, sigma = sigma, gam = gam, penloglik = penloglik, loglik = loglik)
+#'
+#'   }
+#'
+#'   a
+#'
+#' }  # end function regmixPhi2
 
 #' Generates lists of parameters for initial candidates used by
 #' the modified EM test for mixture of normals.
@@ -357,19 +307,6 @@ regmixPhi2 <- function (y, x, z=NULL, parlist, sigma0, h, tau, an) {
 #' \item{gam}{m+1 by ninits matrix for gam}
 regmixPhiInit <- function (y, x, z = NULL, parlist, h, tau, ninits = 1)
 {
-  # Generate initial values used by the modified EM test for mixture of regressions
-  # input is
-  #  y    : n by 1 vector of dependent variable
-  #  x    : n by q1-1 matrix of regressor NOT including an intercept
-  #  z    : n by p matrix of regressor associated with gam
-  # parlist  : list of alpha, mubeta, sigma, gam from an m-component model
-  #  h    : h in the modified EM test
-  #  ninits  : number of initial values to be generated
-  # output is a list that contains
-  #  alpha  : m+1 by ninits matrix
-  #  mubeta  : q1 by m+1 by ninits array
-  #  sigma  : m+1 by ninits matrix
-  #  gam  : p by ninits matrix
   if (test.on) # initial values controlled by test.on
     set.seed(test.seed)
 
@@ -414,12 +351,15 @@ regmixPhiInit <- function (y, x, z = NULL, parlist, h, tau, ninits = 1)
     mu.hyp <- c(mu0,mu0)    # 2 by 1 vector
   }
 
-  mu <- c(mu.hyp,runif((m+1)*(ninits-1),min=lb,max=ub))
-  beta1 <- c(rep(1,(m+1)*(q1-1)),runif((m+1)*(q1-1)*(ninits-1),min=-2,max=2))*as.vector(beta.hyp)
-  beta <- matrix(beta1,nrow=q1-1)
-
-  mubeta <- rbind(mu,beta)
-  mubeta <- array(mubeta,dim=c(q1,m+1,ninits))
+  mubeta <- matrix(0, nrow=q1*(m+1), ncol=ninits)
+  for (j in 1:(m+1)) {
+    mubeta[(q1*(j-1)+1), ] <- runif(ninits, min=lb, max=ub)
+    mubeta[(q1*(j-1)+1), 1] <- mu.hyp[j]
+    for (i in 2:q1) {
+      mubeta[(q1*(j-1)+i), ] <- beta.hyp[i]*runif(ninits, min=-2, max=2)
+      mubeta[(q1*(j-1)+i), 1] <- beta.hyp[i]
+    }
+  }
 
   sigma.hyp <- c(sigma0[1:h],sigma0[h:m])  # m+1 by 1
   sigma1 <- c(rep(1,m+1),runif((m+1)*(ninits-1),min=0.25,max=2))*sigma.hyp
@@ -450,6 +390,7 @@ regmixPhiInit <- function (y, x, z = NULL, parlist, h, tau, ninits = 1)
 #' @param maxit The maximum number of iterations.
 #' @param epsilon.short The convergence criterion in short EM. Convergence is declared when the penalized log-likelihood increases by less than \code{epsilon.short}.
 #' @param maxit.short The maximum number of iterations in short EM.
+#' @param binit The initial value of parameter vector that is included as a candidate parameter vector
 #' @return  A list of class \code{normalMix} with items:
 #' \item{coefficients}{A vector of parameter estimates. Ordered as \eqn{\alpha_1,\ldots,\alpha_m,\mu_1,\ldots,\mu_m,\sigma_1,\ldots,\sigma_m,\gam}.}
 #' \item{parlist}{The parameter estimates as a list containing alpha, mu, and sigma (and gam if z is included in the model).}
@@ -490,8 +431,8 @@ regmixPhiInit <- function (y, x, z = NULL, parlist, h, tau, ninits = 1)
 #' regmixPMLE(y = eruptions, x = waiting, m = 1)
 #' regmixPMLE(y = eruptions, x = waiting, m = 2)
 regmixPMLE <- function (y, x, m = 2, z = NULL, vcov.method = c("Hessian", "OPG", "none"),
-                        ninits = 25, epsilon = 1e-08, maxit = 2000,
-                        epsilon.short = 1e-02, maxit.short = 500) {
+                        ninits = 10, epsilon = 1e-08, maxit = 2000,
+                        epsilon.short = 1e-02, maxit.short = 500, binit = NULL) {
   y   <- as.vector(y)
   x   <- as.matrix(x)   # n by (q1-1) matrix
   n   <- length(y)
@@ -501,7 +442,7 @@ regmixPMLE <- function (y, x, m = 2, z = NULL, vcov.method = c("Hessian", "OPG",
 
   p       <- 0
   gam   <- NULL
-  ninits.short <- ninits*4*(q1+p)*m
+  ninits.short <- ninits*10*(q1+p)*m
   vcov.method <- match.arg(vcov.method)
 
   if (!is.null(z)) {
@@ -533,10 +474,6 @@ regmixPMLE <- function (y, x, m = 2, z = NULL, vcov.method = c("Hessian", "OPG",
 
     # generate initial values
     tmp <- regmixPMLEinit(y = y, x = x, z = z, ninits = ninits.short, m = m)
-    alphaset.s  <- tmp$alpha
-    mubetaset.s <- matrix(tmp$mubeta, nrow=m*q1)
-    sigmaset.s  <- tmp$sigma
-    gamset.s  <- tmp$gam
 
     h       <- 0    # setting h=0 gives PMLE
     tau     <- 0.5  # setting tau=0.5 gives PMLE
@@ -545,104 +482,34 @@ regmixPMLE <- function (y, x, m = 2, z = NULL, vcov.method = c("Hessian", "OPG",
     sigma0  <- rep(sd0, m)
     mu0     <- double(m)    # dummy
     an      <- 1/n  # penalty term for variance
-
-    jpvt <- integer(max(q1,p))  # pivots used in dgelsy
-
+	
+	if (is.null(z))
+      ztilde <- matrix(0) # dummy
+	else
+      ztilde <- z
+    
     # short EM
-    if (is.null(z)) {
-      setting <- c(n,m,q1,ninits.short,maxit.short,jpvt)  # configulation parameters
-      out.short <- .C("regmixpmle", as.integer(setting), as.double(y), as.double(x1),
-                      alphaset = as.double(alphaset.s), mubetaset = as.double(mubetaset.s), sigmaset = as.double(sigmaset.s),
-                      as.double(sigma0), as.double(mu0), as.double(an),
-                      as.double(tau), as.integer(h), as.integer(k),
-                      lub = double(2*m),
-                      double(3*m), post = double(n*m),
-                      loglikset = double(ninits.short), penloglikset = double(ninits.short),
-                      notcg = integer(ninits.short), as.double(epsilon.short), double(n*(q1+1)), package = "normalregMix")
-    } else {
-      setting.z <- c(n,m,q1,p,ninits.short,maxit.short,jpvt)  # configulation parameters
-      out.short <- .C("regmixpmle_z", as.integer(setting.z), as.double(y), as.double(x1), as.double(z),
-                      alphaset = as.double(alphaset.s), mubetaset = as.double(mubetaset.s), sigmaset = as.double(sigmaset.s), gamset = as.double(gamset.s),
-                      as.double(sigma0), as.double(mu0), as.double(an),
-                      as.double(tau), as.integer(h), as.integer(k),
-                      lub = double(2*m),
-                      double(3*m), post = double(n*m),
-                      loglikset = double(ninits.short), penloglikset = double(ninits.short),
-                      notcg = integer(ninits.short), as.double(epsilon.short), double(n*(q1+3+p)), package = "normalregMix")
+    b0 <- rbind( tmp$alpha, tmp$mubeta, tmp$sigma, tmp$gam )
+    if (!is.null(binit)) {
+      b0[ , 1] <- binit
     }
-
-    penloglik.short <- out.short$penloglikset    # extract the 4th argument = penloglik
+    out.short <- regmixpmle_z2(b0, y, x, ztilde, mu0, sigma0, m, p, an, maxit.short,
+                                  ninits.short, epsilon.short)
     # long EM
-    indices <- order(penloglik.short, decreasing = TRUE)[1:ninits]
-    short.thetas <- lapply(indices, function (index) theta =
-                             list (alpha = out.short$alphaset[(m*(index-1)+1):(m*index)],
-                                   mubeta= matrix(out.short$mubetaset[(q1*m*(index-1)+1):(q1*m*index)], nrow=q1),
-                                   sigma = out.short$sigmaset[(m*(index-1)+1):(m*index)],
-                                   gam = out.short$gamset[(p*(index-1)+1):(p*index)]))
-    alphaset <- sapply(short.thetas, "[[", "alpha")
-    mubetaset <- sapply(short.thetas, "[[", "mubeta")
-    sigmaset <- sapply(short.thetas, "[[", "sigma")
-    gamset <- sapply(short.thetas, "[[", "gam")
-
-    if (is.null(z)) {
-      setting <- c(n,m,q1,ninits,maxit,jpvt)
-      out <- .C("regmixpmle", as.integer(setting), as.double(y), as.double(x1),
-                alphaset = as.double(alphaset), mubetaset = as.double(mubetaset), sigmaset = as.double(sigmaset),
-                as.double(sigma0), as.double(mu0), as.double(an),
-                as.double(tau), as.integer(h), as.integer(k),
-                lub = double(2*m),
-                double(3*m), post = double(n*m),
-                loglikset = double(ninits), penloglikset = double(ninits),
-                notcg = integer(ninits), as.double(epsilon), double(n*(q1+1)), package = "normalregMix")
-    } else {
-      setting.z <- c(n,m,q1,p,ninits,maxit,jpvt)
-      out <- .C("regmixpmle_z", as.integer(setting.z), as.double(y), as.double(x1), as.double(z),
-                alphaset = as.double(alphaset), mubetaset = as.double(mubetaset), sigmaset = as.double(sigmaset), gamset = as.double(gamset),
-                as.double(sigma0), as.double(mu0), as.double(an),
-                as.double(tau), as.integer(h), as.integer(k),
-                lub = double(2*m),
-                double(3*m), post = double(n*m),
-                loglikset = double(ninits), penloglikset = double(ninits),
-                notcg = integer(ninits), as.double(epsilon), double(n*(q1+3+p)), package = "normalregMix")
-    }
-
-    #  if (mean(out$notcg) >= 0.9) {
-    #  warning(sprintf("The EM algorithm failed to converge in %d%% of the initial values.
-    # Try increasing maxit.", 100*mean(out$notcg)))
-    #  }
+    indices <- order(out.short$penloglikset, decreasing = TRUE)[1:ninits]
+    b1 <- b0[ ,indices] # b0 has been updated
+    out <- regmixpmle_z2(b1, y, x, ztilde, mu0, sigma0, m, p, an, maxit, ninits, epsilon)
 
     index     <- which.max(out$penloglikset)
-    alpha     <- out$alphaset[(m*(index-1)+1):(m*index)]
-    mubeta    <- matrix(out$mubetaset[(q1*m*(index-1)+1):(q1*m*index)], nrow=q1)
-    sigma     <- out$sigmaset[(m*(index-1)+1):(m*index)]
-    gam     <- out$gamset[(p*(index-1)+1):(p*index)]
+    alpha <- b1[1:m,index] # b0 has been updated
+    mubeta <- matrix(b1[(1+m):((q1+1)*m),index],nrow=q1,ncol=m)
+    sigma <- b1[(1+(q1+1)*m):((q1+2)*m),index]
+    if (!is.null(z)) {
+      gam     <- b1[((q1+2)*m+1):((q1+2)*m+p),index]
+    }
     penloglik <- out$penloglikset[index]
     loglik    <- out$loglikset[index]
-
-    # Compute posterior probabilities
-    if (is.null(z)) {
-      setting <- c(n,m,q1,1,1,jpvt)
-      out.p <- .C("regmixpmle", as.integer(setting), as.double(y), as.double(x1),
-                  alphaset = as.double(alpha), mubetaset = as.double(mubeta),
-                  sigmaset = as.double(sigma),
-                  as.double(sigma0), as.double(mu0), as.double(an),
-                  as.double(tau), as.integer(h), as.integer(k),
-                  lub = double(2*m),
-                  double(3*m), post = double(n*m),
-                  loglikset = double(1), penloglikset = double(1),
-                  notcg = integer(1), as.double(epsilon), double(n*(q1+1)), package = "normalregMix")
-    } else {
-      setting.z <- c(n,m,q1,p,1,1,jpvt)
-      out.p <- .C("regmixpmle_z", as.integer(setting.z), as.double(y), as.double(x1), as.double(z),
-                  alphaset = as.double(alpha), mubetaset = as.double(mubeta),
-                  sigmaset = as.double(sigma), gamset = as.double(gam),
-                  as.double(sigma0), as.double(mu0), as.double(an),
-                  as.double(tau), as.integer(h), as.integer(k),
-                  lub = double(2*m),
-                  double(3*m), post = double(n*m),
-                  loglikset = double(1), penloglikset = double(1),
-                  notcg = integer(1), as.double(epsilon), double(n*(q1+3+p)), package = "normalregMix")
-    }
+    postprobs <- matrix(out$post[,index], nrow=n)
 
     aic <- -2*loglik + 2*npar
     bic <- -2*loglik + log(n)*npar
@@ -652,10 +519,6 @@ regmixPMLE <- function (y, x, m = 2, z = NULL, vcov.method = c("Hessian", "OPG",
     mubeta    <- mubeta[,mu.order]
     sigma     <- sigma[mu.order]
 
-    mu    <- mubeta[1,]
-    beta  <- mubeta[-1,]
-
-    postprobs <- matrix(out.p$post, nrow=n)
     postprobs <- postprobs[, mu.order]
     colnames(postprobs) <- c(paste("comp", ".", 1:m, sep = ""))
 
@@ -675,7 +538,6 @@ regmixPMLE <- function (y, x, m = 2, z = NULL, vcov.method = c("Hessian", "OPG",
     parlist <- list(alpha = alpha, mubeta = mubeta, sigma = sigma, gam = gam)
     coefficients <- unlist(parlist)
     names(coefficients)[(m+1):((q1+1)*m)] <- c(mubeta.name)
-
   }  # end m >= 2
 
   if (vcov.method == "none") {
@@ -737,16 +599,16 @@ regmixPMLEinit <- function (y, x, z = NULL, ninits = 1, m = 2)
   alpha <- matrix(runif(m*ninits), nrow=m)
   alpha <- t(t(alpha)/colSums(alpha))
 
-  mu0   <- mubeta_hat[1]
-  beta0 <- mubeta_hat[-1]
-  minMU <- min(y - x %*% beta0)
-  maxMU <- max(y - x %*% beta0)
 
-  mu     <- runif(m*ninits, min=minMU, max=maxMU)
-  beta   <- matrix(runif(m*(q1-1)*ninits, min=-2, max=2), nrow=q1-1)*beta0
-  mubeta <- rbind(mu, beta)
-  mubeta <- array(mubeta, dim=c(q1, m, ninits))
-
+  minMU <- min(y - x %*% mubeta_hat[-1])
+  maxMU <- max(y - x %*% mubeta_hat[-1])
+  mubeta <- matrix(0, nrow=q1*m, ncol=ninits)
+  for (j in 1:m) {
+    mubeta[(q1*(j-1)+1), ] <- runif(ninits, min=minMU, max=maxMU)
+    for (i in 2:q1) {
+      mubeta[(q1*(j-1)+i), ] <- mubeta_hat[i]*runif(ninits, min=-2, max=2)
+    }
+  }
   sigma <- matrix(runif(m*ninits, min=0.01, max=1), nrow=m)*stdR
 
   list(alpha = alpha, mubeta = mubeta, sigma = sigma, gam = gam)
@@ -802,9 +664,8 @@ regmixVcov <- function(y, x, coefficients, z = NULL, vcov.method = c("Hessian", 
   q   <- ncol(x)
 
   m  <- (len-p)/(3+q)
-  if (round(m) != m) {
+  if (round(m) != m)
     stop("The dimension of the coefficients is incompatible with x and z. Please check the data.")
-  }
 
   alpha   <- coefficients[1:m]  # m-vector
   mubeta  <- matrix(coefficients[(m+1):((2+q)*m)], nrow=q+1, ncol=m)  # q+1 by m
@@ -826,9 +687,7 @@ regmixVcov <- function(y, x, coefficients, z = NULL, vcov.method = c("Hessian", 
     vcov <- diag(c.mat.vec) %*% vcov %*% diag(c.mat.vec)
 
   } else {  # end of if (m == 1)
-
     # m >= 2
-
     # Compute posterior probabilities, and adjust y if z is present
     sigma0  <- rep(1, m)  # dummy
     mu0     <- double(m)  # dummy
@@ -837,26 +696,17 @@ regmixVcov <- function(y, x, coefficients, z = NULL, vcov.method = c("Hessian", 
     tau     <- 0.5
     k <- 0
     epsilon <- 1e-08
-    jpvt    <- integer(max(q1,p))    # pivots used in dgelsy
-
-    if (is.null(z)) {
-      setting <- c(n, m, q1, 1, 1, jpvt)
-      out.p <- .C("regmixpmle", as.integer(setting), as.double(y), as.double(x1),
-                  alphaset = as.double(alpha), mubetaset = as.double(mubeta), sigmaset = as.double(sigma),
-                  as.double(sigma0), as.double(mu0), as.double(an), tau, as.integer(h), k, lub = double(2*m),
-                  double(3*m), post = double(n*m),
-                  loglikset = double(1), penloglikset = double(1),
-                  notcg = integer(1), as.double(epsilon), double(n*(q1+1)), package = "normalregMix")
-    } else {
-      setting.z <- c(n, m, q1, p, 1, 1, jpvt)
-      out.p <- .C("regmixpmle_z", as.integer(setting.z), as.double(y), as.double(x1), as.double(z),
-                  alphaset = as.double(alpha), mubetaset = as.double(mubeta), sigmaset = as.double(sigma), gamset = as.double(gam),
-                  as.double(sigma0), as.double(mu0), as.double(an), tau, as.integer(h), k, lub = double(2*m),
-                  double(3*m), post = double(n*m),
-                  loglikset = double(1), penloglikset = double(1),
-                  notcg = integer(1), as.double(epsilon), double(n*(q1+3+p)), package = "normalregMix")
+	maxit = 2
+    ninits = 1
+    b <- matrix( rep( coefficients, ninits), ncol = ninits)
+	
+    if (is.null(z)) 
+      out.p <- regmixpmle_z2(b, y, x, matrix(0), mu0, sigma0, m, p, an, maxit, ninits, epsilon, tau, h, k)
+    else 
+	{
+      out.p <- regmixpmle_z2(b, y, x, z, mu0, sigma0, m, p, an, maxit, ninits, epsilon, tau, h, k)
       # Adjust y
-      y <- as.vector(y - z %*% gam)
+      y <- y - z %*% gam
     }
 
     post <- matrix(out.p$post, nrow=n)

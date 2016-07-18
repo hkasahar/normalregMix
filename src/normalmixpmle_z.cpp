@@ -156,7 +156,7 @@ extern "C" {
                     }
 
                 /* If not exit, update alpha, mu, and sigma. */
-                    
+
                 /* Update gamma */
                 for (i=0; i<n; i++) {
                     wmu = 0.0; // Initialize wmu
@@ -168,7 +168,7 @@ extern "C" {
 
                 // Copy z to zCopy because z will be overwritten.
                 F77_CALL(dcopy)(&np, z, &iOne, zCopy, &iOne);
-                    
+
                 /* initialize jpvt */
                 for (ii=0; ii<p; ii++) {
                     jpvt[ii] = 0;
@@ -231,7 +231,7 @@ extern "C" {
 
                 /* Check singularity */
                 for (j=0; j<m; j++) {
-                    if (alpha[j] < 1e-8 || isnan(alpha[j]) || sigma[j] < 1e-8) {
+                    if (alpha[j] < 1e-8 || std::isnan(alpha[j]) || sigma[j] < 1e-8) {
                         sing = 1;
                     }
                 }

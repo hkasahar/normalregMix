@@ -148,6 +148,10 @@ normalmixCritBoot <- function (y, parlist, z = NULL, values = NULL, ninits = 10,
   ybset <- rnorm(nbtsp*n, mean = mu[ii], sd = sigma[ii])
   ybset <- matrix(ybset, nrow = n, ncol = nbtsp)
 
+  if (!is.null(z)) {
+    zgam <- as.matrix(z) %*% gam
+    ybset <- ybset + replicate(nbtsp, as.vector(zgam))
+  }
   if (parallel) {
     if (is.null(cl))
       cl <- makeCluster(detectCores())

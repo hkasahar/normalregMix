@@ -64,7 +64,7 @@ if (k==1) {  // If k==1, compute upper and lower bounds
   mu0[m] = R_PosInf;
   double *lb0 = mu0;
   double *ub0 = mu0+1;
-  
+
   for (j=0; j<h; j++) {
     lb[j] = (lb0[j]+lb0[j+1])/2.0;
     ub[j] = (ub0[j]+ub0[j+1])/2.0;
@@ -83,14 +83,14 @@ for (jn=0; jn<ninits; jn++) {
   double *alpha = alphaset + jn*m;
   double *mubeta = mubetaset + jn*m*q1;
   double *sigma = sigmaset + jn*m;
-  
+
   /* initialize EM iteration */
-  
+
   oldpenloglik = R_NegInf;
   emit = 0;
   double diff = 1.0;
   sing = 0;
-  
+
   /* EM loop begins */
   while(1)
   {
@@ -99,7 +99,7 @@ for (jn=0; jn<ninits; jn++) {
   AlpSigRatio[j] = alpha[j] / sigma[j];
     logAlpSigRatio[j] = log(AlpSigRatio[j]);
   }
-  
+
   for (i=0; i<n; i++) {
     for (j=0; j<m; j++) {
       xtheta = 0.0; // Initialize xtheta
@@ -137,22 +137,22 @@ for (jn=0; jn<ninits; jn++) {
     /* Finally, adjust the loglikelihood correctly */
     loglik += log(rowsum) - min + logAlpSigRatio[minj];
   } /* end for (i=0; i<n; i++) loop */
-    
+
     /* Compute the penalized loglik. Note that penalized loglik uses old (not updated) sigma */
     penloglik = loglik + log(2.0) + fmin(log(tau),log(1-tau));
   for (j=0; j<m; j++) {
     s0j = sigma0[j]/sigma[j];
     penloglik += -an*(s0j*s0j - 2.0*log(s0j) -1.0);
   }
-  
+
   diff = penloglik - oldpenloglik;
   oldpenloglik = penloglik;
-  
+
   /* Normal exit */
   if (diff < tol || emit>=maxit){
     break;
   }
-  
+
   /* If not exit, update alpha, mubeta, and sigma. */
   for (j=0; j<m; j++) {
     alpha[j] = 0.0;     // initialize alpha
@@ -168,11 +168,11 @@ for (jn=0; jn<ninits; jn++) {
     for (ii=0; ii<q1; ii++) {
       jpvt[ii] = 0;
     }
-    
+
     /* Update mubeta */
     F77_CALL(dgelsy)(nn, qq1, &iOne, wx, nn, wy, nn, jpvt, &rcond, &rk, work2, &nwork, &info);
     if (info!=0) error("Error: info=%d\n",info);
-    
+
     for (ii=0; ii<q1; ii++) {
       mubeta[ii + q1*j] = wy[ii];    // Store the value of updated mubeta
     }
@@ -181,7 +181,7 @@ for (jn=0; jn<ninits; jn++) {
       mubeta[q1*j] = fmax(mubeta[q1*j],lb[j]);
       mubeta[q1*j] = fmin(mubeta[q1*j],ub[j]);
     }
-    
+
     /*  Compute the residuals and newsigma. Note that 'theta_hat' values are now in 'wy'. */
     ssr_j = 0.0;
     for (i=0; i<n; i++) {
@@ -195,7 +195,7 @@ for (jn=0; jn<ninits; jn++) {
     sigma[j] = sqrt((ssr_j + 2.0*an*sigma0[j]*sigma0[j])  / (alpha[j] * n + 2.0*an));
     sigma[j] = fmax(sigma[j],0.01*sigma0[j]);
   }   /* end for j=0; j<m; j++ loop updating alpha, mubeta and sigma */
-    
+
     /* if k!=0, update alpha and/or tau */
     if (k!=0){
       alphah = (alpha[h-1]+alpha[h]);
@@ -212,24 +212,24 @@ for (jn=0; jn<ninits; jn++) {
       alpha[h-1] = alphah*tau;
       alpha[h] = alphah*(1-tau);
     }
-    
-    
+
+
     /* Check singularity */
     for (j=0; j<m; j++) {
-      if (alpha[j] < 1e-8 || isnan(alpha[j]) || sigma[j] < 1e-8){
+      if (alpha[j] < 1e-8 || std::isnan(alpha[j]) || sigma[j] < 1e-8){
         sing = 1;
       }
     }
-    
+
     /* Exit from the loop if singular */
     if (sing) {
       notcg[jn] = 1;
       break;
     }
-    
+
     emit++;
   } // end while loop
-  
+
   penloglikset[jn] = penloglik;
   loglikset[jn] = loglik;
   for (j=0; j<m; j++) {
@@ -239,11 +239,10 @@ for (jn=0; jn<ninits; jn++) {
   for (j=0; j<q1*m; j++) {
     mubetaset[jn*m*q1+j] = mubeta[j];
   }
-  
+
 } /* end for (jn=0; jn<ninits; jn++) loop */
-    
+
     return;
   } /* end regmixpmle()  */
-    
+
 } /* end extern "C" */
-    

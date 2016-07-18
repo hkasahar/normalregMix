@@ -54,7 +54,8 @@ regmixCrit <- function(y, x, parlist, z = NULL, values = NULL, parallel = TRUE,
   x1    <- cbind(1,x)
   q     <- ncol(x)
 
-  W  <- t(t(y - x1 %*% mubeta)/sigma)       # normalized data, n by m
+  # normalized data, n by m
+  W  <- t(t(matrix(rep.int(y,m), ncol=m) - x1 %*% mubeta)/sigma)       
   f  <- t(t(exp(-W^2/2)/sqrt(2*pi))/sigma)  # pdf, n by m
   f0 <- colSums(t(f)*alpha)                 # data pdf, n by 1
 
@@ -223,7 +224,7 @@ regmixCritBoot <- function (y, x, parlist, z = NULL, values = NULL, ninits = 100
 
   if (!is.null(z)) {
     zgam <- as.matrix(z) %*% gam
-    ybset <- ybset + as.vector(zgam)
+    ybset <- ybset + replicate(nbtsp, as.vector(zgam))
   }
 
   if (parallel) {
@@ -238,7 +239,6 @@ regmixCritBoot <- function (y, x, parlist, z = NULL, values = NULL, ninits = 100
   else
     out <- apply(ybset, 2, regmixMEMtest, x = x, m = m, z = z,
                  ninits = ninits, crit.method = "none")
-
 
   emstat.b <- sapply(out, "[[", "emstat")  # 3 by nbstp matrix
 
