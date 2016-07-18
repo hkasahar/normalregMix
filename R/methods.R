@@ -6,9 +6,9 @@ test.seed <- 8888577
 #' @title testMode
 #' @name testMode
 #' @description When the modified EM-algorithm is run, initial values are randomly created
-#' based on the data given. If the test mode is turned on, these initial values 
+#' based on the data given. If the test mode is turned on, these initial values
 #' are going to be created with the random seed provided. This method would be suitable
-#' for users who would like to replicate experiments. By default, the test mode is turned off.  
+#' for users who would like to replicate experiments. By default, the test mode is turned off.
 #' @param on Option to turn on the test mode
 #' @param seed The random seed to be used for initialization
 #' @param hide.message Determines whether to print the current seed and status
@@ -20,9 +20,9 @@ testMode <- function(on = FALSE, seed = 8888577, hide.message = TRUE)
   assign("test.seed", seed, getNamespace("normalregMix"))
   lockBinding("test.on", getNamespace("normalregMix"))
   lockBinding("test.seed", getNamespace("normalregMix"))
-  
+
   if (!hide.message)
-    print(paste("The test mode is currently", 
+    print(paste("The test mode is currently",
                 switch(as.character(test.on), "TRUE" = "ON", "FALSE" = "OFF"),
                 "with seed",
                 as.character(test.seed)))
@@ -34,14 +34,14 @@ plotPivotRes <- function(y = y, x = x, m = 2, vcov.method = "OPG")
   dimx <- dim(as.matrix(x))[2]
   if ((dimx <= 1) || (is.null(dimx)))
     return (NULL)
-  
+
   pivot.names <- as.character(seq(1, dimx))
   if (!is.null(colnames(x)))
     pivot.names <- colnames(x)
 
   indices <- regmixPMLE(y = y, x = x, m = m, vcov.method = vcov.method)$indices
   ivs <- as.matrix(x)
-  
+
   for (j in 1:m)
   {
     ivs.component <- as.matrix(ivs[indices == j,])
@@ -53,29 +53,29 @@ plotPivotRes <- function(y = y, x = x, m = 2, vcov.method = "OPG")
       ivs.others <- ivs.component[,-pivot]
       lm.y.other <- lm(ys.component ~ ivs.others)
       lm.pivot.other <- lm(ivs.pivot ~ ivs.others)
-      plot.df <- data.frame(y.on.others = lm.y.other$residuals, 
-                            pivot.on.others = lm.pivot.other$residuals) 
+      plot.df <- data.frame(y.on.others = lm.y.other$residuals,
+                            pivot.on.others = lm.pivot.other$residuals)
       plot <- ggplot(plot.df, aes(x=pivot.on.others, y=y.on.others))
       plot <- plot + geom_point(shape=1) + geom_smooth(method=lm) +
-        xlab(paste("pivot.on.others (pivot on ", pivot.name, ", component ", 
+        xlab(paste("pivot.on.others (pivot on ", pivot.name, ", component ",
                    as.character(j), ")", sep = ""))
       print(plot)
     }
   }
 }
 
-#' Generates a vector that indicates which component each observation belongs to, 
+#' Generates a vector that indicates which component each observation belongs to,
 #' based on its posterior probability
 #' @export
 #' @title getComponentIndices
 #' @name getComponentIndices
-#' @param postprobs n by m matrix of posterior probabilities for 
+#' @param postprobs n by m matrix of posterior probabilities for
 #' m-component model on n observations
 #' @return n by 1 vector of indices that indicate which component each observation belongs to
 #' based on its posterior probability
 getComponentIndices <- function(postprobs)
 {
-  postprobs.mat <- as.matrix(postprobs) 
+  postprobs.mat <- as.matrix(postprobs)
   apply(postprobs.mat, 1, function(i) (which(i==max(i))))
 }
 
@@ -98,26 +98,26 @@ if (object$label == "PMLE") {
       sel <- c(j, (m+(j-1)*k+1):(m+j*k), j+m*(k+1))
       sel.vec <- c(sel.vec,sel)
     }
-    if (!is.null(object$parlist$gamma)) {
-      p <- length(object$parlist$gamma)
+    if (!is.null(object$parlist$gam)) {
+      p <- length(object$parlist$gam)
       sel <- c((len1-p+1):len1)
       sel.vec <- c(sel.vec,sel)
     }
     reorder.mat <- matrix(0, nrow=len1, ncol=len1)
     sel.vec.2 <- cbind(1:len1, sel.vec)
-    reorder.mat[sel.vec.2] <- 1 
+    reorder.mat[sel.vec.2] <- 1
     coef <- coef[sel.vec]
     vcov <- reorder.mat %*% vcov %*% t(reorder.mat)
   }
-  
+
   se    <- sqrt(diag(vcov))
   tval  <- coef / se
-  TAB   <- cbind(Estimate = coef, StdErr =se, t.value = tval, p.value = 2*pnorm(-abs(tval)))  
+  TAB   <- cbind(Estimate = coef, StdErr =se, t.value = tval, p.value = 2*pnorm(-abs(tval)))
   res   <- list(coefficients = TAB, parlist = object$parlist, vcov = vcov,
-              loglik = object$loglik, penloglik = object$penloglik, 
+              loglik = object$loglik, penloglik = object$penloglik,
               aic = object$aic, bic = object$bic, call = object$call,
               m = object$m, reorder = reorder,
-              digits = digits)  
+              digits = digits)
   class(res) <- "summary.normalregMix"
   res
 
@@ -148,12 +148,12 @@ if (reorder) {
     # rownames(coef.j) <- c("alpha","mu","sigma")
     printCoefmat(coef.j, P.values = TRUE, has.Pvalue = TRUE, signif.legend = FALSE, digits=x$digits)
   }
-  if (!is.null(x$parlist$gamma)) {
-    p <- length(x$parlist$gamma)
-    gamma <- tab[(nrow(tab)-p+1):nrow(tab), , drop = FALSE]
-    cat("Gamma\n")
-    printCoefmat(gamma, P.values = TRUE, has.Pvalue = TRUE, signif.legend = FALSE, digits=x$digits)
-  }    
+  if (!is.null(x$parlist$gam)) {
+    p <- length(x$parlist$gam)
+    gam <- tab[(nrow(tab)-p+1):nrow(tab), , drop = FALSE]
+    cat("gam\n")
+    printCoefmat(gam, P.values = TRUE, has.Pvalue = TRUE, signif.legend = FALSE, digits=x$digits)
+  }
   cat("---\nSignif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1")
 } else {
   printCoefmat(x$coefficients, P.values = TRUE, has.Pvalue = TRUE, digits = x$digits)
@@ -182,12 +182,12 @@ if (reorder) {
     # rownames(coef.j) <- c("alpha","mu","sigma")
     printCoefmat(coef.j, P.values = TRUE, has.Pvalue = TRUE, signif.legend = FALSE, digits=x$digits)
   }
-  if (!is.null(x$parlist$gamma)) {
+  if (!is.null(x$parlist$gam)) {
     # browser()
-    p <- length(x$parlist$gamma)
-    gamma <- tab[(nrow(tab)-p+1):nrow(tab), , drop = FALSE]
-    cat("\nGamma\n")
-    printCoefmat(gamma, P.values = TRUE, has.Pvalue = TRUE, signif.legend = FALSE, digits=x$digits)
+    p <- length(x$parlist$gam)
+    gam <- tab[(nrow(tab)-p+1):nrow(tab), , drop = FALSE]
+    cat("\ngam\n")
+    printCoefmat(gam, P.values = TRUE, has.Pvalue = TRUE, signif.legend = FALSE, digits=x$digits)
   }
   cat("---\n Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1")
 } else {
@@ -221,7 +221,7 @@ if (x$label == "MEMtest") {
   cat(sprintf("\nloglik at estimate: %.3f\n", x$loglik))
   cat(sprintf("penloglik at estimate: %.3f\n", x$penloglik))
   cat(sprintf("AIC: %.3f\n", x$aic))
-  cat(sprintf("BIC: %.3f\n", x$bic))  
+  cat(sprintf("BIC: %.3f\n", x$bic))
 } else {
   stop("The object is not a valid normalMix object.")
 }
@@ -232,9 +232,9 @@ if (x$label == "MEMtest") {
 #' @export
 #' @title anFormula
 #' @name anFormula
-#' @param parlist The parameter estimates as a list containing alpha, mu, sigma, and gamma 
-#' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m), 
-#' sigma = (sigma_1, ..., sigma_m), gamma = (gamma_1, ..., gamma_m))
+#' @param parlist The parameter estimates as a list containing alpha, mu, sigma, and gamma
+#' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m),
+#' sigma = (sigma_1, ..., sigma_m), gam = (gamma_1, ..., gamma_m))
 #' @param m The number of components in the mixture
 #' @param n The number of observations
 #' @param q The dimension of x (by default, 0)
@@ -247,11 +247,11 @@ anFormula <- function(parlist, m, n, q = 0)
   # Computes a_n for testing H_0 of m components
   # against H_1 of m+1 components
 {
-  
+
   if (q != 0) # an when the dimension of X is not zero.
     return (switch(as.character(q), "1" = 2.2, "2" = 3.6, "3" = 4.6, "4" = 8.2, 2.2))
-  
-  
+
+
   if (m == 1) {
     #   an <- 1.0
     an <- 0.40
@@ -277,5 +277,5 @@ anFormula <- function(parlist, m, n, q = 0)
   else {
     an <- 1.0
   }
-  
+
 }  # end function anFormula

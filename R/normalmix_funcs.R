@@ -3,15 +3,15 @@
 #' @title normalmixVcov
 #' @name normalmixVcov
 #' @param y n by 1 vector of data
-#' @param coefficients (alpha_1, ..., alpha_m, mu_1, ..., mu_m, sigma_1, ..., sigma_m, gamma)
+#' @param coefficients (alpha_1, ..., alpha_m, mu_1, ..., mu_m, sigma_1, ..., sigma_m, gam)
 #' @param z n by p matrix of regressor associated with gamma
 #' @param p Dimension of z
-#' @param vcov.method Method used to compute the variance-covariance matrix, 
-#' one of \code{"Hessian"} and \code{"OPG"}. #' The default option is \code{"Hessian"}. 
-#' When \code{method = "Hessian"}, the variance-covarince matrix is 
-#' estimated by the Hessian using the formula given in Boldea and Magnus (2009). 
+#' @param vcov.method Method used to compute the variance-covariance matrix,
+#' one of \code{"Hessian"} and \code{"OPG"}. #' The default option is \code{"Hessian"}.
+#' When \code{method = "Hessian"}, the variance-covarince matrix is
+#' estimated by the Hessian using the formula given in Boldea and Magnus (2009).
 #' When \code{method = "OPG"}, the outer product of gradients is used.
-#' @return The variance-covariance matrix of the MLE of 
+#' @return The variance-covariance matrix of the MLE of
 #' m-component normal mixture given the data and coefficients.
 #' @references   Boldea, O. and Magnus, J. R. (2009)
 #' Maximum Likelihood Estimation of the Multivariate Normal Mixture Model,
@@ -19,30 +19,28 @@
 #' \bold{104}, 1539--1549.
 normalmixVcov <- function(y, coefficients, z = NULL, vcov.method = c("Hessian", "OPG"))
 {
-  
-  
   y <- as.vector(y)
   n <- length(y)
   len <- length(coefficients)
   p <- 0
-  gamma  <- NULL
+  gam  <- NULL
   vcov.method <- match.arg(vcov.method)
-  
+
   if (!is.null(z)) {
     z <- as.matrix(z)
     p <- ncol(z)
-    gamma <- coefficients[(len-p+1):len]
+    gam <- coefficients[(len-p+1):len]
   }
-  
+
   m <- (len-p)/3
   if (round(m) != m) {
     stop("The dimension of the coefficients is incompatible with z. Please check the data.")
   }
-  
+
   alpha   <- coefficients[1:m]
   mu      <- coefficients[(m+1):(2*m)]
   sigma   <- coefficients[(2*m+1):(3*m)]
-  
+
   if (m == 1) {
     if (is.null(z)) {
       I <- n*diag(c(1/sigma^2, 2/sigma^2))  # information matrix
@@ -58,10 +56,10 @@ normalmixVcov <- function(y, coefficients, z = NULL, vcov.method = c("Hessian", 
     # Because the variance is parameterized as sigma^2, we convert it to sigma
     c.mat.vec <- c(1, (1/sigma^(1/2))/2, rep(1, p))
     vcov <- diag(c.mat.vec) %*% vcov %*% diag(c.mat.vec)
-    
+
   } else { # end of if (m == 1)
     # m >= 2
-    
+
     # Compute posterior probabilities, and adjust y if z is present
     sigma0  <- rep(1, m)  # dummy
     mu0     <- double(m)  # dummy
@@ -70,7 +68,7 @@ normalmixVcov <- function(y, coefficients, z = NULL, vcov.method = c("Hessian", 
     tau     <- 0.5
     k       <- 0
     epsilon <- 1e-08
-    
+
     if (is.null(z)) {
       setting <- c(n, m, 1, 1)
       out.p <- .C("normalmixpmle", as.integer(setting), as.double(y),
@@ -84,40 +82,40 @@ normalmixVcov <- function(y, coefficients, z = NULL, vcov.method = c("Hessian", 
       setting.z <- c(n, m, p, 1, 1, jpvt)
       out.p <- .C("normalmixpmle_z", as.integer(setting.z), as.double(y), as.double(z),
                   alphaset = as.double(alpha), muset = as.double(mu), sigmaset = as.double(sigma),
-                  gammaset = as.double(gamma),
+                  gamset = as.double(gam),
                   as.double(sigma0), as.double(mu0), as.double(an), as.double(tau), as.integer(h),
                   as.integer(k), lub = double(2*m), double(3*m), post = double(n*m),
                   loglikset = double(1), penloglikset = double(1),
                   notcg = integer(1), as.double(epsilon), double(n*(2+p)), package = "normalregMix")
       # Adjust y
-      y <- y - z %*% gamma
+      y <- y - z %*% gam
     }
-    
+
     post <- matrix(out.p$post, nrow=n)
-    
+
     p1 <- seq(1, (2*m-1), by=2) # sequence of odd numbers, 1,3,...,2*m-1
     p2 <- seq(2, (2*m), by=2)    # sequence of even numbers, 2,4,...,2*m
-    
+
     # Matrices used in computing vcov
-    
+
     a <- diag(1/alpha[-m], nrow=m-1, ncol=m-1)
     a <- cbind(a, -1/alpha[m])  # m-1 by m matrix of a_i's
     abar <- a %*% t(post) # m-1 by n
-    
+
     Z0 <- t((t(matrix(rep.int(y, m), ncol=m))-mu)/sigma)  # normalized data, n by m
     f <- t(t(exp(-Z0^2/2)/sqrt(2*pi))/sigma)      # pdf, n by m
     phi <- t(t(f)*alpha)                # n by m
     f0 <- rowSums(phi)                  # data pdf, n by 1
-    
+
     vinv <- 1/(sigma*sigma)
-    
+
     b <- t(t(Z0)/sigma)  # n by m
     B <- t(vinv - t(b*b))  # n by m
-    
+
     c0 <- array(0, dim=c(n, m, 2))
     c0[, , 1] <- b
     c0[, , 2] <- -B/2
-    
+
     # Computes Hessian-based I
     if (vcov.method == "Hessian")  {
       other.method = "OPG"
@@ -125,7 +123,7 @@ normalmixVcov <- function(y, coefficients, z = NULL, vcov.method = c("Hessian", 
       C0[, , 1, 1] <- t(matrix(vinv, nrow=m, ncol=n))  # n by m
       C0[, , 2, 1] <- C0[, , 1, 2] <- t(t(b)*vinv)    # n by m
       C0[, , 2, 2] <- t((vinv -2*t(B))*vinv)/2       # n by m
-      
+
       Q.pi <- - abar %*% t(abar)  # m-1 by m-1
       Q.pi.theta <- matrix(0, nrow=m-1, ncol=2*m)  # m-1 by 2m
       for (i in 1:m){
@@ -137,7 +135,7 @@ normalmixVcov <- function(y, coefficients, z = NULL, vcov.method = c("Hessian", 
         Q.pi.theta[, i] <- Q.i[1:(m-1)]
         Q.pi.theta[, m+i] <- Q.i[m:(2*(m-1))]
       }
-      
+
       Q.theta <- matrix(0, nrow=2*m, ncol=2*m)
       for (i in 2:m){ # off-diagonal blocks
         for (j in 1:(i-1)){
@@ -147,7 +145,7 @@ normalmixVcov <- function(y, coefficients, z = NULL, vcov.method = c("Hessian", 
           Q.theta[(2*i-1):(2*i), (2*j-1):(2*j)] = t(matrix(Q.ij, nrow=2, ncol=2))
         }
       }
-      
+
       Q.theta <- Q.theta + t(Q.theta)
       for (i in 1:m){ # diagonal blocks
         C.ii <- array(C0[, i, , ], dim=c(n, 2, 2))
@@ -159,75 +157,75 @@ normalmixVcov <- function(y, coefficients, z = NULL, vcov.method = c("Hessian", 
       # odd rows and columns of Q.theta correspond to mu
       # even rows and columns of Q.theta correspond to sigma
       Q.theta <- Q.theta[c(p1,p2), c(p1,p2)] # first block = wrt mu, second blosk = wrt sigma
-      
+
       dimI <- m-1+2*m
       I <- matrix(0, nrow=dimI, ncol=dimI)
       I[1:(m-1), 1:(m-1)] <- - Q.pi
       I[1:(m-1), m:dimI]  <- - Q.pi.theta
       I[m:dimI, 1:(m-1)]  <- - t(Q.pi.theta)
       I[m:dimI, m:dimI]   <- - Q.theta
-      
+
       if (!is.null(z)) {
         dbar  <-  z*rowSums(post*b) # n by p
-        Q.gamma.theta <- matrix(0, nrow=p, ncol=2*m)  # p by 2*m matrix
+        Q.gam.theta <- matrix(0, nrow=p, ncol=2*m)  # p by 2*m matrix
         for (i in 1:m) {
           C.i <- array(C0[, i, 1, ], dim=c(n, 2))  # n by 2
           Q.i.1 <- colSums(tKR(-C.i+b[, i]*c0[, i, ], z*post[, i]))
           Q.i.2 <- colSums(tKR(c0[, i, ]*post[, i], dbar))  # p*2 vector
-          Q.gamma.theta[, (2*i-1):(2*i)] <- matrix(Q.i.1-Q.i.2, nrow=p, ncol=2)
+          Q.gam.theta[, (2*i-1):(2*i)] <- matrix(Q.i.1-Q.i.2, nrow=p, ncol=2)
         }
-        
-        Q.gamma.theta <- Q.gamma.theta[, c(p1, p2),  drop=FALSE]  # p by 2*m
+
+        Q.gam.theta <- Q.gam.theta[, c(p1, p2),  drop=FALSE]  # p by 2*m
         w1 <- (post*b)%*%t(a) - rowSums(post*b)*t(abar)  # n by m-1
-        Q.pi.gamma.0 <- colSums(tKR(w1, z))  # (m-1)*p vector
-        Q.pi.gamma  <- matrix(Q.pi.gamma.0, nrow=m-1, ncol=p)
-        Q.gamma     <- - t(z) %*% (z*rowSums(post*B)) -
+        Q.pi.gam.0 <- colSums(tKR(w1, z))  # (m-1)*p vector
+        Q.pi.gam  <- matrix(Q.pi.gam.0, nrow=m-1, ncol=p)
+        Q.gam     <- - t(z) %*% (z*rowSums(post*B)) -
           matrix(colSums(tKR(dbar, dbar)), nrow=p, ncol=p)
-        I <- cbind(I, -rbind(Q.pi.gamma, t(Q.gamma.theta)))
-        I <- rbind(I, -cbind(t(Q.pi.gamma), Q.gamma.theta, Q.gamma))
+        I <- cbind(I, -rbind(Q.pi.gam, t(Q.gam.theta)))
+        I <- rbind(I, -cbind(t(Q.pi.gam), Q.gam.theta, Q.gam))
       }  # end if (!is.null(z))
-      
+
     } else  { # compute I with (vcov.method == "OPG")
       other.method = "Hessian"
       score <- t(abar)
       for (j in 1:m) { score <- cbind(score, c0[, j, ]*post[, j]) }
-      
+
       ind <- c(c(1:(m-1)), p1+m-1, p2+m-1)
       score <- score[, ind]
       I <- t(score) %*% score
-      
+
       if (!is.null(z)) {
         dbar  <-  z*rowSums(post*b) # n by p
         score <- cbind(score, dbar)
         I <- t(score) %*% score
       }
-      
+
     } # end if (vcov.method == "OPG")
-    
+
     vcov <- try(solve(I))
     if (class(vcov) == "try-error" || any(diag(vcov) <0) ) {
       vcov <- matrix(NaN, nrow = 3*m-1+p, ncol = 3*m-1+p)
       warning("Fisher information matrix is singular and/or the
               variance is estimated to be negative. Consider using vcov.method=\"",other.method,"\".")
     }
-    
+
     # Because the variance is parameterized as sigma^2, we convert is to sigma
-    
+
     c.mat.vec <- c(rep(1, m-1+m), (1/sigma^(1/2))/2, rep(1, p))
     vcov <- diag(c.mat.vec) %*% vcov %*% diag(c.mat.vec)
-    
+
     # Add the variance of alpha_m
     len   <- length(coefficients)
     M.mat <- diag(len-1)
     M.mat <- rbind(M.mat[1:(m-1), ], c(rep(-1, m-1), rep(0, len-m)),
                    M.mat[m:(len-1), ])
-    
+
     vcov     <- M.mat %*% vcov %*% t(M.mat)
-    
+
   }   # end else (i.e., m >= 2)
-  
+
   vcov
-  
+
 }  # end function normalmixVcov
 
 
@@ -239,49 +237,49 @@ normalmixVcov <- function(y, coefficients, z = NULL, vcov.method = c("Hessian", 
 #' @param m The number of components in the mixture
 #' @param z n by p matrix of regressor associated with gamma
 #' @param vcov.method Method used to compute the variance-covariance matrix, one of \code{"Hessian"} and \code{"OPG"}.
-#' The default option is \code{"Hessian"}. When \code{method = "Hessian"}, the variance-covarince matrix is 
-#' estimated by the Hessian using the formula given in Boldea and Magnus (2009). 
+#' The default option is \code{"Hessian"}. When \code{method = "Hessian"}, the variance-covarince matrix is
+#' estimated by the Hessian using the formula given in Boldea and Magnus (2009).
 #' When \code{method = "OPG"}, the outer product of gradients is used.
 #' @param ninits The number of randomly drawn initial values.
-#' @param epsilon The convergence criterion. Convergence is declared when the penalized log-likelihood increases by less than \code{epsilon}. 
+#' @param epsilon The convergence criterion. Convergence is declared when the penalized log-likelihood increases by less than \code{epsilon}.
 #' @param maxit The maximum number of iterations.
 #' @param epsilon.short The convergence criterion in short EM. Convergence is declared when the penalized log-likelihood increases by less than \code{epsilon.short}.
 #' @param maxit.short The maximum number of iterations in short EM.
 #' @return  A list of class \code{normalMix} with items:
-#' \item{coefficients}{A vector of parameter estimates. Ordered as \eqn{\alpha_1,\ldots,\alpha_m,\mu_1,\ldots,\mu_m,\sigma_1,\ldots,\sigma_m,\gamma}.}
-#' \item{parlist}{The parameter estimates as a list containing alpha, mu, and sigma (and gamma if z is included in the model).}
+#' \item{coefficients}{A vector of parameter estimates. Ordered as \eqn{\alpha_1,\ldots,\alpha_m,\mu_1,\ldots,\mu_m,\sigma_1,\ldots,\sigma_m,\gam}.}
+#' \item{parlist}{The parameter estimates as a list containing alpha, mu, and sigma (and gam if z is included in the model).}
 #' \item{vcov}{The estimated variance-covariance matrix.}
 #' \item{loglik}{The maximized value of the log-likelihood.}
 #' \item{penloglik}{The maximized value of the penalized log-likelihood.}
 #' \item{aic}{Akaike Information Criterion of the fitted model.}
 #' \item{bic}{Bayesian Information Criterion of the fitted model.}
 #' \item{postprobs}{n by m matrix of posterior probabilities for observations}
-#' \item{indices}{n by 1 vector of integers that indicates the indices of components 
+#' \item{indices}{n by 1 vector of integers that indicates the indices of components
 #' each observation belongs to based on computed posterior probabilities}
 #' \item{call}{The matched call.}
 #' \item{m}{The number of components in the mixture.}
-#' @note \code{normalmixPMLE} maximizes the penalized log-likelihood function 
-#' using the EM algorithm with combining short and long runs of EM steps as in Biernacki et al. (2003). 
-#' \code{normalmixPMLE} first runs the EM algorithm from \code{ninits}\eqn{* 4m(1 + p)} initial values 
-#' with the convertence criterion \code{epsilon.short} and \code{maxit.short}. 
-#' Then, \code{normalmixPMLE} uses \code{ninits} best initial values to run the EM algorithm 
-#' with the convertence criterion \code{epsilon} and \code{maxit}. 
+#' @note \code{normalmixPMLE} maximizes the penalized log-likelihood function
+#' using the EM algorithm with combining short and long runs of EM steps as in Biernacki et al. (2003).
+#' \code{normalmixPMLE} first runs the EM algorithm from \code{ninits}\eqn{* 4m(1 + p)} initial values
+#' with the convertence criterion \code{epsilon.short} and \code{maxit.short}.
+#' Then, \code{normalmixPMLE} uses \code{ninits} best initial values to run the EM algorithm
+#' with the convertence criterion \code{epsilon} and \code{maxit}.
 #' @references     Biernacki, C., Celeux, G. and Govaert, G. (2003)
 #' Choosing Starting Values for the EM Algorithm for Getting the
 #' Highest Likelihood in Multivariate Gaussian Mixture Models,
 #' \emph{Computational Statistics and Data Analysis}, \bold{41}, 561--575.
-#' 
+#'
 #' Boldea, O. and Magnus, J. R. (2009)
 #' Maximum Likelihood Estimation of the Multivariate Normal Mixture Model,
 #' \emph{Journal of the American Statistical Association},
 #' \bold{104}, 1539--1549.
-#' 
+#'
 #' Chen, J., Tan, X. and Zhang, R. (2008)
 #' Inference for Normal Mixtures in Mean and Variance,
 #' \emph{Statistica Sinica}, \bold{18}, 443--465.
-#' 
+#'
 #' McLachlan, G. J. and Peel, D. (2000) \emph{Finite Mixture Models}, John Wiley \& Sons, Inc.
-#' @examples 
+#' @examples
 #' data(faithful)
 #' attach(faithful)
 #'
@@ -293,10 +291,10 @@ normalmixPMLE <- function (y, m = 2, z = NULL, vcov.method = c("Hessian", "OPG",
   y <- as.vector(y)
   n <- length(y)
   p <- 0
-  gamma <- NULL
+  gam <- NULL
   ninits.short <- ninits*4*(1 + p)*m
   vcov.method <- match.arg(vcov.method)
-  
+
   if (!is.null(z)) {
     z     <- as.matrix(z)
     p     <- ncol(z)
@@ -307,43 +305,43 @@ normalmixPMLE <- function (y, m = 2, z = NULL, vcov.method = c("Hessian", "OPG",
   } else {
     sd0   <- sd(y) * sqrt((n - 1) / n)
   }
-  
+
   if (m == 1) {
     if (!is.null(z)) {
       mu     <- unname(ls.out$coeff[1])
-      gamma <- unname(ls.out$coeff[2:(1 + p)])
+      gam <- unname(ls.out$coeff[2:(1 + p)])
       res    <- ls.out$residuals
       sigma <- sqrt(mean(res*res))
     } else {
       mu     <- mean(y)
       sigma  <- sd0
     }
-    
+
     loglik   <- - (n/2) *(1 + log(2*pi) + 2*log(sigma))
     aic      <- -2*loglik + 2*(m-1+2*m+p)
     bic      <- -2*loglik + log(n)*(m-1+2*m+p)
     penloglik <- loglik
-    
-    parlist <- list(alpha = 1, mu = mu, sigma = sigma, gamma = gamma)
-    coefficients <- c(alpha = 1, mu = mu, sigma = sigma, gamma = gamma)
+
+    parlist <- list(alpha = 1, mu = mu, sigma = sigma, gam = gam)
+    coefficients <- c(alpha = 1, mu = mu, sigma = sigma, gam = gam)
     postprobs <- rep(1, n)
-    
+
   } else {  # m >= 2
-    
+
     # generate initial values
     tmp <- normalmixPMLEinit(y = y, z = z, ninits = ninits.short, m = m)
     alphaset.s  <- tmp$alpha
     muset.s     <- tmp$mu
     sigmaset.s  <- tmp$sigma
-    gammaset.s  <- tmp$gamma
-    
-    h       <- 0  # setting h=0 gives PMLE  
+    gamset.s  <- tmp$gam
+
+    h       <- 0  # setting h=0 gives PMLE
     k       <- 0  # k is set to 0 because this is PMLE
     tau     <- 0.5  # tau is set to 0.5 because this is PMLE
     sigma0  <- rep(sd0, m)
     mu0     <- double(m)    # dummy
     an      <- 1/n  # penalty term for variance
-    
+
     # short EM
     if (is.null(z)) {
       setting <- c(n, m, ninits.short, maxit.short)  # configulation parameters
@@ -357,13 +355,13 @@ normalmixPMLE <- function (y, m = 2, z = NULL, vcov.method = c("Hessian", "OPG",
       setting.z <- c(n, m, p, ninits.short, maxit.short, jpvt)  # configulation parameters
       out.short <- .C("normalmixpmle_z", as.integer(setting.z), as.double(y), as.double(z),
                       alphaset = as.double(alphaset.s), muset = as.double(muset.s), sigmaset = as.double(sigmaset.s),
-                      gammaset = as.double(gammaset.s),
-                      as.double(sigma0), as.double(mu0), as.double(an), as.double(tau), as.integer(h), 
+                      gamset = as.double(gamset.s),
+                      as.double(sigma0), as.double(mu0), as.double(an), as.double(tau), as.integer(h),
                       as.integer(k), lub = double(2*m), double(3*m), post = double(n*m),
                       loglikset = double(ninits.short), penloglikset = double(ninits.short),
                       notcg = integer(ninits.short), as.double(epsilon.short), double(n*(2+p)), package = "normalregMix")
     }
-    
+
     penloglik.short <- out.short$penloglikset
 
     # long EM
@@ -372,12 +370,12 @@ normalmixPMLE <- function (y, m = 2, z = NULL, vcov.method = c("Hessian", "OPG",
                              list (alpha = out.short$alphaset[(m*(index-1)+1):(m*index)],
                                    mu = out.short$muset[(m*(index-1)+1):(m*index)],
                                    sigma = out.short$sigmaset[(m*(index-1)+1):(m*index)],
-                                   gamma = out.short$gammaset[(p*(index-1)+1):(p*index)]))
-    alphaset <- sapply(short.thetas, "[[", "alpha") 
+                                   gam = out.short$gamset[(p*(index-1)+1):(p*index)]))
+    alphaset <- sapply(short.thetas, "[[", "alpha")
     muset <- sapply(short.thetas, "[[", "mu")
     sigmaset <- sapply(short.thetas, "[[", "sigma")
-    gammaset <- sapply(short.thetas, "[[", "gamma")
-    
+    gamset <- sapply(short.thetas, "[[", "gam")
+
     if (is.null(z)) {
       setting <- c(n, m, ninits, maxit)
       out <- .C("normalmixpmle", as.integer(setting), as.double(y),
@@ -390,27 +388,27 @@ normalmixPMLE <- function (y, m = 2, z = NULL, vcov.method = c("Hessian", "OPG",
       setting.z <- c(n, m, p, ninits, maxit, jpvt)
       out <- .C("normalmixpmle_z", as.integer(setting.z), as.double(y), as.double(z),
                 alphaset = as.double(alphaset), muset = as.double(muset), sigmaset = as.double(sigmaset),
-                gammaset = as.double(gammaset),
+                gamset = as.double(gamset),
                 as.double(sigma0), as.double(mu0), as.double(an), as.double(tau), as.integer(h),
                 as.integer(k), lub = double(2*m), double(3*m), post = double(n*m),
                 loglikset = double(ninits), penloglikset = double(ninits),
                 notcg = integer(ninits), as.double(epsilon), double(n*(2+p)), package = "normalregMix")
     }
-    
+
     # causes an error in snow package, running on %d.
     #   if (mean(out$notcg) >= 0.9) {
     #       warning(sprintf("The EM algorithm failed to converge in %d%% of the initial values.
     #         Try increasing maxit.", 100*mean(out$notcg)))
     # }
-    
+
     index     <- which.max(out$penloglikset)
     alpha     <- out$alphaset[(m*(index-1)+1):(m*index)]
     mu        <- out$muset[(m*(index-1)+1):(m*index)]
     sigma     <- out$sigmaset[(m*(index-1)+1):(m*index)]
-    gamma     <- out$gammaset[(p*(index-1)+1):(p*index)]
+    gam     <- out$gamset[(p*(index-1)+1):(p*index)]
     penloglik <- out$penloglikset[index]
     loglik    <- out$loglikset[index]
-    
+
     # Compute posterior probabilities
     if (is.null(z)) {
       setting <- c(n, m, 1, 1)
@@ -423,43 +421,43 @@ normalmixPMLE <- function (y, m = 2, z = NULL, vcov.method = c("Hessian", "OPG",
     } else {
       setting.z <- c(n, m, p, 1, 1, jpvt)
       out.p <- .C("normalmixpmle_z", as.integer(setting.z), as.double(y), as.double(z),
-                  alphaset = as.double(alpha), muset = as.double(mu), sigmaset = as.double(sigma), gammaset = as.double(gamma),
+                  alphaset = as.double(alpha), muset = as.double(mu), sigmaset = as.double(sigma), gamset = as.double(gam),
                   as.double(sigma0), as.double(mu0), as.double(an), as.double(tau), as.integer(h),
                   as.integer(k), lub = double(2*m), double(3*m), post = double(n*m),
                   loglikset = double(1), penloglikset = double(1),
                   notcg = integer(1), as.double(epsilon), double(n*(2+p)), package = "normalregMix")
     }
-    
+
     aic     <- -2*loglik + 2*(m-1+2*m+p)
     bic     <- -2*loglik + log(n)*(m-1+2*m+p)
-    
+
     mu.order  <- order(mu)
     alpha     <- alpha[mu.order]
     mu        <- mu[mu.order]
     sigma     <- sigma[mu.order]
-    
+
     postprobs <- matrix(out.p$post, nrow=n)
     postprobs <- postprobs[, mu.order]
     colnames(postprobs) <- c(paste("comp", ".", 1:m, sep = ""))
-    
-    parlist <- list(alpha = alpha, mu = mu, sigma = sigma, gamma = gamma)
+
+    parlist <- list(alpha = alpha, mu = mu, sigma = sigma, gam = gam)
     coefficients <- unlist(parlist)
-    
+
   } # end m >= 2
-  
+
   if (vcov.method == "none") {
     vcov <- NULL
   } else {
     vcov <- normalmixVcov(y = y, coefficients = coefficients, z = z , vcov.method = vcov.method)
   }
-  
+
   a <- list(coefficients = coefficients, parlist = parlist, vcov = vcov, loglik = loglik,
             penloglik = penloglik, aic = aic, bic = bic, postprobs = postprobs,
             indices = getComponentIndices(postprobs),
             call = match.call(), m = m, label = "PMLE")
-  
+
   class(a) <- "normalregMix"
-  
+
   a
 }  # end function normalmixPMLE
 
@@ -468,54 +466,54 @@ normalmixPMLE <- function (y, m = 2, z = NULL, vcov.method = c("Hessian", "OPG",
 #' @title normalmixMaxPhi
 #' @name normalmixMaxPhi
 #' @param y n by 1 vector of data
-#' @param parlist The parameter estimates as a list containing alpha, mu, sigma, and gamma 
-#' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m), 
-#' sigma = (sigma_1, ..., sigma_m), gamma = (gamma_1, ..., gamma_m))
+#' @param parlist The parameter estimates as a list containing alpha, mu, sigma, and gamma
+#' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m),
+#' sigma = (sigma_1, ..., sigma_m), gam = (gamma_1, ..., gamma_m))
 #' @param z n by p matrix of regressor associated with gamma
 #' @param an a term used for penalty function
 #' @param tauset A set of initial tau value candidates
 #' @param ninits The number of randomly drawn initial values.
 #' @param epsilon.short The convergence criterion in short EM. Convergence is declared when the penalized log-likelihood increases by less than \code{epsilon.short}.
-#' @param epsilon The convergence criterion. Convergence is declared when the penalized log-likelihood increases by less than \code{epsilon}. 
+#' @param epsilon The convergence criterion. Convergence is declared when the penalized log-likelihood increases by less than \code{epsilon}.
 #' @param maxit.short The maximum number of iterations in short EM.
 #' @param maxit The maximum number of iterations.
 #' @param parallel Determines whether package \code{doParallel} is used for calculation
 #' @param cl Cluster used for parallelization; if it is \code{NULL}, the system will automatically
-#' create a new one for computation accordingly. 
+#' create a new one for computation accordingly.
 #' @return A list with items:
 #' \item{loglik}{Log-likelihood resulting from MEM algorithm at k=1,2,3.}
 #' \item{penloglik}{Penalized log-likelihood resulting from MEM algorithm at k=1,2,3.}
-normalmixMaxPhi <- function (y, parlist, z = NULL, an, tauset = c(0.1,0.3,0.5), 
+normalmixMaxPhi <- function (y, parlist, z = NULL, an, tauset = c(0.1,0.3,0.5),
                              ninits = 10, epsilon.short = 1e-02, epsilon = 1e-08,
-                             maxit.short = 500, maxit = 2000, 
-                             verb = FALSE, 
+                             maxit.short = 500, maxit = 2000,
+                             verb = FALSE,
                              parallel = FALSE,
                              cl = NULL) {
   # Given a parameter estimate of an m component model and tuning paramter an,
   # maximize the objective function for computing the modified EM test statistic
   # for testing H_0 of m components against H_1 of m+1 for a univariate normal finite mixture
-  
+
   warn  <- options(warn=-1) # Turn off warnings
-  
+
   p <- 0
   m <- length(parlist$alpha)
-  
+
   # jpvt must be specified to run SNOW package
   jpvt <- NULL
   if (!is.null(z)) {
     p <- ncol(z)
     jpvt   <- integer(p)    # pivots used in dgelsy
   }
-  
+
   ninits.short <- ninits*4*(1+p)*m
-  
-  
-  
+
+
+
   loglik.all <- matrix(0,nrow=m*length(tauset),ncol=3)
   penloglik.all <- matrix(0,nrow=m*length(tauset),ncol=3)
   # Remember, you can always take phi1 back,
   # phi1 <- vector('list',m*length(tauset))
-  
+
   if (parallel) {
     if (is.null(cl))
       cl <- makeCluster(detectCores())
@@ -534,11 +532,11 @@ normalmixMaxPhi <- function (y, parlist, z = NULL, an, tauset = c(0.1,0.3,0.5),
     penloglik.all <- t(sapply(results, "[[", "penloglik"))
   }
   else
-    for (h in 1:m) 
+    for (h in 1:m)
       for (t in 1:length(tauset)) {
         rowindex <- (t-1)*m + h
         tau <- tauset[t]
-        result <- normalmixMaxPhiStep(c(h, tau), y, parlist, z = NULL, p, jpvt, 
+        result <- normalmixMaxPhiStep(c(h, tau), y, parlist, z = NULL, p, jpvt,
                                       an,
                                       ninits, ninits.short,
                                       epsilon.short, epsilon,
@@ -550,24 +548,24 @@ normalmixMaxPhi <- function (y, parlist, z = NULL, an, tauset = c(0.1,0.3,0.5),
       }
   loglik <- apply(loglik.all, 2, max)  # 3 by 1 vector
   penloglik <- apply(penloglik.all, 2, max)  # 3 by 1 vector
-  
+
   out <- list(loglik = loglik, penloglik = penloglik)
-  
+
   out
-  
+
 }  # end normalmixMaxPhi
 
 ## TODO: verb is not used.
-#' Given a pair of h and tau and data, compute ordinary & 
+#' Given a pair of h and tau and data, compute ordinary &
 #' penalized log-likelihood ratio resulting from MEM algorithm at k=1,2,3, tailored for parallelization.
 #' @export
 #' @title normalmixMaxPhiStep
 #' @name normalmixMaxPhiStep
 #' @param htaupair A set of h and tau
 #' @param y n by 1 vector of data
-#' @param parlist The parameter estimates as a list containing alpha, mu, sigma, and gamma 
-#' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m), 
-#' sigma = (sigma_1, ..., sigma_m), gamma = (gamma_1, ..., gamma_m))
+#' @param parlist The parameter estimates as a list containing alpha, mu, sigma, and gamma
+#' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m),
+#' sigma = (sigma_1, ..., sigma_m), gam = (gamma_1, ..., gamma_m))
 #' @param z n by p matrix of regressor associated with gamma
 #' @param p Dimension of z
 #' @param jpvt Pivots used in dgelsy
@@ -575,11 +573,11 @@ normalmixMaxPhi <- function (y, parlist, z = NULL, an, tauset = c(0.1,0.3,0.5),
 #' @param ninits The number of randomly drawn initial values.
 #' @param ninits.short The number of candidates used to generate an initial phi, in short MEM
 #' @param epsilon.short The convergence criterion in short EM. Convergence is declared when the penalized log-likelihood increases by less than \code{epsilon.short}.
-#' @param epsilon The convergence criterion. Convergence is declared when the penalized log-likelihood increases by less than \code{epsilon}. 
+#' @param epsilon The convergence criterion. Convergence is declared when the penalized log-likelihood increases by less than \code{epsilon}.
 #' @param maxit.short The maximum number of iterations in short EM.
 #' @param maxit The maximum number of iterations.
 #' @return A list of phi, log-likelihood, and penalized log-likelihood resulting from MEM algorithm.
-normalmixMaxPhiStep <- function (htaupair, y, parlist, z = NULL, p, jpvt, 
+normalmixMaxPhiStep <- function (htaupair, y, parlist, z = NULL, p, jpvt,
                                  an,
                                  ninits, ninits.short,
                                  epsilon.short, epsilon,
@@ -589,31 +587,31 @@ normalmixMaxPhiStep <- function (htaupair, y, parlist, z = NULL, p, jpvt,
   # TODO: Beautify and move some parameters to the method
   # that calls this.
   alpha0 <- parlist$alpha
-  
+
   m      <- length(alpha0)
   m1     <- m+1
   k      <- 1
   n      <- length(y)
   h      <- as.numeric(htaupair[1])
   tau    <- as.numeric(htaupair[2])
-  
+
   mu0    <- parlist$mu
   mu0h   <- c(0,mu0,0)        # m+1 by 1
   sigma0 <- parlist$sigma
   sigma0h<- c(sigma0[1:h],sigma0[h:m])
-  gamma0 <- parlist$gamma
-  
+  gam0 <- parlist$gam
+
   # generate initial values
   tmp <- normalmixPhiInit(y = y, parlist = parlist, z = z, h=h, tau = tau, ninits = ninits.short)
   # tmp$alpha, tmp$sigma: m+1 by ninits matrix, tmp$mu: p by m+1 by ninits array
-  # tmp$gamma: p by ninits matrix
-  
+  # tmp$gam: p by ninits matrix
+
   alphaset.s   <- tmp$alpha
   muset.s   <- tmp$mu
   sigmaset.s   <- tmp$sigma
-  gammaset.s  <- tmp$gamma
-  
-  
+  gamset.s  <- tmp$gam
+
+
   if (is.null(z)) {
     setting <- c(n,m1,ninits.short,maxit.short)  # configulation parameters
     out.short <- .C("normalmixpmle", as.integer(setting), as.double(y),
@@ -625,31 +623,31 @@ normalmixMaxPhiStep <- function (htaupair, y, parlist, z = NULL, p, jpvt,
   } else {
     setting.z <- c(n,m1,p,ninits.short,maxit.short,jpvt)  # configulation parameters
     out.short <- .C("normalmixpmle_z", as.integer(setting.z), as.double(y), as.double(z),
-                    alphaset = as.double(alphaset.s), muset = as.double(muset.s), sigmaset = as.double(sigmaset.s), gammaset = as.double(gammaset.s),
+                    alphaset = as.double(alphaset.s), muset = as.double(muset.s), sigmaset = as.double(sigmaset.s), gamset = as.double(gamset.s),
                     as.double(sigma0h), as.double(mu0h), as.double(an), as.double(tau), as.integer(h),
                     as.integer(k), lub = double(2*m1), double(3*m1), post = double(n*m1),
                     loglikset = double(ninits.short), penloglikset = double(ninits.short),
                     notcg = integer(ninits.short), as.double(epsilon.short), double(n*(2+p)), package = "normalregMix")
   }
-  
+
   if (verb && any(out.short$notcg)) {
     cat(sprintf("non-convergence rate at short-EM = %.3f\n",mean(out.short$notcg)))
   }
-  
+
   penloglik.short <- out.short$penloglikset    # extract the 4th argument = penloglik
-  
+
   # long EM
   indices <- order(penloglik.short, decreasing = TRUE)[1:ninits]
   short.thetas <- lapply(indices, function (index) theta =
                            list (alpha = out.short$alphaset[(m*(index-1)+1):(m*index)],
                                  mu = out.short$muset[(m*(index-1)+1):(m*index)],
                                  sigma = out.short$sigmaset[(m*(index-1)+1):(m*index)],
-                                 gamma = out.short$gammaset[(p*(index-1)+1):(p*index)]))
-  alphaset <- sapply(short.thetas, "[[", "alpha") 
+                                 gam = out.short$gamset[(p*(index-1)+1):(p*index)]))
+  alphaset <- sapply(short.thetas, "[[", "alpha")
   muset <- sapply(short.thetas, "[[", "mu")
   sigmaset <- sapply(short.thetas, "[[", "sigma")
-  gammaset <- sapply(short.thetas, "[[", "gamma")
-  
+  gamset <- sapply(short.thetas, "[[", "gam")
+
   if (is.null(z)) {
     setting <- c(n,m1,ninits,maxit)
     out <- .C("normalmixpmle", as.integer(setting), as.double(y),
@@ -661,7 +659,7 @@ normalmixMaxPhiStep <- function (htaupair, y, parlist, z = NULL, p, jpvt,
   } else {
     setting.z <- c(n,m1,p,ninits,maxit,jpvt)
     out <- .C("normalmixpmle_z", as.integer(setting.z), as.double(y), as.double(z),
-              alphaset = as.double(alphaset), muset = as.double(muset), sigmaset = as.double(sigmaset), gammaset = as.double(gammaset),
+              alphaset = as.double(alphaset), muset = as.double(muset), sigmaset = as.double(sigmaset), gamset = as.double(gamset),
               as.double(sigma0h), as.double(mu0h), as.double(an), as.double(tau), as.integer(h),
               as.integer(k), lub = double(2*m1), double(3*m1), post = double(n*m1),
               loglikset = double(ninits), penloglikset = double(ninits),
@@ -672,37 +670,37 @@ normalmixMaxPhiStep <- function (htaupair, y, parlist, z = NULL, p, jpvt,
   #   warning(sprintf("The EM algorithm failed to converge in %d%% of the
   #                   initial values at h = %d. Please increase maxit.", 100*mean(out$notcg), h))
   # }
-  
+
   index       <- which.max(out$penloglikset)
   alpha       <- out$alphaset[(m1*(index-1)+1):(m1*index)]
   mu          <- out$muset[(m1*(index-1)+1):(m1*index)]
   sigma       <- out$sigmaset[(m1*(index-1)+1):(m1*index)]
-  gamma       <- out$gammaset[(p*(index-1)+1):(p*index)]
+  gam       <- out$gamset[(p*(index-1)+1):(p*index)]
   penloglik   <- out$penloglikset[index]
   loglik      <- out$loglikset[index]
   noncg.rate  <- mean(out$notcg)
-  
+
   #    print(c(h,k,tau,alpha,mu,sigma))
   #   print(loglik)
   #   print(penloglik)
-  
+
   mu.order  <- order(mu)
   alpha     <- alpha[mu.order]
   mu        <- mu[mu.order]
   sigma     <- sigma[mu.order]
-  
-  a0 = list(alpha = alpha, mu = mu, sigma = sigma, gamma = gamma,
+
+  a0 = list(alpha = alpha, mu = mu, sigma = sigma, gam = gam,
             penloglik = penloglik, loglik=loglik)
-  
+
   # update parameters
   a     <- normalmixPhi2(y, z, a0, sigma0 = sigma0, h=h, tau=tau, an=an)
-  a[[1]]  <- list(alpha = alpha, mu = mu, sigma = sigma, gamma = gamma,
+  a[[1]]  <- list(alpha = alpha, mu = mu, sigma = sigma, gam = gam,
                   penloglik = a0$penloglik, loglik=a0$loglik)
-  
+
   phi1 <- c(a[[1]], h = h)
   loglik <- sapply(a, "[[", "loglik")    # extract loglik at k=1,2,3
   penloglik <- sapply(a, "[[", "penloglik")    # extract penloglik at k=1,2,3
-  
+
   return (list(phi1 = phi1, loglik = loglik, penloglik = penloglik))
 }
 
@@ -714,44 +712,44 @@ normalmixMaxPhiStep <- function (htaupair, y, parlist, z = NULL, p, jpvt,
 #' @name normalmixPhi2
 #' @param y n by 1 vector of data
 #' @param z n by p matrix of regressor associated with gamma
-#' @param parlist The parameter estimates as a list containing alpha, mu, sigma, and gamma 
-#' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m), 
-#' sigma = (sigma_1, ..., sigma_m), gamma = (gamma_1, ..., gamma_m))
-#' @param sigma0 m by 1 vector of sigma 
+#' @param parlist The parameter estimates as a list containing alpha, mu, sigma, and gam
+#' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m),
+#' sigma = (sigma_1, ..., sigma_m), gam = (gamma_1, ..., gamma_m))
+#' @param sigma0 m by 1 vector of sigma
 #' @param h h used as index for pivoting
 #' @param tau Tau used to split the h-th component
 #' @param an a term used for penalty function
-#' @return A list of length 2, where the first element is the local modified 
-#' MEM test statistic at k=2, the second element is 
+#' @return A list of length 2, where the first element is the local modified
+#' MEM test statistic at k=2, the second element is
 #' the local modified MEM test statistic at k=3
 normalmixPhi2 <- function (y, z = NULL, parlist, sigma0, h, tau, an) {
-  
+
   n     <- length(y)
   alpha <- parlist$alpha
   mu    <- parlist$mu
   sigma <- parlist$sigma
-  gamma <- parlist$gamma
+  gam <- parlist$gam
   m1    <- length(alpha) # m1 = m+1
   m     <- m1-1
   sigma0h <- c(sigma0[1:h],sigma0[h:m])
   a     <- vector('list',3)
   mu0   <- double(m1)
   h0    <- 0
-  
+
   p      <- 0
   if (!is.null(z)) {
     p <- ncol(z)
     jpvt <- integer(p)
     setting.z <- c(n,m1,p,1,1,jpvt)
   }
-  
+
   # setting <- c(n,m1,1,2)
   setting <- c(n,m1,1,1)
-  
+
   for (k in 2:3) {
     a[[k]] <- list(penloglik = -Inf, loglik = -Inf)
   }
-  
+
   for (k in 2:3) {
     # Two EM steps
     if (is.null(z)) {
@@ -763,42 +761,43 @@ normalmixPhi2 <- function (y, z = NULL, parlist, sigma0, h, tau, an) {
                 notcg = integer(1), tol = as.double(1e-8), package = "normalregMix")
     } else {
       out <- .C("normalmixpmle_z", as.integer(setting.z), as.double(y), as.double(z),
-                alpha = as.double(alpha), mu = as.double(mu), sigma = as.double(sigma), gamma = as.double(gamma),
+                alpha = as.double(alpha), mu = as.double(mu), sigma = as.double(sigma), gam = as.double(gam),
                 as.double(sigma0h), as.double(mu0), as.double(an), as.double(tau), as.integer(h),
                 as.integer(k), lub = double(2*m1), double(3*m1), post = double(n*m1),
                 loglik = double(1), penloglik = double(1),
                 notcg = integer(1), tol = as.double(1e-8), double(n*(2+p)), package = "normalregMix")
     }
-    
+
     # Check singularity: if singular, break from the loop
     if ( any(out$sigma < 1e-06) || any(out$alpha < 1e-06) || is.na(sum(out$alpha)) ) {
       break
     }
-    
+
     alpha    <- out$alpha
     mu      <- out$mu
     sigma    <- out$sigma
-    gamma    <- out$gamma
+    gam    <- out$gam
     loglik    <- out$loglik
     penloglik   <- out$penloglik
-    
-    a[[k]] <- list(alpha = alpha, mu = mu, sigma = sigma, gamma = gamma, penloglik = penloglik, loglik = loglik)
-    
+
+    a[[k]] <- list(alpha = alpha, mu = mu, sigma = sigma, gam = gam, penloglik = penloglik, loglik = loglik)
+
   }
-  
+
   a
-  
+
 }  # end function normalmixPhi2
 
-#' Generates lists of parameters for initial candidates used by 
+#' Generates lists of parameters for initial candidates used by
 #' the modified EM test for mixture of normals.
 #' @export
 #' @title normalmixPhiInit
 #' @name normalmixPhiInit
 #' @param y n by 1 vector of data
-#' @param parlist The parameter estimates as a list containing alpha, mu, sigma, and gamma 
-#' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m), 
-#' sigma = (sigma_1, ..., sigma_m), gamma = (gamma_1, ..., gamma_m))
+#' @param parlist The parameter estimates as a list containing alpha, mu, sigma,
+#' and gamma in the form of (alpha = (alpha_1, ..., alpha_m),
+#' mu = (mu_1, ..., mu_m), sigma = (sigma_1, ..., sigma_m),
+#' gam = (gamma_1, ..., gamma_m))
 #' @param z n by p matrix of regressor associated with gamma
 #' @param h h used as index for pivoting
 #' @param tau Tau used to split the h-th component
@@ -807,27 +806,27 @@ normalmixPhi2 <- function (y, z = NULL, parlist, sigma0, h, tau, an) {
 #' \item{alpha}{m+1 by ninits matrix for alpha}
 #' \item{mu}{m+1 by ninits matrix for mu}
 #' \item{sigma}{m+1 by ninits matrix for sigma}
-#' \item{gamma}{m+1 by ninits matrix for gamma}
+#' \item{gam}{m+1 by ninits matrix for gamma}
 normalmixPhiInit <- function (y, parlist, z = NULL, h, tau, ninits = 1)
 {
   if (test.on) # initial values controlled by test.on
     set.seed(test.seed)
-  
+
   n     <- length(y)
   p     <- ncol(z)
-  gamma <- NULL
-  
+  gam <- NULL
+
   mu0      <- parlist$mu
   sigma0   <- parlist$sigma
   alpha0   <- parlist$alpha
-  gamma0  <- parlist$gamma
+  gam0  <- parlist$gam
   m       <- length(alpha0)
-  
+
   if (!is.null(z)){
-    y    <- y - z %*% gamma0
-    gamma <- matrix(runif(p*ninits,min=0.5,max=1.5),nrow=p)*gamma0
+    y    <- y - z %*% gam0
+    gam <- matrix(runif(p*ninits,min=0.5,max=1.5),nrow=p)*gam0
   }
-  
+
   if (m>=2){
     mid <- (mu0[1:(m-1)]+mu0[2:m])/2  # m-1 by 1
     lb0 <- c(min(y),mid)        # m by 1
@@ -838,18 +837,18 @@ normalmixPhiInit <- function (y, parlist, z = NULL, h, tau, ninits = 1)
     lb  <- c(min(y),min(y))
     ub  <- c(max(y),max(y))
   }
-  
+
   mu <- matrix(runif((m+1)*ninits,min=lb,max=ub),nrow=m+1)
-  
+
   sigma.hyp <- c(sigma0[1:h],sigma0[h:m])  # m+1 by 1
   sigma <- matrix(runif((m+1)*ninits,min=sigma.hyp*0.25,max=sigma.hyp*2),nrow=m+1)
-  
+
   alpha.hyp <- c(alpha0[1:h],alpha0[h:m])  # m+1 by 1
   alpha.hyp[h:(h+1)] <- c(alpha.hyp[h]*tau,alpha.hyp[h+1]*(1-tau))
   alpha <- matrix(rep.int(alpha.hyp,ninits),nrow=m+1)
-  
-  list(alpha = alpha, mu = mu, sigma = sigma, gamma = gamma)
-  
+
+  list(alpha = alpha, mu = mu, sigma = sigma, gam = gam)
+
 }  # end function normalmixPhiInit
 
 
@@ -865,29 +864,29 @@ normalmixPhiInit <- function (y, parlist, z = NULL, h, tau, ninits = 1)
 #' \item{alpha}{m by ninits matrix for alpha}
 #' \item{mu}{m by ninits matrix for mu}
 #' \item{sigma}{m by ninits matrix for sigma}
-#' \item{gamma}{m by ninits matrix for gamma}
+#' \item{gam}{m by ninits matrix for gam}
 normalmixPMLEinit <- function (y, z = NULL, ninits = 1, m = 2)
 {
   if (test.on) # initial values controlled by test.on
     set.seed(test.seed)
-  
+
   n <- length(y)
   p <- ncol(z)
-  gamma <- NULL
+  gam <- NULL
   if (!is.null(z)){
     out     <- lsfit(z,y)
-    gamma0  <- out$coef[-1]
-    gamma   <- matrix(runif(p*ninits, min=0.5, max=1.5), nrow=p) * gamma0
+    gam0  <- out$coef[-1]
+    gam   <- matrix(runif(p*ninits, min=0.5, max=1.5), nrow=p) * gam0
     y       <- out$residuals + out$coef[1]
   }
-  
+
   alpha <- matrix(runif(m * ninits), nrow=m)
   alpha <- t(t(alpha) / colSums(alpha))
   mu    <- matrix(runif(m * ninits, min = min(y), max = max(y)), nrow=m)
   sigma <- matrix(runif(m * ninits, min = 0.01, max = 2)*sd(y), nrow=m)
-  
-  list(alpha = alpha, mu = mu, sigma = sigma, gamma = gamma)
-  
+
+  list(alpha = alpha, mu = mu, sigma = sigma, gam = gam)
+
 }  # end function normalmixPMLEinit
 
 ## TODO: This has not been used. Do I remove this?
@@ -897,7 +896,7 @@ normalmixPMLEinit <- function (y, z = NULL, ninits = 1, m = 2)
 #' @name rnormregmix
 #' @param n The number of observations
 #' @param x n by k-1 matrix that does NOT include a constant
-#' @param alpha m by 1 vector that represents proportions of components 
+#' @param alpha m by 1 vector that represents proportions of components
 #' @param mubeta k by m matrix that represents (mu times k regression coefficients) on x for m components
 #' @param sigma m by 1 vector that represents sd of components
 #' @return n by 1 vector that is formed by regressor x
@@ -913,10 +912,10 @@ rnormregmix <- function (n, x = NULL, alpha, mubeta, sigma) {
   #  y : n by 1 vector
   if (test.on) # initial values controlled by test.on
     set.seed(test.seed)
-  
+
   m     <- length(alpha)
   mubeta   <- matrix(mubeta, ncol=m)
-  
+
   if (!is.null(x)){
     x <- as.matrix(x)
     if (nrow(x) != n) { stop("y and x must have the same number of rows.") }
@@ -927,9 +926,9 @@ rnormregmix <- function (n, x = NULL, alpha, mubeta, sigma) {
     ii   <- sample(m, n, replace=TRUE, prob=alpha)
     y   <- rnorm(n, mean = mubeta[, ii], sd = sigma[ii])
   }
-  
+
   y
-  
+
 }  # end function rnormregmix
 
 
@@ -938,7 +937,7 @@ rnormregmix <- function (n, x = NULL, alpha, mubeta, sigma) {
 #' @export
 #' @title omega.ji
 #' @name omega.ji
-#' @param phi_i 3 by 1 column consisting of alpha, mu, sigma of ith component 
+#' @param phi_i 3 by 1 column consisting of alpha, mu, sigma of ith component
 #' @param phi_j 3 by 1 column consisting of alpha, mu, sigma of jth component
 #' @return omega_{j|i}
 #' @references Maitra, R., and Melnykov, V. (2010)
@@ -947,7 +946,7 @@ rnormregmix <- function (n, x = NULL, alpha, mubeta, sigma) {
 #' \bold{19}, 354--376.
 # Returns a misclassification rate omega_ji given two components i, j,
 # i.e. the probability of choosing component j where
-# the true model is ith component.  
+# the true model is ith component.
 omega.ji <- function(phi_i, phi_j) {
   alpha_i <- phi_i[1]
   alpha_j <- phi_j[1]
@@ -955,17 +954,17 @@ omega.ji <- function(phi_i, phi_j) {
   mu_j <- phi_j[2]
   sigma_i <- phi_i[3]
   sigma_j <- phi_j[3]
-  
+
   a <- (1/sigma_j^2 - 1/sigma_i^2)
   b <- mu_i / sigma_i^2 - mu_j / sigma_j^2
   c <- mu_j^2 / sigma_j^2 - mu_i^2 / sigma_i^2
-  
+
   if (sigma_i == sigma_j)
     if (mu_i > mu_j)
-      omega_ji = pnorm((2 * log(alpha_j/alpha_i) - c)/(2*b), 
+      omega_ji = pnorm((2 * log(alpha_j/alpha_i) - c)/(2*b),
                        mean = mu_i, sd = sigma_i)
   else
-    omega_ji = 1 - pnorm((2 * log(alpha_j/alpha_i) - c)/(2*b), 
+    omega_ji = 1 - pnorm((2 * log(alpha_j/alpha_i) - c)/(2*b),
                          mean = mu_i, sd = sigma_i)
   else {
     d <- 2 * log(alpha_j * sigma_i / (alpha_i * sigma_j)) - c + (b^2 / a)
@@ -973,8 +972,8 @@ omega.ji <- function(phi_i, phi_j) {
     if (sigma_i > sigma_j)
       omega_ji = pnorm(sqrt(da)-b/a, mean = mu_i, sd = sigma_i) -
       pnorm(-sqrt(da)-b/a, mean = mu_i, sd = sigma_i)
-    else 
-      omega_ji = 1 + 
+    else
+      omega_ji = 1 +
       pnorm(-sqrt(da)-b/a, mean = mu_i, sd = sigma_i) -
       pnorm(sqrt(da)-b/a, mean = mu_i, sd = sigma_i)
   }
@@ -983,11 +982,11 @@ omega.ji <- function(phi_i, phi_j) {
 
 #' Computes omega_{12} defined in Maitra and Melnykov (2010)
 #' @export
-#' @title omega.12 
+#' @title omega.12
 #' @name omega.12
-#' @param parlist The parameter estimates as a list containing alpha, mu, sigma, and gamma 
-#' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m), 
-#' sigma = (sigma_1, ..., sigma_m), gamma = (gamma_1, ..., gamma_m))
+#' @param parlist The parameter estimates as a list containing alpha, mu, sigma, and gam
+#' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m),
+#' sigma = (sigma_1, ..., sigma_m), gam = (gam_1, ..., gam_m))
 #' @return The misclassification rate omega_ij
 #' @references Maitra, R., and Melnykov, V. (2010)
 #' Simulating Data to Study Performance of Finite Mixture Modeling and Model-Based Clustering Algorithms,
@@ -998,10 +997,10 @@ omega.12 <- function(parlist)
 {
   phi1 <- c(alpha = parlist$alpha[1], mu = parlist$mu[1], sigma = parlist$sigma[1])
   phi2 <- c(alpha = parlist$alpha[2], mu = parlist$mu[2], sigma = parlist$sigma[2])
-  
+
   part1 <- omega.ji(phi1, phi2)
   part2 <- omega.ji(phi2, phi1)
-  
+
   return((part1 + part2) / 2)
 }  # end function omega.12
 
@@ -1010,10 +1009,10 @@ omega.12 <- function(parlist)
 #' @export
 #' @title omega.123
 #' @name omega.123
-#' @param parlist The parameter estimates as a list containing alpha, mu, sigma, and gamma 
-#' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m), 
-#' sigma = (sigma_1, ..., sigma_m), gamma = (gamma_1, ..., gamma_m))
-#' @return A 2 by 1 vector whose first element is omega_12 and second element is omega_23 
+#' @param parlist The parameter estimates as a list containing alpha, mu, sigma, and gamma
+#' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m),
+#' sigma = (sigma_1, ..., sigma_m), gam = (gamma_1, ..., gamma_m))
+#' @return A 2 by 1 vector whose first element is omega_12 and second element is omega_23
 #' @references Maitra, R., and Melnykov, V. (2010)
 #' Simulating Data to Study Performance of Finite Mixture Modeling and Model-Based Clustering Algorithms,
 #' \emph{Journal of Computational and Graphical Statistica},
@@ -1023,26 +1022,26 @@ omega.123 <- function(parlist)
   phi1 <- c(alpha = parlist$alpha[1], mu = parlist$mu[1], sigma = parlist$sigma[1])
   phi2 <- c(alpha = parlist$alpha[2], mu = parlist$mu[2], sigma = parlist$sigma[2])
   phi3 <- c(alpha = parlist$alpha[3], mu = parlist$mu[3], sigma = parlist$sigma[3])
-  
+
   part1 <- omega.ji(phi1, phi2)
   part2 <- omega.ji(phi2, phi1)
   w12 <- (part1 + part2)/2
-  
+
   part3 <- omega.ji(phi2, phi3)
   part4 <- omega.ji(phi3, phi2)
   w23 <- (part3 + part4)/2
-  
+
   return(c(w12, w23))
-  
+
 }  # end function omega.123
 
 #' Computes omega_{12}, omega_{23}, and omega_{34} defined in Maitra and Melnykov (2010)
 #' @export
 #' @title omega.1234
 #' @name omega.1234
-#' @param parlist The parameter estimates as a list containing alpha, mu, sigma, and gamma 
-#' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m), 
-#' sigma = (sigma_1, ..., sigma_m), gamma = (gamma_1, ..., gamma_m))
+#' @param parlist The parameter estimates as a list containing alpha, mu, sigma, and gamma
+#' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m),
+#' sigma = (sigma_1, ..., sigma_m), gam = (gamma_1, ..., gamma_m))
 #' @return A 3 by 1 vector consisting of omega_12, omega_23, and omega_34
 #' @references Maitra, R., and Melnykov, V. (2010)
 #' Simulating Data to Study Performance of Finite Mixture Modeling and Model-Based Clustering Algorithms,
@@ -1054,21 +1053,21 @@ omega.1234 <- function(parlist)
   phi2 <- c(alpha = parlist$alpha[2], mu = parlist$mu[2], sigma = parlist$sigma[2])
   phi3 <- c(alpha = parlist$alpha[3], mu = parlist$mu[3], sigma = parlist$sigma[3])
   phi4 <- c(alpha = parlist$alpha[4], mu = parlist$mu[4], sigma = parlist$sigma[4])
-  
+
   part1 <- omega.ji(phi1, phi2)
   part2 <- omega.ji(phi2, phi1)
   w12 <- (part1 + part2)/2
-  
+
   part3 <- omega.ji(phi2, phi3)
   part4 <- omega.ji(phi3, phi2)
   w23 <- (part3 + part4)/2
-  
+
   part5 <- omega.ji(phi3, phi4)
   part6 <- omega.ji(phi4, phi3)
   w34 <- (part5 + part6)/2
-  
+
   return(c(w12, w23, w34))
-  
+
 }  # end function omega.1234
 
 # TODO: This has not been used. Do I remove this? The same functions is in other_funcs.R.
@@ -1076,26 +1075,26 @@ coef.to.list <- function(coefficients, z = NULL) {
   # 　Convert coefficients to list
   len     <- length(coefficients)
   p       <- 0
-  gamma   <- NULL
-  
+  gam   <- NULL
+
   if (!is.null(z)) {
     z <- as.matrix(z)
     p <- ncol(z)
-    gamma <- coefficients[(len-p+1):len]
+    gam <- coefficients[(len-p+1):len]
   }
-  
+
   m <- (len-p)/3
   if (round(m) != m) {
     stop("The dimension of the coefficients is incompatible with z. Please check the data.")
   }
-  
+
   param   <- matrix(coefficients[1:(len-p)], nrow=m, ncol=3)
   alpha   <- param[, 1]
   mu      <- param[, 2]
   sigma   <- param[, 3]
-  
-  a = list(alpha = alpha, mu = mu, sigma = sigma, gamma = gamma)
-  
+
+  a = list(alpha = alpha, mu = mu, sigma = sigma, gam = gam)
+
   a
-  
+
 }

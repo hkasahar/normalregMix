@@ -32,12 +32,12 @@ coef.to.list <- function(coefficients, z = NULL) {
 # 　Convert coefficients to list
 len     <- length(coefficients)
 p       <- 0
-gamma   <- NULL
+gam   <- NULL
 
 if (!is.null(z)) {
   z <- as.matrix(z)
   p <- ncol(z)
-  gamma <- coefficients[(len-p+1):len]
+  gam <- coefficients[(len-p+1):len]
 }
 
 m <- (len-p)/3
@@ -50,7 +50,7 @@ alpha   <- param[, 1]
 mu      <- param[, 2]
 sigma   <- param[, 3]
 
-a = list(alpha = alpha, mu = mu, sigma = sigma, gamma = gamma)
+a = list(alpha = alpha, mu = mu, sigma = sigma, gam = gam)
 
 a
 

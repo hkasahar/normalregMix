@@ -5,9 +5,9 @@
 #' @name regmixCrit
 #' @param y n by 1 vector of data for y
 #' @param x n by q matrix of data for x
-#' @param parlist The parameter estimates as a list containing alpha, mu, sigma, and gamma 
-#' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m), 
-#' sigma = (sigma_1, ..., sigma_m), gamma = (gamma_1, ..., gamma_m))
+#' @param parlist The parameter estimates as a list containing alpha, mu, sigma, and gamma
+#' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m),
+#' sigma = (sigma_1, ..., sigma_m), gam = (gamma_1, ..., gamma_m))
 #' @param z n by p matrix of regressor associated with gamma
 #' @param values 3 by 1 Vector of length 3 (k = 1, 2, 3) at which the p-values are computed
 #' @param parallel Determines whether package \code{doParallel} is used for calculation
@@ -31,64 +31,64 @@ regmixCrit <- function(y, x, parlist, z = NULL, values = NULL, parallel = TRUE,
   #   crit = (10%, 5%, 1% critical values), pvals = p-values
   if (test.on) # initial values controlled by test.on
     set.seed(test.seed)
-  
+
   y  <- as.vector(y)
   n  <- length(y)
   p  <- 0
-  
+
   alpha   <- parlist$alpha
   mubeta  <- parlist$mubeta
   sigma   <- parlist$sigma
-  gamma   <- parlist$gamma
+  gam   <- parlist$gam
   m       <- length(alpha)
-  
+
   if (!is.null(z)) {
     z <- as.matrix(z)
     p <- ncol(z)
-    y   <- y - z %*% gamma
+    y   <- y - z %*% gam
   }
-  
+
   pvals <- NULL
-  
+
   x     <- as.matrix(x)
   x1    <- cbind(1,x)
   q     <- ncol(x)
-  
+
   W  <- t(t(y - x1 %*% mubeta)/sigma)       # normalized data, n by m
   f  <- t(t(exp(-W^2/2)/sqrt(2*pi))/sigma)  # pdf, n by m
   f0 <- colSums(t(f)*alpha)                 # data pdf, n by 1
-  
+
   H <- hermite(W,sigma)
-  
+
   w_m <- t(t(f)*alpha)/f0  # n by m matrix of w_{ji}
-  
+
   if (m == 1) {
     S_alpha <- NULL
   } else {
     S_alpha <- (f[,1:(m-1)] - f[,m])/f0
   }
-  
+
   S_mu    <- w_m*H[,,1]
   S_beta  <- matrix(0, nrow=n, ncol=q*m)
-  
+
   for (j in 1:m) {
     S_beta[, (1+(j-1)*q):(j*q)] <- x*S_mu[, j]
   }
-  
+
   S_sigma <- w_m*H[,,2]
   S_eta   <- cbind(S_alpha, S_mu, S_beta, S_sigma)
-  
+
   if (!is.null(z)) {
-    S_gamma <- z*rowSums(S_mu)
-    S_eta <- cbind(S_eta,S_gamma)
+    S_gam <- z*rowSums(S_mu)
+    S_eta <- cbind(S_eta,S_gam)
   }
-  
+
   n_lam <- q*(q+1)/2+2*q+2
   S_lam <- matrix(0, nrow=n, ncol=n_lam*m)
   xx    <- matrix(0, nrow=n, ncol=q*(q+1)/2)
-  
+
   xx[,1:q] <- x*x
-  
+
   if (q > 1) {
     t <- q + 1
     for (j in 1:(q-1)) {
@@ -98,7 +98,7 @@ regmixCrit <- function(y, x, parlist, z = NULL, values = NULL, parallel = TRUE,
       }
     }
   }
-  
+
   for (j in 1:m) {
     w_2 <- S_sigma[,j]
     w_3 <- w_m[,j]*H[,j,3]
@@ -107,7 +107,7 @@ regmixCrit <- function(y, x, parlist, z = NULL, values = NULL, parallel = TRUE,
     S_lam_2 <- cbind(w_4, x*w_3, xx*w_2)
     S_lam[, ((j-1)*n_lam+1):(j*n_lam)] <- cbind(S_lam_1, S_lam_2)
   }
-  
+
   I_eta     <- t(S_eta) %*% S_eta/n
   I_lam     <- t(S_lam) %*% S_lam/n
   I_el      <- t(S_eta) %*% S_lam/n
@@ -117,22 +117,22 @@ regmixCrit <- function(y, x, parlist, z = NULL, values = NULL, parallel = TRUE,
     stop("The critical value cannot be computed due to singularity of some matrices.
          Please try a bootstrap version, regmixCritBoot and regmixMEMtestBoot.")
   }
-  
+
   # generate u ~ N(0,I_eta_lam)
   set.seed(123456)
   e <- eigen(I_eta_lam, symmetric=TRUE)  # eigenvalue decomposition is slower than chol but more stable
   u <- t(e$vec %*% (t(e$vec) * sqrt(e$val)) %*% matrix(rnorm(nrep*n_lam*m), nrow=n_lam*m))
-  
+
   q_1 <- 1+q
   q_2 <- 1+q+q*(q+1)/2
-  
+
   LR <- matrix(0, nrow=nrep, ncol=m)
-  
+
   if ( (parallel) && (is.null(cl)) ) {
     ncpus <- parallel::detectCores()
     cl <- parallel::makePSOCKcluster(rep("localhost", ncpus))
   }
-  
+
   for (j in 1:m) {
     I_j <- I_eta_lam[((j-1)*n_lam+1):(j*n_lam),((j-1)*n_lam+1):(j*n_lam)]
     if (qr(I_j)$rank == nrow(I_j)) {
@@ -155,7 +155,7 @@ regmixCrit <- function(y, x, parlist, z = NULL, values = NULL, parallel = TRUE,
     inv_V_22 <- solve(V_22)
     Z_22 <- t(inv_V_22[1,] %*% t(Z_2))
     LR_1 <- rowSums((Z_1_2 %*% solve(V_1_2))*Z_1_2) + (1/inv_V_22[1,1])*(Z_22^2)*(Z_22<0)
-    
+
     # Lambda_2
     if (parallel) {
       parallel::clusterSetRNGStream(cl, 123456)
@@ -165,21 +165,21 @@ regmixCrit <- function(y, x, parlist, z = NULL, values = NULL, parallel = TRUE,
     }
     LR[,j]  <- apply(cbind(LR_1,LR_2), 1, max)
     }
-  
+
   if (parallel) { parallel::stopCluster(cl) }
-  
+
   max_EM <- apply(LR, 1, max)
   max_EM_sort <- sort(max_EM)
   qc <- floor(nrep*c(0.90,0.95,0.99))
   crit <- max_EM_sort[qc]
-  
+
   if (!is.null(values)) {
     q1 <- length(values)
     pvals <- rowMeans(t(matrix(rep.int(max_EM_sort,q1),ncol=q1)) >= values)
   }
-  
+
   return(list(crit = crit, pvals = pvals))
-  
+
   } # end function regmixCrit
 
 
@@ -188,10 +188,10 @@ regmixCrit <- function(y, x, parlist, z = NULL, values = NULL, parallel = TRUE,
 #' @title regmixCritBoot
 #' @name regmixCritBoot
 #' @param y n by 1 vector of data for y
-#' @param x n by q vector of data for x 
-#' @param parlist The parameter estimates as a list containing alpha, mu, sigma, and gamma 
-#' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m), 
-#' sigma = (sigma_1, ..., sigma_m), gamma = (gamma_1, ..., gamma_m))
+#' @param x n by q vector of data for x
+#' @param parlist The parameter estimates as a list containing alpha, mu, sigma, and gamma
+#' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m),
+#' sigma = (sigma_1, ..., sigma_m), gam = (gamma_1, ..., gamma_m))
 #' @param z n by p matrix of regressor associated with gamma
 #' @param values 3 by 1 Vector of length 3 (k = 1, 2, 3) at which the p-values are computed
 #' @param ninits The number of initial candidates to be generated
@@ -205,27 +205,27 @@ regmixCritBoot <- function (y, x, parlist, z = NULL, values = NULL, ninits = 100
                             nbtsp = 199, parallel = TRUE, cl = NULL) {
   if (test.on) # initial values controlled by test.on
     set.seed(test.seed)
-  
+
   y  <- as.vector(y)
   n  <- length(y)
   x  <- as.matrix(x)
-  
+
   alpha   <- parlist$alpha
   mubeta  <- parlist$mubeta
   sigma   <- parlist$sigma
-  gamma   <- parlist$gamma
+  gam   <- parlist$gam
   m       <- length(alpha)
-  
+
   pvals <- NULL
-  
+
   # Generate bootstrap observations
   ybset <- replicate(nbtsp, rnormregmix(n = n, x = x, alpha = alpha, mubeta = mubeta, sigma = sigma))
-  
+
   if (!is.null(z)) {
-    zgamma <- as.matrix(z) %*% gamma
-    ybset <- ybset + as.vector(zgamma)
+    zgam <- as.matrix(z) %*% gam
+    ybset <- ybset + as.vector(zgam)
   }
-  
+
   if (parallel) {
     if (is.null(cl))
       cl <- makeCluster(detectCores())
@@ -235,20 +235,19 @@ regmixCritBoot <- function (y, x, parlist, z = NULL, values = NULL, ninits = 100
                      z = z, ninits = ninits, crit.method = "none") }
     on.exit(cl)
   }
-  else 
-    out <- apply(ybset, 2, regmixMEMtest, x = x, m = m, z = z, 
+  else
+    out <- apply(ybset, 2, regmixMEMtest, x = x, m = m, z = z,
                  ninits = ninits, crit.method = "none")
-  
-  
+
+
   emstat.b <- sapply(out, "[[", "emstat")  # 3 by nbstp matrix
-  
+
   emstat.b <- t(apply(emstat.b, 1, sort))
-  
+
   q <- ceiling(nbtsp*c(0.90,0.95,0.99))
   crit <- emstat.b[, q]
-  
+
   if (!is.null(values)) { pvals <- rowMeans(emstat.b > values) }
-  
+
   return(list(crit = crit, pvals = pvals))
 }  # end function regmixCritBoot
-
