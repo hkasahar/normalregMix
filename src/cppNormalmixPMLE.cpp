@@ -6,7 +6,7 @@ using namespace Rcpp;
 const double SINGULAR_EPS = 10e-10; // criteria for matrix singularity
 
 // [[Rcpp::export]]
-List normalmixpmle_z2(NumericMatrix bs,
+List cppNormalmixPMLE(NumericMatrix bs,
                       NumericVector ys,
                       NumericMatrix zs,
                       NumericVector mu0s,

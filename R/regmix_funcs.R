@@ -151,12 +151,12 @@ regmixPhiStep <- function (htaupair, y, x, parlist, z = NULL, p,
 
   # short EM
   b0 <- as.matrix(rbind( tmp$alpha, tmp$mubeta, tmp$sigma, tmp$gam ))
-  out.short <- regmixpmle_z2(b0, y, x, ztilde, mu0h, sigma0h, m1, p, an, maxit.short,
+  out.short <- cppRegmixPMLE(b0, y, x, ztilde, mu0h, sigma0h, m1, p, an, maxit.short,
                              ninits.short, epsilon.short, tau, h, k)
   # long EM
   indices <- order(out.short$penloglikset, decreasing = TRUE)[1:ninits]
   b1 <- as.matrix(b0[ ,indices]) # b0 has been updated
-  out <- regmixpmle_z2(b1, y, x, ztilde, mu0h, sigma0h, m1, p, an, maxit, ninits, epsilon, tau, h, k)
+  out <- cppRegmixPMLE(b1, y, x, ztilde, mu0h, sigma0h, m1, p, an, maxit, ninits, epsilon, tau, h, k)
 
   index     <- which.max(out$penloglikset)
   alpha <- b1[1:m1,index] # b0 has been updated
@@ -183,7 +183,7 @@ regmixPhiStep <- function (htaupair, y, x, parlist, z = NULL, p,
     ninits <- 1
     maxit <- 2
     # Two EM steps
-    out <- regmixpmle_z2(b, y, x, ztilde, mu0h, sigma0h, m1, p, an, maxit, ninits, epsilon, tau, h, k)
+    out <- cppRegmixPMLE(b, y, x, ztilde, mu0h, sigma0h, m1, p, an, maxit, ninits, epsilon, tau, h, k)
     alpha <- b[1:m1,1] # b0 has been updated
     mubeta <- matrix(b[(1+m1):((q1+1)*m1),1],nrow=q1,ncol=m1)
     sigma <- b[(1+(q1+1)*m1):((q1+2)*m1),1]
@@ -263,7 +263,7 @@ regmixPhiStep <- function (htaupair, y, x, parlist, z = NULL, p,
 #'
 #'   for (k in 2:3) {
 #'     # Two EM steps
-#'     out <- regmixpmle_z2(b, y, x, ztilde, mu0, sigma0h, m1, p, an, maxit, ninits, tol, tau, h, k)
+#'     out <- cppRegmixPMLE(b, y, x, ztilde, mu0, sigma0h, m1, p, an, maxit, ninits, tol, tau, h, k)
 #'     alpha <- b[1:m1,1] # b0 has been updated
 #'     mubeta <- matrix(b[(1+m1):((q1+1)*m1),1],nrow=q1,ncol=m1)
 #'     sigma <- b[(1+(q1+1)*m1):((q1+2)*m1),1]
@@ -493,12 +493,12 @@ regmixPMLE <- function (y, x, m = 2, z = NULL, vcov.method = c("Hessian", "OPG",
     if (!is.null(binit)) {
       b0[ , 1] <- binit
     }
-    out.short <- regmixpmle_z2(b0, y, x, ztilde, mu0, sigma0, m, p, an, maxit.short,
+    out.short <- cppRegmixPMLE(b0, y, x, ztilde, mu0, sigma0, m, p, an, maxit.short,
                                   ninits.short, epsilon.short)
     # long EM
     indices <- order(out.short$penloglikset, decreasing = TRUE)[1:ninits]
     b1 <- b0[ ,indices] # b0 has been updated
-    out <- regmixpmle_z2(b1, y, x, ztilde, mu0, sigma0, m, p, an, maxit, ninits, epsilon)
+    out <- cppRegmixPMLE(b1, y, x, ztilde, mu0, sigma0, m, p, an, maxit, ninits, epsilon)
 
     index     <- which.max(out$penloglikset)
     alpha <- b1[1:m,index] # b0 has been updated
@@ -701,10 +701,10 @@ regmixVcov <- function(y, x, coefficients, z = NULL, vcov.method = c("Hessian", 
     b <- matrix( rep( coefficients, ninits), ncol = ninits)
 	
     if (is.null(z)) 
-      out.p <- regmixpmle_z2(b, y, x, matrix(0), mu0, sigma0, m, p, an, maxit, ninits, epsilon, tau, h, k)
+      out.p <- cppRegmixPMLE(b, y, x, matrix(0), mu0, sigma0, m, p, an, maxit, ninits, epsilon, tau, h, k)
     else 
 	{
-      out.p <- regmixpmle_z2(b, y, x, z, mu0, sigma0, m, p, an, maxit, ninits, epsilon, tau, h, k)
+      out.p <- cppRegmixPMLE(b, y, x, z, mu0, sigma0, m, p, an, maxit, ninits, epsilon, tau, h, k)
       # Adjust y
       y <- y - z %*% gam
     }
