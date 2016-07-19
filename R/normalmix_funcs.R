@@ -73,9 +73,9 @@ normalmixVcov <- function(y, coefficients, z = NULL, vcov.method = c("Hessian", 
 
     b <- matrix( rep( coefficients, ninits), ncol = ninits)
     if (is.null(z)) {
-      out.p <- suppressWarnings(normalmixpmle_z2(b, y, matrix(0),  mu0, sigma0, m, p, an, maxit, ninits, epsilon, tau, h, k))
+      out.p <- normalmixpmle_z2(b, y, matrix(0),  mu0, sigma0, m, p, an, maxit, ninits, epsilon, tau, h, k)
     } else {
-      out.p <- suppressWarnings(normalmixpmle_z2(b, y, z,  mu0, sigma0, m, p, an, maxit, ninits, epsilon, tau, h, k))
+      out.p <- normalmixpmle_z2(b, y, z,  mu0, sigma0, m, p, an, maxit, ninits, epsilon, tau, h, k)
       # Adjust y
       y <- y - z %*% gam
     }
@@ -340,12 +340,12 @@ normalmixPMLE <- function (y, m = 2, z = NULL, vcov.method = c("Hessian", "OPG",
     if (!is.null(binit)) {
       b0[ , 1] <- binit
     }
-    out.short <- suppressWarnings(normalmixpmle_z2(b0, y, ztilde, mu0, sigma0, m, p, an, maxit.short,
-                                ninits.short, epsilon.short))
+    out.short <- normalmixpmle_z2(b0, y, ztilde, mu0, sigma0, m, p, an, maxit.short,
+                                ninits.short, epsilon.short)
     # long EM
     indices <- order(out.short$penloglikset, decreasing = TRUE)[1:ninits]
     b1 <- b0[ ,indices] # b0 has been updated
-    out <- suppressWarnings(normalmixpmle_z2(b1, y, ztilde, mu0, sigma0, m, p, an, maxit, ninits, epsilon))
+    out <- normalmixpmle_z2(b1, y, ztilde, mu0, sigma0, m, p, an, maxit, ninits, epsilon)
 
     index     <- which.max(out$penloglikset)
     alpha <- b1[1:m,index] # b0 has been updated
@@ -536,15 +536,15 @@ normalmixMaxPhiStep <- function (htaupair, y, parlist, z = NULL, p,
 
   # short EM
   b0 <- as.matrix(rbind(tmp$alpha, tmp$mu, tmp$sigma, tmp$gam))
-  out.short <- suppressWarnings(normalmixpmle_z2(b0, y, ztilde, mu0h, sigma0h, m1, p, an, maxit.short, ninits.short,
-                              epsilon.short, tau, h, k))
+  out.short <- normalmixpmle_z2(b0, y, ztilde, mu0h, sigma0h, m1, p, an, maxit.short, ninits.short,
+                              epsilon.short, tau, h, k)
   indices <- order(out.short$penloglikset, decreasing = TRUE)[1:ninits]
   if (verb && any(out.short$notcg)) {
     cat(sprintf("non-convergence rate at short-EM = %.3f\n",mean(out.short$notcg)))
   }
   # long EM
   b1 <- as.matrix(b0[ ,indices])
-  out <- suppressWarnings(normalmixpmle_z2(b1, y, ztilde, mu0h, sigma0h, m1, p, an, maxit, ninits, epsilon, tau, h, k))
+  out <- normalmixpmle_z2(b1, y, ztilde, mu0h, sigma0h, m1, p, an, maxit, ninits, epsilon, tau, h, k)
 
   index     <- which.max(out$penloglikset)
   alpha <- b1[1:m1,index]
@@ -571,7 +571,7 @@ normalmixMaxPhiStep <- function (htaupair, y, parlist, z = NULL, p,
     ninits <- 1
     maxit <- 2
     # Two EM steps
-    out <- suppressWarnings(normalmixpmle_z2(b, y, ztilde, mu0h, sigma0h, m1, p, an, maxit, ninits, epsilon, tau, h, k))
+    out <- normalmixpmle_z2(b, y, ztilde, mu0h, sigma0h, m1, p, an, maxit, ninits, epsilon, tau, h, k)
     alpha <- b[1:m1,1] # b has been updated
     mu <- b[(1+m1):(2*m1),1]
     sigma <- b[(1+2*m1):(3*m1),1]

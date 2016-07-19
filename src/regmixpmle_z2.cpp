@@ -1,8 +1,10 @@
-#include <R.h>
-#include <Rmath.h>
+#define ARMA_NO_DEBUG
 #include <RcppArmadillo.h>
+
 // [[Rcpp::depends(RcppArmadillo)]]
 using namespace Rcpp;
+
+const double SINGULAR_EPS = 0; // criteria for matrix singularity
 
 // [[Rcpp::export]]
 List regmixpmle_z2(NumericMatrix bs,
@@ -137,7 +139,16 @@ List regmixpmle_z2(NumericMatrix bs,
         for (int ii = 0; ii < q1; ii++) {
           xtilde.col(ii) = wtilde % x1.col(ii);
         }
-        mubeta.col(j) = solve( trans(xtilde) * x1 , trans(xtilde) * ytilde );
+        
+        arma::mat design_matrix = trans(xtilde) * x1;
+        if (rcond(design_matrix) < SINGULAR_EPS)
+        {
+          sing = 1;
+          break;
+        }
+        
+        mubeta.col(j) = solve( design_matrix , trans(xtilde) * ytilde );
+        //mubeta.col(j) = solve( trans(xtilde) * x1 , trans(xtilde) * ytilde );
         ssr_j = sum( trans(w.row(j)) % pow(  ytilde - x1*mubeta.col(j) , 2 ) );
         sigma(j) = sqrt( (ssr_j + 2.0*an*sigma0(j)*sigma0(j))  / (w_j + 2.0*an) );
         sigma(j) = fmax(sigma(j),0.05*sigma0(j));
@@ -147,21 +158,7 @@ List regmixpmle_z2(NumericMatrix bs,
         }
         alpha(j) = fmin( fmax(alpha(j),0.01), 0.99);
       }
-
-      if (p>0) { /* update gamma */
-        zz.zeros();
-        ze.zeros();
-        for (int j = 0; j < m; j++) {
-          wtilde = trans(w.row(j)) ;
-          for (int ii = 0; ii < p; ii++) {
-            ztilde.col(ii) = wtilde % z.col(ii);
-          }
-          zz = zz + ( trans(ztilde) * z ) / (sigma(j)*sigma(j));
-          ze = ze + ( trans(ztilde) * (y - x1*mubeta.col(j)) ) / (sigma(j)*sigma(j));
-        }
-        gamma = solve(zz,ze);
-      }
-
+      
       /* if k!=0, update alpha and/or tau */
       // if (k!=0){
       //   alphah = (alpha(h-1)+alpha(h));
@@ -183,6 +180,27 @@ List regmixpmle_z2(NumericMatrix bs,
         /* Using tau, revise the h and h+1 th element of alpha */
         alpha(h-1) = alphah*tau;
         alpha(h) = alphah*(1-tau);
+      }
+
+      if (p>0) { /* update gamma */
+        zz.zeros();
+        ze.zeros();
+        for (int j = 0; j < m; j++) {
+          wtilde = trans(w.row(j)) ;
+          for (int ii = 0; ii < p; ii++) {
+            ztilde.col(ii) = wtilde % z.col(ii);
+          }
+          zz = zz + ( trans(ztilde) * z ) / (sigma(j)*sigma(j));
+          ze = ze + ( trans(ztilde) * (y - x1*mubeta.col(j)) ) / (sigma(j)*sigma(j));
+        }
+        
+        if (rcond(zz) < SINGULAR_EPS)
+        {
+          sing = 1;
+          break;
+        }
+
+        gamma = solve(zz,ze);
       }
 
       /* Check singularity */

@@ -5,10 +5,6 @@ normalmixpmle_z2 <- function(bs, ys, zs, mu0s, sigma0s, m, p, an, maxit = 2000L,
     .Call('normalregMix_normalmixpmle_z2', PACKAGE = 'normalregMix', bs, ys, zs, mu0s, sigma0s, m, p, an, maxit, ninits, tol, tau, h, k)
 }
 
-normalmixpmle2 <- function(bs, ys, mu0s, sigma0s, m, an, maxit = 2000L, ninits = 10L, tol = 1e-8, tau = 0.5, h = 0L, k = 0L) {
-    .Call('normalregMix_normalmixpmle2', PACKAGE = 'normalregMix', bs, ys, mu0s, sigma0s, m, an, maxit, ninits, tol, tau, h, k)
-}
-
 regmixpmle_z2 <- function(bs, ys, xs, zs, mu0s, sigma0s, m, p, an, maxit = 2000L, ninits = 10L, tol = 1e-8, tau = 0.5, h = 0L, k = 0L) {
     .Call('normalregMix_regmixpmle_z2', PACKAGE = 'normalregMix', bs, ys, xs, zs, mu0s, sigma0s, m, p, an, maxit, ninits, tol, tau, h, k)
 }

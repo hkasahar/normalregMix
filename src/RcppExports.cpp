@@ -30,28 +30,6 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
-// normalmixpmle2
-List normalmixpmle2(NumericMatrix bs, NumericVector ys, NumericVector mu0s, NumericVector sigma0s, int m, double an, int maxit, int ninits, double tol, double tau, int h, int k);
-RcppExport SEXP normalregMix_normalmixpmle2(SEXP bsSEXP, SEXP ysSEXP, SEXP mu0sSEXP, SEXP sigma0sSEXP, SEXP mSEXP, SEXP anSEXP, SEXP maxitSEXP, SEXP ninitsSEXP, SEXP tolSEXP, SEXP tauSEXP, SEXP hSEXP, SEXP kSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject __result;
-    Rcpp::RNGScope __rngScope;
-    Rcpp::traits::input_parameter< NumericMatrix >::type bs(bsSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type ys(ysSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type mu0s(mu0sSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type sigma0s(sigma0sSEXP);
-    Rcpp::traits::input_parameter< int >::type m(mSEXP);
-    Rcpp::traits::input_parameter< double >::type an(anSEXP);
-    Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
-    Rcpp::traits::input_parameter< int >::type ninits(ninitsSEXP);
-    Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
-    Rcpp::traits::input_parameter< double >::type tau(tauSEXP);
-    Rcpp::traits::input_parameter< int >::type h(hSEXP);
-    Rcpp::traits::input_parameter< int >::type k(kSEXP);
-    __result = Rcpp::wrap(normalmixpmle2(bs, ys, mu0s, sigma0s, m, an, maxit, ninits, tol, tau, h, k));
-    return __result;
-END_RCPP
-}
 // regmixpmle_z2
 List regmixpmle_z2(NumericMatrix bs, NumericVector ys, NumericMatrix xs, NumericMatrix zs, NumericVector mu0s, NumericVector sigma0s, int m, int p, double an, int maxit, int ninits, double tol, double tau, int h, int k);
 RcppExport SEXP normalregMix_regmixpmle_z2(SEXP bsSEXP, SEXP ysSEXP, SEXP xsSEXP, SEXP zsSEXP, SEXP mu0sSEXP, SEXP sigma0sSEXP, SEXP mSEXP, SEXP pSEXP, SEXP anSEXP, SEXP maxitSEXP, SEXP ninitsSEXP, SEXP tolSEXP, SEXP tauSEXP, SEXP hSEXP, SEXP kSEXP) {
