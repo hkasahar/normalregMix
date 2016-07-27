@@ -9,6 +9,7 @@ Maintainer: Hiroyuki Kasahara <hkasahar@mail.ubc.ca>
 Depends:
     R (>= 2.14.0),
     minpack.lm,
+    foreach
     doParallel,
     RcppArmadillo
 Description: More about what it does (maybe more than one line)
