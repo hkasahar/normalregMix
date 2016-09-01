@@ -248,8 +248,8 @@ anFormula <- function(parlist, m, n, q = 0)
 {
 
   if (q != 0) # an when the dimension of X is not zero.
-    return (switch(as.character(q), "1" = 2.2, "2" = 3.6, "3" = 4.6, "4" = 8.2, 2.2))
-
+    return (switch(as.character(q), "1" = 0.4, "2" = 2.3, "3" = 2.4, "4" = 2.4, 0.4))
+  
   if (m == 1) {
     #   an <- 1.0
     an <- 0.40
