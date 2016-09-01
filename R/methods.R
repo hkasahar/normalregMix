@@ -29,7 +29,7 @@ testMode <- function(on = FALSE, seed = 8888577, hide.message = TRUE)
 }
 
 
-plotPivotRes <- function(y = y, x = x, m = 2, vcov.method = "OPG")
+plotDiag <- function(indices, y = y, x = x, m = 2)
 {
   dimx <- dim(as.matrix(x))[2]
   if ((dimx <= 1) || (is.null(dimx)))
@@ -39,7 +39,6 @@ plotPivotRes <- function(y = y, x = x, m = 2, vcov.method = "OPG")
   if (!is.null(colnames(x)))
     pivot.names <- colnames(x)
 
-  indices <- regmixPMLE(y = y, x = x, m = m, vcov.method = vcov.method)$indices
   ivs <- as.matrix(x)
 
   for (j in 1:m)
