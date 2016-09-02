@@ -29,7 +29,7 @@ testMode <- function(on = FALSE, seed = 8888577, hide.message = TRUE)
 }
 
 
-plotDiag <- function(indices, y = y, x = x, m = 2)
+plotDiag <- function(components, y = y, x = x, m = 2)
 {
   dimx <- dim(as.matrix(x))[2]
   if ((dimx <= 1) || (is.null(dimx)))
@@ -43,8 +43,8 @@ plotDiag <- function(indices, y = y, x = x, m = 2)
 
   for (j in 1:m)
   {
-    ivs.component <- as.matrix(ivs[indices == j,])
-    ys.component <- y[indices == j]
+    ivs.component <- as.matrix(ivs[components == j,])
+    ys.component <- y[components == j]
     for (pivot in 1:dimx)
     {
       pivot.name <- pivot.names[pivot]
@@ -66,13 +66,13 @@ plotDiag <- function(indices, y = y, x = x, m = 2)
 #' Generates a vector that indicates which component each observation belongs to,
 #' based on its posterior probability
 #' @export
-#' @title getComponentIndices
-#' @name getComponentIndices
+#' @title getComponentcomponents
+#' @name getComponentcomponents
 #' @param postprobs n by m matrix of posterior probabilities for
 #' m-component model on n observations
-#' @return n by 1 vector of indices that indicate which component each observation belongs to
+#' @return n by 1 vector of components that indicate which component each observation belongs to
 #' based on its posterior probability
-getComponentIndices <- function(postprobs)
+getComponentcomponents <- function(postprobs)
 {
   postprobs.mat <- as.matrix(postprobs)
   apply(postprobs.mat, 1, function(i) (which(i==max(i))))

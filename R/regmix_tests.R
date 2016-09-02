@@ -184,7 +184,7 @@ regmixMEMtestSeq <- function (y, x, z = NULL, maxm = 3, ninits = 10, maxit = 200
 #' \item{aic}{Akaike Information Criterion of the fitted model.}
 #' \item{bic}{Bayesian Information Criterion of the fitted model.}
 #' \item{postprobs}{n by m matrix of posterior probabilities for observations}
-#' \item{indices}{n by 1 vector of integers that indicates the indices of components
+#' \item{components}{n by 1 vector of integers that indicates the indices of components
 #' each observation belongs to based on computed posterior probabilities}
 #' \item{call}{The matched call.}
 #' \item{m}{The number of components in the mixture.}

@@ -243,7 +243,7 @@ normalmixVcov <- function(y, coefficients, z = NULL, vcov.method = c("Hessian", 
 #' \item{aic}{Akaike Information Criterion of the fitted model.}
 #' \item{bic}{Bayesian Information Criterion of the fitted model.}
 #' \item{postprobs}{n by m matrix of posterior probabilities for observations}
-#' \item{indices}{n by 1 vector of integers that indicates the indices of components
+#' \item{components}{n by 1 vector of integers that indicates the indices of components
 #' each observation belongs to based on computed posterior probabilities}
 #' \item{call}{The matched call.}
 #' \item{m}{The number of components in the mixture.}
@@ -343,8 +343,8 @@ normalmixPMLE <- function (y, m = 2, z = NULL, vcov.method = c("Hessian", "OPG",
     out.short <- cppNormalmixPMLE(b0, y, ztilde, mu0, sigma0, m, p, an, maxit.short,
                                 ninits.short, epsilon.short)
     # long EM
-    indices <- order(out.short$penloglikset, decreasing = TRUE)[1:ninits]
-    b1 <- b0[ ,indices] # b0 has been updated
+    components <- order(out.short$penloglikset, decreasing = TRUE)[1:ninits]
+    b1 <- b0[ ,components] # b0 has been updated
     out <- cppNormalmixPMLE(b1, y, ztilde, mu0, sigma0, m, p, an, maxit, ninits, epsilon)
 
     index     <- which.max(out$penloglikset)
@@ -382,7 +382,7 @@ normalmixPMLE <- function (y, m = 2, z = NULL, vcov.method = c("Hessian", "OPG",
 
   a <- list(coefficients = coefficients, parlist = parlist, vcov = vcov, loglik = loglik,
             penloglik = penloglik, aic = aic, bic = bic, postprobs = postprobs,
-            indices = getComponentIndices(postprobs),
+            components = getComponentcomponents(postprobs),
             call = match.call(), m = m, label = "PMLE")
 
   class(a) <- "normalregMix"
@@ -538,12 +538,12 @@ normalmixMaxPhiStep <- function (htaupair, y, parlist, z = NULL, p,
   b0 <- as.matrix(rbind(tmp$alpha, tmp$mu, tmp$sigma, tmp$gam))
   out.short <- cppNormalmixPMLE(b0, y, ztilde, mu0h, sigma0h, m1, p, an, maxit.short, ninits.short,
                               epsilon.short, tau, h, k)
-  indices <- order(out.short$penloglikset, decreasing = TRUE)[1:ninits]
+  components <- order(out.short$penloglikset, decreasing = TRUE)[1:ninits]
   if (verb && any(out.short$notcg)) {
     cat(sprintf("non-convergence rate at short-EM = %.3f\n",mean(out.short$notcg)))
   }
   # long EM
-  b1 <- as.matrix(b0[ ,indices])
+  b1 <- as.matrix(b0[ ,components])
   out <- cppNormalmixPMLE(b1, y, ztilde, mu0h, sigma0h, m1, p, an, maxit, ninits, epsilon, tau, h, k)
 
   index     <- which.max(out$penloglikset)

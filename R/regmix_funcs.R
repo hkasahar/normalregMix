@@ -154,8 +154,8 @@ regmixPhiStep <- function (htaupair, y, x, parlist, z = NULL, p,
   out.short <- cppRegmixPMLE(b0, y, x, ztilde, mu0h, sigma0h, m1, p, an, maxit.short,
                              ninits.short, epsilon.short, tau, h, k)
   # long EM
-  indices <- order(out.short$penloglikset, decreasing = TRUE)[1:ninits]
-  b1 <- as.matrix(b0[ ,indices]) # b0 has been updated
+  components <- order(out.short$penloglikset, decreasing = TRUE)[1:ninits]
+  b1 <- as.matrix(b0[ ,components]) # b0 has been updated
   out <- cppRegmixPMLE(b1, y, x, ztilde, mu0h, sigma0h, m1, p, an, maxit, ninits, epsilon, tau, h, k)
 
   index     <- which.max(out$penloglikset)
@@ -400,7 +400,7 @@ regmixPhiInit <- function (y, x, z = NULL, parlist, h, tau, ninits = 1)
 #' \item{aic}{Akaike Information Criterion of the fitted model.}
 #' \item{bic}{Bayesian Information Criterion of the fitted model.}
 #' \item{postprobs}{n by m matrix of posterior probabilities for observations}
-#' \item{indices}{n by 1 vector of integers that indicates the indices of components
+#' \item{components}{n by 1 vector of integers that indicates the indices of components
 #' each observation belongs to based on computed posterior probabilities}
 #' \item{call}{The matched call.}
 #' \item{m}{The number of components in the mixture.}
@@ -496,8 +496,8 @@ regmixPMLE <- function (y, x, m = 2, z = NULL, vcov.method = c("Hessian", "OPG",
     out.short <- cppRegmixPMLE(b0, y, x, ztilde, mu0, sigma0, m, p, an, maxit.short,
                                   ninits.short, epsilon.short)
     # long EM
-    indices <- order(out.short$penloglikset, decreasing = TRUE)[1:ninits]
-    b1 <- b0[ ,indices] # b0 has been updated
+    components <- order(out.short$penloglikset, decreasing = TRUE)[1:ninits]
+    b1 <- b0[ ,components] # b0 has been updated
     out <- cppRegmixPMLE(b1, y, x, ztilde, mu0, sigma0, m, p, an, maxit, ninits, epsilon)
 
     index     <- which.max(out$penloglikset)
@@ -548,7 +548,7 @@ regmixPMLE <- function (y, x, m = 2, z = NULL, vcov.method = c("Hessian", "OPG",
 
   a <- list(coefficients = coefficients, parlist = parlist, vcov = vcov, loglik = loglik,
             penloglik = penloglik, aic = aic, bic = bic, postprobs = postprobs,
-            indices = getComponentIndices(postprobs),
+            components = getComponentcomponents(postprobs),
             call = match.call(), m = m, label = "PMLE")
 
   class(a) <- "normalregMix"

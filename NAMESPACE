@@ -5,6 +5,6 @@ export(normalmixCrit, normalmixCritBoot, normalmixMEMtest, normalmixMEMtestSeq,
        regmixCrit, regmixCritBoot, regmixMEMtest, regmixMEMtestSeq,
        regmixPMLE, regmixMaxPhi, regmixVcov, 
        print.normalregMix, print.summary.normalregMix, summary.normalregMix, 
-       omega.ji, omega.12, omega.123, omega.1234, testMode)
+       omega.ji, omega.12, omega.123, omega.1234, testMode, plotDiag)
 
 # exportPattern("^[[:alpha:]]+")
