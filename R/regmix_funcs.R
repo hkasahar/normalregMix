@@ -703,10 +703,10 @@ regmixVcov <- function(y, x, coefficients, z = NULL, vcov.method = c("Hessian", 
     if (is.null(z)) 
       out.p <- cppRegmixPMLE(b, y, x, matrix(0), mu0, sigma0, m, p, an, maxit, ninits, epsilon, tau, h, k)
     else 
-	{
+	  {
       out.p <- cppRegmixPMLE(b, y, x, z, mu0, sigma0, m, p, an, maxit, ninits, epsilon, tau, h, k)
       # Adjust y
-      y <- y - z %*% gam
+      y <- as.vector(y - z %*% gam)
     }
 
     post <- matrix(out.p$post, nrow=n)
