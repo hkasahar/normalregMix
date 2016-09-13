@@ -253,8 +253,9 @@ anFormula <- function(parlist, m, n, q = 0)
   else if (m == 2) {
     omega <- omega.12(parlist)
     omega <- pmin(pmax(omega, 1e-16), 1-1e-16)  # an becomes NaN if omega[j]=0 or 1
-    b <- c(-0.73865, -0.33091, -0.10332, 10.22893) # coefficients of intercept, aterm, misclterm, nterm
-    x <- exp( - (b[1]-log(2)) / b[2] - (b[3]/b[2]) * log(omega / (0.5 - omega)) - (b[4]/b[2]) /n )  # maxa=1
+    omega.term <- log(omega /(0.5-omega))
+    b <- c(-2.1767654, -0.2865645, 70.3372779) # coefficients of -(intercept, misclterm, nterm)/atermcoeff
+    x <- exp(- b[1] - b[2] * omega.term - b[3] / n)  # maxa=1
     an <- 0.25 * x / (1 + x)
     #   x <- exp(-1.642 - 0.434 * log(omega / (1 - omega)) - 101.80/n)  # maxa=2
     #   an <- 1.8 * x / (1 + x)
@@ -262,10 +263,12 @@ anFormula <- function(parlist, m, n, q = 0)
   else if (m == 3) {
     omega <- omega.123(parlist)
     omega <- pmin(pmax(omega, 1e-16), 1-1e-16)  # an becomes NaN if omega[j]=0 or 1
-    t_omega <- (omega[1] * omega[2])/(0.5 - omega[1])/(0.5 - omega[2])
+    omega.12 <- omega[1]
+    omega.23 <- omega[2]
+    omega.term <- log(omega.12 * omega.23 / ((0.5-omega.12)*(0.5-omega.23)))
 
-    b <- c(-0.65606, -0.43539, -0.04214, 28.05422)
-    x <- exp( - (b[1]-log(2)) / b[2] - (b[3]/b[2]) * log(t_omega) - (b[4]/b[2]) /n )
+    b <- c(-1.9799330, -0.1722206, 28.1660611)
+    x <- exp(- b[1] - b[2] * omega.term - b[3] / n)
     an <- 0.25 * x / (1 + x)
     # an <- 0.80 * x / (1 + x)
     #   x <- exp(-1.678 - 0.232 * log(t_omega) - 175.50/n)
@@ -273,9 +276,13 @@ anFormula <- function(parlist, m, n, q = 0)
   } else if (m == 4) {
     omega <- omega.1234(parlist)
     omega <- pmin(pmax(omega, 1e-16), 1-1e-16)  # an becomes NaN if omega[j]=0 or 1
-    t_omega <- (omega[1] * omega[2] * omega[3])/(0.5 - omega[1])/(0.5 - omega[2])/(0.5 - omega[3])
-    b <- c(-1.50694, -0.48456, -0.07084, -24.04380)
-    x <- exp( - (b[1]-log(2)) / b[2] - (b[3]/b[2]) * log(t_omega) - (b[4]/b[2]) /n )
+    omega.12 <- omega[1]
+    omega.23 <- omega[2]
+    omega.34 <- omega[3]
+    omega.term <- log(omega.12 * omega.23 * omega.34 / 
+                  ((0.5-omega.12)*(0.5-omega.23)*(0.5-omega.34)))
+    b <- c(-4.3727106, -0.2290375, -180.6050362)
+    x <- exp(- b[1] - b[2] * omega.term - b[3] / n)
     an <- 0.25 * x / (1 + x)
   }
   else 

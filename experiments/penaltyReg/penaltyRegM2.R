@@ -1,5 +1,3 @@
-#install.packages("normalregMix2Test_1.0.tar.gz", repos = NULL, type="source")
-library(snow)
 library(doParallel)
 library(Rmpi)
 library(normalregMix)
@@ -138,7 +136,7 @@ print("workers loaded.")
 # ====== BEGIN EXPERIMENT ======
 ## 1. Initialization
 # Case when m = 2 
-aset <- c(0.02, 0.07, 0.12, 0.17, 0.22)
+aset <- c(0.04, 0.09, 0.14, 0.19, 0.24)
 nset <- c(100, 300, 500)
 alphasets <- list(c(0.25, 0.75), c(0.5, 0.5))
 musets 		<- list(c(-1.5, 1.5), c(-2, 2), c(-2.5, 2.5))
