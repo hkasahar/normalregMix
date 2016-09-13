@@ -5,20 +5,19 @@
 \title{regmixMaxPhi}
 \usage{
 regmixMaxPhi(y, x, parlist, z = NULL, an, tauset = c(0.1, 0.3, 0.5),
-  ninits = 100, epsilon.short = 0.01, epsilon = 1e-08,
-  maxit.short = 500, maxit = 2000, verb = FALSE, parallel = FALSE,
-  cl = NULL)
+  ninits = 10, epsilon.short = 0.01, epsilon = 1e-08, maxit.short = 500,
+  maxit = 2000, verb = FALSE, parallel = FALSE, cl = NULL)
 }
 \arguments{
 \item{y}{n by 1 vector of data for y}
 
 \item{x}{n by q matrix of data for x}
 
-\item{parlist}{The parameter estimates as a list containing alpha, mu, sigma, and gamma 
-in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m), 
-sigma = (sigma_1, ..., sigma_m), gamma = (gamma_1, ..., gamma_m))}
+\item{parlist}{The parameter estimates as a list containing alpha, mu, sigma, and gam
+in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m),
+sigma = (sigma_1, ..., sigma_m), gam = (gam_1, ..., gam_m))}
 
-\item{z}{n by p matrix of regressor associated with gamma}
+\item{z}{n by p matrix of regressor associated with gam}
 
 \item{an}{a term used for penalty function}
 
@@ -34,6 +33,8 @@ sigma = (sigma_1, ..., sigma_m), gamma = (gamma_1, ..., gamma_m))}
 
 \item{maxit}{The maximum number of iterations.}
 
+\item{verb}{Determines whether to print a message if an error occurs.}
+
 \item{parallel}{Determines whether package \code{doParallel} is used for calculation}
 
 \item{cl}{Cluster used for parallelization; if it is \code{NULL}, the system will automatically
@@ -45,6 +46,7 @@ A list with items:
 \item{penloglik}{Penalized log-likelihood resulting from MEM algorithm at k=1,2,3.}
 }
 \description{
-Compute ordinary & penalized log-likelihood ratio resulting from MEM algorithm at k=1,2,3.
+Compute ordinary & penalized log-likelihood ratio resulting from 
+MEM algorithm at k=1,2,3.
 }
 

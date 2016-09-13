@@ -29,8 +29,8 @@ regmixCrit <- function(y, x, parlist, z = NULL, values = NULL, parallel = TRUE,
   # Output
   #   list(crit,pvals)
   #   crit = (10%, 5%, 1% critical values), pvals = p-values
-  if (test.on) # initial values controlled by test.on
-    set.seed(test.seed)
+  if (normalregMix.test.on) # initial values controlled by normalregMix.test.on
+    set.seed(normalregMix.test.seed)
 
   y  <- as.vector(y)
   n  <- length(y)
@@ -204,8 +204,8 @@ regmixCrit <- function(y, x, parlist, z = NULL, values = NULL, parallel = TRUE,
 #' \item{pvals}{A vector of p-values at k = 1, 2, 3}
 regmixCritBoot <- function (y, x, parlist, z = NULL, values = NULL, ninits = 100,
                             nbtsp = 199, parallel = TRUE, cl = NULL) {
-  if (test.on) # initial values controlled by test.on
-    set.seed(test.seed)
+  if (normalregMix.test.on) # initial values controlled by normalregMix.test.on
+    set.seed(normalregMix.test.seed)
 
   y  <- as.vector(y)
   n  <- length(y)

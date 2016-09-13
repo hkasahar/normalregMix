@@ -237,8 +237,8 @@ regmixPhiStep <- function (htaupair, y, x, parlist, z = NULL, p,
 #' \item{gam}{m+1 by ninits matrix for gam}
 regmixPhiInit <- function (y, x, z = NULL, parlist, h, tau, ninits = 1)
 {
-  if (test.on) # initial values controlled by test.on
-    set.seed(test.seed)
+  if (normalregMix.test.on) # initial values controlled by normalregMix.test.on
+    set.seed(normalregMix.test.seed)
 
   y  <- as.vector(y)
   n   <- length(y)
@@ -504,8 +504,8 @@ regmixPMLE <- function (y, x, m = 2, z = NULL, vcov.method = c("Hessian", "OPG",
 #' \item{gam}{m by ninits matrix for gam}
 regmixPMLEinit <- function (y, x, z = NULL, ninits = 1, m = 2)
 {
-  if (test.on) # initial values controlled by test.on
-    set.seed(test.seed)
+  if (normalregMix.test.on) # initial values controlled by normalregMix.test.on
+    set.seed(normalregMix.test.seed)
 
   n  <- length(y)
   q1  <- ncol(x)+1
@@ -866,8 +866,8 @@ obj_zIz.jac <- function(b,Z,I) {
 
 # Computes LR_2 for given Z and I, where q is dim(x)
 LR_2.comp <- function(Z, I, q, ninits = 25) {
-  if (test.on) # initial values controlled by test.on
-    set.seed(test.seed)
+  if (normalregMix.test.on) # initial values controlled by normalregMix.test.on
+    set.seed(normalregMix.test.seed)
 
   con.nls = minpack.lm::nls.lm.control(maxit = 400)
 

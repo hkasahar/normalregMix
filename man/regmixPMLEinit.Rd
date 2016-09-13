@@ -11,7 +11,7 @@ regmixPMLEinit(y, x, z = NULL, ninits = 1, m = 2)
 
 \item{x}{n by q matrix of data for x}
 
-\item{z}{n by p matrix of regressor associated with gamma}
+\item{z}{n by p matrix of regressor associated with gam}
 
 \item{ninits}{number of initial values to be generated}
 
@@ -22,7 +22,7 @@ A list with the following items:
 \item{alpha}{m by ninits matrix for alpha}
 \item{mubeta}{q+1 by m by ninits array for mu and beta}
 \item{sigma}{m by ninits matrix for sigma}
-\item{gamma}{m by ninits matrix for gamma}
+\item{gam}{m by ninits matrix for gam}
 }
 \description{
 Generate initial values used by the PMLE of mixture of normals

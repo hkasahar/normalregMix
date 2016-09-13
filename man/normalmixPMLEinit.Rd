@@ -20,7 +20,7 @@ A list with the following items:
 \item{alpha}{m by ninits matrix for alpha}
 \item{mu}{m by ninits matrix for mu}
 \item{sigma}{m by ninits matrix for sigma}
-\item{gamma}{m by ninits matrix for gamma}
+\item{gam}{m by ninits matrix for gam}
 }
 \description{
 Generate initial values used by the PMLE of mixture of normals

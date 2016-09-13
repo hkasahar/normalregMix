@@ -1,5 +1,5 @@
-test.on <- FALSE
-test.seed <- 8888577
+normalregMix.test.on <- FALSE
+normalregMix.test.seed <- 8888577
 
 #' @description Turns on/off the test mode.
 #' @export
@@ -14,18 +14,18 @@ test.seed <- 8888577
 #' @param hide.message Determines whether to print the current seed and status
 testMode <- function(on = FALSE, seed = 8888577, hide.message = TRUE)
 {
-  unlockBinding("test.on", getNamespace("normalregMix"))
-  unlockBinding("test.seed", getNamespace("normalregMix"))
-  assign("test.on", on, getNamespace("normalregMix"))
-  assign("test.seed", seed, getNamespace("normalregMix"))
-  lockBinding("test.on", getNamespace("normalregMix"))
-  lockBinding("test.seed", getNamespace("normalregMix"))
+  unlockBinding("normalregMix.test.on", getNamespace("normalregMix"))
+  unlockBinding("normalregMix.test.seed", getNamespace("normalregMix"))
+  assign("normalregMix.test.on", on, getNamespace("normalregMix"))
+  assign("normalregMix.test.seed", seed, getNamespace("normalregMix"))
+  lockBinding("normalregMix.test.on", getNamespace("normalregMix"))
+  lockBinding("normalregMix.test.seed", getNamespace("normalregMix"))
 
   if (!hide.message)
     print(paste("The test mode is currently",
-                switch(as.character(test.on), "TRUE" = "ON", "FALSE" = "OFF"),
+                switch(as.character(normalregMix.test.on), "TRUE" = "ON", "FALSE" = "OFF"),
                 "with seed",
-                as.character(test.seed)))
+                as.character(normalregMix.test.seed)))
 }
 
 #' @description Prints the multiple plots for diagnosis. 

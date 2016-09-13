@@ -7,9 +7,9 @@
 omega.123(parlist)
 }
 \arguments{
-\item{parlist}{The parameter estimates as a list containing alpha, mu, sigma, and gamma 
-in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m), 
-sigma = (sigma_1, ..., sigma_m), gamma = (gamma_1, ..., gamma_m))}
+\item{parlist}{The parameter estimates as a list containing alpha, mu, sigma, and gamma
+in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m),
+sigma = (sigma_1, ..., sigma_m), gam = (gamma_1, ..., gamma_m))}
 }
 \value{
 A 2 by 1 vector whose first element is omega_12 and second element is omega_23

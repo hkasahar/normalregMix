@@ -12,7 +12,7 @@ regmixMEMtestSeq(y, x, z = NULL, maxm = 3, ninits = 10, maxit = 2000,
 
 \item{x}{n by q matrix of data for x}
 
-\item{z}{n by p matrix of regressor associated with gamma}
+\item{z}{n by p matrix of regressor associated with gam}
 
 \item{maxm}{The maximum number of components set as null hypothesis in the mixture}
 
@@ -33,21 +33,22 @@ A list of with the following items:
 \item{mu}{maxm by maxm matrix, whose i-th column is a vector of mus estimated given the null hypothesis m_0 = i}
 \item{sigma}{maxm by maxm matrix, whose i-th column is a vector of sigmas estimated given the null hypothesis m_0 = i}
 \item{beta}{A list of length maxm, whose i-th element is a q times i matrix of betas estimated given the null hypothesis m_0 = i}
-\item{gamma}{maxm by maxm matrix, whose i-th column is a vector of gammas estimated given the null hypothesis m_0 = i}
+\item{gam}{maxm by maxm matrix, whose i-th column is a vector of gams estimated given the null hypothesis m_0 = i}
 \item{emstat}{A maxm vector of values of modified EM statistics of the model at m_0 = 1, 2, ..., maxm}
 \item{pvals}{A maxm by 3 matrix whose i-th row indicates a vector of p-values at k = 1, 2, 3}
 \item{aic}{A maxm vector of Akaike Information Criterion of the fitted model at m_0 = 1, 2, ..., maxm}
 \item{bic}{A maxm vector of Bayesian Information Criterion of the fitted model at m_0 = 1, 2, ..., maxm}
 \item{loglik}{A maxm vector of log-likelihood values of the model at m_0 = 1, 2, ..., maxm}
 \item{penloglik}{A maxm vector of penalized log-likelihood values of the model at m_0 = 1, 2, ..., maxm}
+\item{pmle.result}{a list of output from regmixPMLE under the number of components selected by sequantial hypothesis testing}
 }
 \description{
-Sequentially performs MEM test given the data for y and x on the null hypothesis H_0: m = m_0
-where m_0 is in {1, 2, ..., maxm}
+Sequentially performs MEM test given the data for y and x on 
+the null hypothesis H_0: m = m_0 where m_0 is in {1, 2, ..., maxm}
 }
 \examples{
 data(faithful)
 attach(faithful)
-regmixMEMtestSeq(y = eruptions, x = waiting)
+\dontrun{regmixMEMtestSeq(y = eruptions, x = waiting, parallel = TRUE)}
 }
 

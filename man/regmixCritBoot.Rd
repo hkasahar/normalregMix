@@ -12,9 +12,9 @@ regmixCritBoot(y, x, parlist, z = NULL, values = NULL, ninits = 100,
 
 \item{x}{n by q vector of data for x}
 
-\item{parlist}{The parameter estimates as a list containing alpha, mu, sigma, and gamma 
-in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m), 
-sigma = (sigma_1, ..., sigma_m), gamma = (gamma_1, ..., gamma_m))}
+\item{parlist}{The parameter estimates as a list containing alpha, mu, sigma, and gamma
+in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m),
+sigma = (sigma_1, ..., sigma_m), gam = (gamma_1, ..., gamma_m))}
 
 \item{z}{n by p matrix of regressor associated with gamma}
 

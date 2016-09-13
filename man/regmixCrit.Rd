@@ -12,9 +12,9 @@ regmixCrit(y, x, parlist, z = NULL, values = NULL, parallel = TRUE,
 
 \item{x}{n by q matrix of data for x}
 
-\item{parlist}{The parameter estimates as a list containing alpha, mu, sigma, and gamma 
-in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m), 
-sigma = (sigma_1, ..., sigma_m), gamma = (gamma_1, ..., gamma_m))}
+\item{parlist}{The parameter estimates as a list containing alpha, mu, sigma, and gamma
+in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m),
+sigma = (sigma_1, ..., sigma_m), gam = (gamma_1, ..., gamma_m))}
 
 \item{z}{n by p matrix of regressor associated with gamma}
 
@@ -25,6 +25,8 @@ sigma = (sigma_1, ..., sigma_m), gamma = (gamma_1, ..., gamma_m))}
 \item{cl}{Cluster used for parallelization; if it is \code{NULL}, the system will automatically}
 
 \item{nrep}{The number of replications used to compute p-values}
+
+\item{ninits.crit}{The number of initial guesses to form critical values}
 }
 \value{
 A list with the following items:

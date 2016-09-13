@@ -11,20 +11,18 @@ regmixVcov(y, x, coefficients, z = NULL, vcov.method = c("Hessian", "OPG"))
 
 \item{x}{n by q matrix of data for x}
 
-\item{coefficients}{(alpha_1, ..., alpha_m, mu_1, ..., mu_m, sigma_1, ..., sigma_m, gamma)}
+\item{coefficients}{(alpha_1, ..., alpha_m, mu_1, ..., mu_m, sigma_1, ..., sigma_m, gam)}
 
-\item{z}{n by p matrix of regressor associated with gamma}
+\item{z}{n by p matrix of regressor associated with gam}
 
-\item{vcov.method}{Method used to compute the variance-covariance matrix, 
-one of \code{"Hessian"} and \code{"OPG"}. #' The default option is \code{"Hessian"}. 
-When \code{method = "Hessian"}, the variance-covarince matrix is 
-estimated by the Hessian using the formula given in Boldea and Magnus (2009). 
+\item{vcov.method}{Method used to compute the variance-covariance matrix,
+one of \code{"Hessian"} and \code{"OPG"}. #' The default option is \code{"Hessian"}.
+When \code{method = "Hessian"}, the variance-covarince matrix is
+estimated by the Hessian using the formula given in Boldea and Magnus (2009).
 When \code{method = "OPG"}, the outer product of gradients is used.}
-
-\item{p}{Dimension of z}
 }
 \value{
-The variance-covariance matrix of the MLE of 
+The variance-covariance matrix of the MLE of
 m-component normal mixture given the data and coefficients.
 }
 \description{

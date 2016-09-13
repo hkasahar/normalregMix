@@ -10,9 +10,9 @@ normalmixCritBoot(y, parlist, z = NULL, values = NULL, ninits = 10,
 \arguments{
 \item{y}{n by 1 vector of data}
 
-\item{parlist}{The parameter estimates as a list containing alpha, mu, sigma, and gamma 
-in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m), 
-sigma = (sigma_1, ..., sigma_m), gamma = (gamma_1, ..., gamma_m))}
+\item{parlist}{The parameter estimates as a list containing alpha, mu, sigma, and gamma
+in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m),
+sigma = (sigma_1, ..., sigma_m), gam = (gamma_1, ..., gamma_m))}
 
 \item{z}{n by p matrix of regressor associated with gamma}
 

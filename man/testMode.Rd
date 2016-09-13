@@ -4,16 +4,18 @@
 \alias{testMode}
 \title{testMode}
 \usage{
-testMode(on = FALSE, seed = 8888577)
+testMode(on = FALSE, seed = 8888577, hide.message = TRUE)
 }
 \arguments{
 \item{on}{Option to turn on the test mode}
 
 \item{seed}{The random seed to be used for initialization}
+
+\item{hide.message}{Determines whether to print the current seed and status}
 }
 \description{
 When the modified EM-algorithm is run, initial values are randomly created
-based on the data given. If the test mode is turned on, these initial values 
+based on the data given. If the test mode is turned on, these initial values
 are going to be created with the random seed provided. This method would be suitable
 for users who would like to replicate experiments. By default, the test mode is turned off.
 }

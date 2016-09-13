@@ -4,7 +4,7 @@
 \alias{normalmixMaxPhiStep}
 \title{normalmixMaxPhiStep}
 \usage{
-normalmixMaxPhiStep(htaupair, y, parlist, z = NULL, p, jpvt, an, ninits,
+normalmixMaxPhiStep(htaupair, y, parlist, z = NULL, p, an, ninits,
   ninits.short, epsilon.short, epsilon, maxit.short, maxit, verb)
 }
 \arguments{
@@ -12,15 +12,13 @@ normalmixMaxPhiStep(htaupair, y, parlist, z = NULL, p, jpvt, an, ninits,
 
 \item{y}{n by 1 vector of data}
 
-\item{parlist}{The parameter estimates as a list containing alpha, mu, sigma, and gamma 
-in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m), 
-sigma = (sigma_1, ..., sigma_m), gamma = (gamma_1, ..., gamma_m))}
+\item{parlist}{The parameter estimates as a list containing alpha, mu, sigma, and gamma
+in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m),
+sigma = (sigma_1, ..., sigma_m), gam = (gamma_1, ..., gamma_m))}
 
 \item{z}{n by p matrix of regressor associated with gamma}
 
 \item{p}{Dimension of z}
-
-\item{jpvt}{Pivots used in dgelsy}
 
 \item{an}{a term used for penalty function}
 
@@ -35,12 +33,15 @@ sigma = (sigma_1, ..., sigma_m), gamma = (gamma_1, ..., gamma_m))}
 \item{maxit.short}{The maximum number of iterations in short EM.}
 
 \item{maxit}{The maximum number of iterations.}
+
+\item{verb}{Determines whether to print a message if an error occurs.}
 }
 \value{
 A list of phi, log-likelihood, and penalized log-likelihood resulting from MEM algorithm.
 }
 \description{
-Given a pair of h and tau and data, compute ordinary & 
-penalized log-likelihood ratio resulting from MEM algorithm at k=1,2,3, tailored for parallelization.
+Given a pair of h and tau and data, compute ordinary &
+penalized log-likelihood ratio resulting from MEM algorithm at k=1,2,3, 
+tailored for parallelization.
 }
 

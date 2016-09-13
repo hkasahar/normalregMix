@@ -5,8 +5,8 @@
 \title{regmixPMLE}
 \usage{
 regmixPMLE(y, x, m = 2, z = NULL, vcov.method = c("Hessian", "OPG",
-  "none"), ninits = 100, epsilon = 1e-08, maxit = 2000,
-  epsilon.short = 0.01, maxit.short = 500)
+  "none"), ninits = 10, epsilon = 1e-08, maxit = 2000,
+  epsilon.short = 0.01, maxit.short = 500, binit = NULL)
 }
 \arguments{
 \item{y}{n by 1 vector of data for y}
@@ -15,11 +15,11 @@ regmixPMLE(y, x, m = 2, z = NULL, vcov.method = c("Hessian", "OPG",
 
 \item{m}{The number of components in the mixture}
 
-\item{z}{n by p matrix of regressor associated with gamma}
+\item{z}{n by p matrix of regressor associated with gam}
 
 \item{vcov.method}{Method used to compute the variance-covariance matrix, one of \code{"Hessian"} and \code{"OPG"}.
-The default option is \code{"Hessian"}. When \code{method = "Hessian"}, the variance-covarince matrix is 
-estimated by the Hessian using the formula given in Boldea and Magnus (2009). 
+The default option is \code{"Hessian"}. When \code{method = "Hessian"}, the variance-covarince matrix is
+estimated by the Hessian using the formula given in Boldea and Magnus (2009).
 When \code{method = "OPG"}, the outer product of gradients is used.}
 
 \item{ninits}{The number of randomly drawn initial values.}
@@ -31,31 +31,34 @@ When \code{method = "OPG"}, the outer product of gradients is used.}
 \item{epsilon.short}{The convergence criterion in short EM. Convergence is declared when the penalized log-likelihood increases by less than \code{epsilon.short}.}
 
 \item{maxit.short}{The maximum number of iterations in short EM.}
+
+\item{binit}{The initial value of parameter vector that is included as a candidate parameter vector}
 }
 \value{
 A list of class \code{normalMix} with items:
-\item{coefficients}{A vector of parameter estimates. Ordered as \eqn{\alpha_1,\ldots,\alpha_m,\mu_1,\ldots,\mu_m,\sigma_1,\ldots,\sigma_m,\gamma}.}
-\item{parlist}{The parameter estimates as a list containing alpha, mu, and sigma (and gamma if z is included in the model).}
+\item{coefficients}{A vector of parameter estimates. Ordered as \eqn{\alpha_1,\ldots,\alpha_m,\mu_1,\ldots,\mu_m,\sigma_1,\ldots,\sigma_m,\gam}.}
+\item{parlist}{The parameter estimates as a list containing alpha, mu, and sigma (and gam if z is included in the model).}
 \item{vcov}{The estimated variance-covariance matrix.}
 \item{loglik}{The maximized value of the log-likelihood.}
 \item{penloglik}{The maximized value of the penalized log-likelihood.}
 \item{aic}{Akaike Information Criterion of the fitted model.}
 \item{bic}{Bayesian Information Criterion of the fitted model.}
 \item{postprobs}{n by m matrix of posterior probabilities for observations}
-\item{components}{n by 1 vector of integers that indicates the indices of components 
+\item{components}{n by 1 vector of integers that indicates the indices of components
 each observation belongs to based on computed posterior probabilities}
 \item{call}{The matched call.}
 \item{m}{The number of components in the mixture.}
 }
 \description{
-Estimates parameters of a finite mixture of univariate normals by the method of penalized maximum likelhood.
+Estimates parameters of a finite mixture of univariate normals by 
+the method of penalized maximum likelhood.
 }
 \note{
-\code{regmixPMLE} maximizes the penalized log-likelihood function 
-using the EM algorithm with combining short and long runs of EM steps as in Biernacki et al. (2003). 
-\code{regmixPMLE} first runs the EM algorithm from \code{ninits}\eqn{* 4m(1 + p)} initial values 
-with the convertence criterion \code{epsilon.short} and \code{maxit.short}. 
-Then, \code{regmixPMLE} uses \code{ninits} best initial values to run the EM algorithm 
+\code{regmixPMLE} maximizes the penalized log-likelihood function
+using the EM algorithm with combining short and long runs of EM steps as in Biernacki et al. (2003).
+\code{regmixPMLE} first runs the EM algorithm from \code{ninits}\eqn{* 4m(1 + p)} initial values
+with the convertence criterion \code{epsilon.short} and \code{maxit.short}.
+Then, \code{regmixPMLE} uses \code{ninits} best initial values to run the EM algorithm
 with the convertence criterion \code{epsilon} and \code{maxit}.
 }
 \examples{

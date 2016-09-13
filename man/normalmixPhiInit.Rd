@@ -9,9 +9,10 @@ normalmixPhiInit(y, parlist, z = NULL, h, tau, ninits = 1)
 \arguments{
 \item{y}{n by 1 vector of data}
 
-\item{parlist}{The parameter estimates as a list containing alpha, mu, sigma, and gamma 
-in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m), 
-sigma = (sigma_1, ..., sigma_m), gamma = (gamma_1, ..., gamma_m))}
+\item{parlist}{The parameter estimates as a list containing alpha, mu, sigma,
+and gamma in the form of (alpha = (alpha_1, ..., alpha_m),
+mu = (mu_1, ..., mu_m), sigma = (sigma_1, ..., sigma_m),
+gam = (gamma_1, ..., gamma_m))}
 
 \item{z}{n by p matrix of regressor associated with gamma}
 
@@ -26,10 +27,10 @@ A list with the following items:
 \item{alpha}{m+1 by ninits matrix for alpha}
 \item{mu}{m+1 by ninits matrix for mu}
 \item{sigma}{m+1 by ninits matrix for sigma}
-\item{gamma}{m+1 by ninits matrix for gamma}
+\item{gam}{m+1 by ninits matrix for gamma}
 }
 \description{
-Generates lists of parameters for initial candidates used by 
+Generates lists of parameters for initial candidates used by
 the modified EM test for mixture of normals.
 }
 
