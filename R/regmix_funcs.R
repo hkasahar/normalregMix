@@ -1,4 +1,5 @@
-#' Compute ordinary & penalized log-likelihood ratio resulting from MEM algorithm at k=1,2,3.
+#' @description Compute ordinary & penalized log-likelihood ratio resulting from 
+#' MEM algorithm at k=1,2,3.
 #' @export
 #' @title regmixMaxPhi
 #' @name regmixMaxPhi
@@ -15,6 +16,7 @@
 #' @param epsilon The convergence criterion. Convergence is declared when the penalized log-likelihood increases by less than \code{epsilon}.
 #' @param maxit.short The maximum number of iterations in short EM.
 #' @param maxit The maximum number of iterations.
+#' @param verb Determines whether to print a message if an error occurs.
 #' @param parallel Determines whether package \code{doParallel} is used for calculation
 #' @param cl Cluster used for parallelization; if it is \code{NULL}, the system will automatically
 #' create a new one for computation accordingly.
@@ -95,8 +97,9 @@ regmixMaxPhi <- function (y, x, parlist, z = NULL, an, tauset = c(0.1,0.3,0.5),
 
 }  # end regmixMaxPhi
 
-#' Given a pair of h and tau and data, compute ordinary &
-#' penalized log-likelihood ratio resulting from MEM algorithm at k=1,2,3, tailored for parallelization.
+#' @description Given a pair of h and tau and data, compute ordinary &
+#' penalized log-likelihood ratio resulting from MEM algorithm at k=1,2,3, 
+#' tailored for parallelization.
 #' @export
 #' @title regmixPhiStep
 #' @name regmixPhiStep
@@ -115,6 +118,7 @@ regmixMaxPhi <- function (y, x, parlist, z = NULL, an, tauset = c(0.1,0.3,0.5),
 #' @param epsilon The convergence criterion. Convergence is declared when the penalized log-likelihood increases by less than \code{epsilon}.
 #' @param maxit.short The maximum number of iterations in short EM.
 #' @param maxit The maximum number of iterations.
+#' @param verb Determines whether to print a message if an error occurs.
 #' @return A list of coefficients, log-likelihood, and penalized log-likelihood resulting from MEM algorithm.
 regmixPhiStep <- function (htaupair, y, x, parlist, z = NULL, p,
                           an,
@@ -212,81 +216,7 @@ regmixPhiStep <- function (htaupair, y, x, parlist, z = NULL, p,
   return (list(coefficient = coefficient, loglik = loglik, penloglik = penloglik))
 }
 
-#' #' Starting from a parameter estimate, take two EM steps to compute the
-#' #' local modified EM test statistic for testing H_0 of m components
-#' #' against H_1 of m+1 at K=2,3 for a univariate normal finite mixture.
-#' #' @export
-#' #' @title regmixPhi2
-#' #' @name regmixPhi2
-#' #' @param b the parameter estimates at k=1 in the form of b=(alpha_1, ..., alpha_m, mu_1, beta_1, ..., mu_m, beta_m,
-#' #' sigma_1, ..., sigma_m, gam_1, ..., gam_m)
-#' #' @param y n by 1 vector of data for y
-#' #' @param x n by q matrix of data for x
-#' #' @param z n by p matrix of regressor associated with gam
-#' #' @param sigma0 m by 1 vector of sigma
-#' #' @param m1 m in alternative
-#' #' @param h h used as index for pivoting
-#' #' @param tau Tau used to split the h-th component
-#' #' @param an a term used for penalty function
-#' #' @return A list of length 2, where the first element is the local modified
-#' #' MEM test statistic at k=2, the second element is
-#' #' the local modified MEM test statistic at k=3
-#' regmixPhi2 <- function (b, y, x, z = NULL, sigma0h, m1, h, tau, an) {
-#'   # Starting from a parameter estimate, take two EM steps to compute the
-#'   # local modified EM test statistic for testing H_0 of m components
-#'   # against H_1 of m+1 at q1=2,3 for a finite mixture of regressions
-#'   # In input,
-#'   #  y    : n by 1 vector of dependent variable
-#'   #  x    : n by q1-1 matrix of regressor NOT including an intercept
-#'   #  z    : n by p matrix of regressor associated with gam
-#'
-#'   mu0   <- double(m1+1) # dummy
-#'   q1     <- ncol(x) + 1
-#'   ninits <- 1
-#'   maxit <- 2
-#'   tol <- 1e-8
-#'
-#'   if (is.null(z)) {
-#'     ztilde <- matrix(0) # dummy
-#'     p <- 0
-#'     gam  <- NULL
-#'   } else {
-#'     ztilde <- z
-#'     p <- ncol(z)
-#'   }
-#'
-#'   a     <- vector('list',3)
-#'
-#'   for (k in 2:3) {
-#'     a[[k]] <- list(penloglik = -Inf, loglik = -Inf)
-#'   }
-#'
-#'   for (k in 2:3) {
-#'     # Two EM steps
-#'     out <- cppRegmixPMLE(b, y, x, ztilde, mu0, sigma0h, m1, p, an, maxit, ninits, tol, tau, h, k)
-#'     alpha <- b[1:m1,1] # b0 has been updated
-#'     mubeta <- matrix(b[(1+m1):((q1+1)*m1),1],nrow=q1,ncol=m1)
-#'     sigma <- b[(1+(q1+1)*m1):((q1+2)*m1),1]
-#'     if (!is.null(z)) {
-#'       gam     <- b[((q1+2)*m1+1):((q1+2)*m1+p),1]
-#'     }
-#'     loglik    <- out$loglik[1]
-#'     penloglik   <- out$penloglik[1]
-#'
-#'     # Check singularity: if singular, break from the loop
-#'     if ( any(sigma < 1e-06) || any(alpha < 1e-06) || is.na(sum(alpha)) ) {
-#'       break
-#'     }
-#'
-#'     a[[k]] <- list(alpha = alpha, mubeta = mubeta, sigma = sigma, gam = gam, penloglik = penloglik, loglik = loglik)
-#'
-#'   }
-#'
-#'   a
-#'
-#' }  # end function regmixPhi2
-
-#' Generates lists of parameters for initial candidates used by
+#' @description Generates lists of parameters for initial candidates used by
 #' the modified EM test for mixture of normals.
 #' @export
 #' @title regmixPhiInit
@@ -373,7 +303,8 @@ regmixPhiInit <- function (y, x, z = NULL, parlist, h, tau, ninits = 1)
 
 }  # end function regmixPhiInit
 
-#' Estimates parameters of a finite mixture of univariate normals by the method of penalized maximum likelhood.
+#' @description Estimates parameters of a finite mixture of univariate normals by 
+#' the method of penalized maximum likelhood.
 #' @export
 #' @title regmixPMLE
 #' @name regmixPMLE
@@ -623,7 +554,6 @@ regmixPMLEinit <- function (y, x, z = NULL, ninits = 1, m = 2)
 #' @param x n by q matrix of data for x
 #' @param coefficients (alpha_1, ..., alpha_m, mu_1, ..., mu_m, sigma_1, ..., sigma_m, gam)
 #' @param z n by p matrix of regressor associated with gam
-#' @param p Dimension of z
 #' @param vcov.method Method used to compute the variance-covariance matrix,
 #' one of \code{"Hessian"} and \code{"OPG"}. #' The default option is \code{"Hessian"}.
 #' When \code{method = "Hessian"}, the variance-covarince matrix is
@@ -862,7 +792,7 @@ regmixVcov <- function(y, x, coefficients, z = NULL, vcov.method = c("Hessian", 
 }  # end function regmixVcov
 
 
-#' Computes objective function used in computing LR_2
+# Computes objective function used in computing LR_2
 obj_zIz <- function(b,Z,I) {
   q       <- length(b)-2
   lam_mu  <- b[1]
@@ -888,7 +818,7 @@ obj_zIz <- function(b,Z,I) {
 
 } # end function obj_zIz
 
-#' Computes Jacobian of the objective function used in computing LR_2
+# Computes Jacobian of the objective function used in computing LR_2
 obj_zIz.jac <- function(b,Z,I) {
 
   q     <- length(b)-2
@@ -934,7 +864,7 @@ obj_zIz.jac <- function(b,Z,I) {
 
 } # end function obj_zIz.jac
 
-#' Computes LR_2 for given Z and I, where q is dim(x)
+# Computes LR_2 for given Z and I, where q is dim(x)
 LR_2.comp <- function(Z, I, q, ninits = 25) {
   if (test.on) # initial values controlled by test.on
     set.seed(test.seed)

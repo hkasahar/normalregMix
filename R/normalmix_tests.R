@@ -1,5 +1,5 @@
-#' Sequentially performs MEM test given the data for y and x on the null hypothesis H_0: m = m_0
-#' where m_0 is in {1, 2, ..., maxm}
+#' @description  Sequentially performs MEM test given the data for y and x 
+#' on the null hypothesis H_0: m = m_0 where m_0 is in {1, 2, ..., maxm}
 #' @export
 #' @title normalmixMEMtestSeq
 #' @name normalmixMEMtestSeq

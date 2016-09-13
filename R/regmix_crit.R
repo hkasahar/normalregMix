@@ -1,5 +1,4 @@
-
-#' Computes the critical values of the modified EM test.
+#' @description Computes the critical values of the modified EM test.
 #' @export
 #' @title regmixCrit
 #' @name regmixCrit
@@ -13,6 +12,7 @@
 #' @param parallel Determines whether package \code{doParallel} is used for calculation
 #' @param cl Cluster used for parallelization; if it is \code{NULL}, the system will automatically
 #' @param nrep The number of replications used to compute p-values
+#' @param ninits.crit The number of initial guesses to form critical values 
 #' @return A list with the following items:
 #' \item{crit}{3 by 3 matrix of (0.1, 0.05, 0.01 critical values), jth row corresponding to k=j}
 #' \item{pvals}{A vector of p-values at k = 1, 2, 3}
@@ -184,7 +184,7 @@ regmixCrit <- function(y, x, parlist, z = NULL, values = NULL, parallel = TRUE,
   } # end function regmixCrit
 
 
-#' Computes the bootstrap critical values of the modified EM test.
+#' @description Computes the bootstrap critical values of the modified EM test.
 #' @export
 #' @title regmixCritBoot
 #' @name regmixCritBoot

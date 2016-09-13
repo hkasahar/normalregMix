@@ -1,4 +1,4 @@
-#' Computes the critical values of the modified EM test.
+#' @description Computes the critical values of the modified EM test.
 #' @export
 #' @title normalmixCrit
 #' @name normalmixCrit
@@ -109,7 +109,7 @@ normalmixCrit <- function(y, parlist, z = NULL, values = NULL, nrep = 10000)
   return(list(crit = crit, pvals = pvals))
 }  # end function normalmixCrit
 
-#' Computes the bootstrap critical values of the modified EM test.
+#' @description Computes the bootstrap critical values of the modified EM test.
 #' @export
 #' @title normalmixCritBoot
 #' @name normalmixCritBoot

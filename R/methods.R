@@ -1,7 +1,7 @@
 test.on <- FALSE
 test.seed <- 8888577
 
-#' Turns on/off the test mode.
+#' @description Turns on/off the test mode.
 #' @export
 #' @title testMode
 #' @name testMode
@@ -28,7 +28,19 @@ testMode <- function(on = FALSE, seed = 8888577, hide.message = TRUE)
                 as.character(test.seed)))
 }
 
-
+#' @description Prints the multiple plots for diagnosis. 
+#' @export
+#' @title plotDiag
+#' @name plotDiag
+#' @param components n vector of the indices of components for each observation
+#' @param y n vector of data that represents dependent variables
+#' @param x n by q matrix of data that represent(s) covariates
+#' @param m The number of components
+#' @examples
+#' data(faithful)
+#' attach(faithful)
+#' regmix.model.m2 <- regmixPMLE(y = eruptions, x = waiting, m = 2)
+#' \dontrun{plotDiag(regmix.model.m2$components, y = eruptions, x = waiting, m  = 2)}
 plotDiag <- function(components, y = y, x = x, m = 2)
 {
   dimx <- dim(as.matrix(x))[2]
@@ -63,7 +75,7 @@ plotDiag <- function(components, y = y, x = x, m = 2)
   }
 }
 
-#' Generates a vector that indicates which component each observation belongs to,
+#' @description Generates a vector that indicates which component each observation belongs to,
 #' based on its posterior probability
 #' @export
 #' @title getComponentcomponents
@@ -78,7 +90,14 @@ getComponentcomponents <- function(postprobs)
   apply(postprobs.mat, 1, function(i) (which(i==max(i))))
 }
 
-
+#' @description Returns the summary of a normalregMix instance
+#' @export
+#' @title summary.normalregMix
+#' @name summary.normalregMix
+#' @param object normalregMix instance
+#' @param reorder Determines whether components are reordered in summary
+#' @param digits Digits used for reporting
+#' @param ... Other arguments that do not affect the function
 summary.normalregMix <- function(object, reorder = FALSE, digits = 3, ...) {
 
 if (object$label == "PMLE") {
@@ -126,7 +145,12 @@ if (object$label == "PMLE") {
 
 }  # end function summary.normalregMix
 
-
+#' @description Prints the summary of a normalregMix instance
+#' @export
+#' @title print.summary.normalregMix
+#' @name print.summary.normalregMix
+#' @param x normalregMix instance
+#' @param ... Other arguments that do not affect the function
 print.summary.normalregMix <- function(x, ...) {
 
 cat("\nCall:\n")
@@ -153,7 +177,7 @@ if (reorder) {
     cat("gam\n")
     printCoefmat(gam, P.values = TRUE, has.Pvalue = TRUE, signif.legend = FALSE, digits=x$digits)
   }
-  cat("---\nSignif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1")
+  cat("---\nSignif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1")
 } else {
   printCoefmat(x$coefficients, P.values = TRUE, has.Pvalue = TRUE, digits = x$digits)
 }
@@ -165,41 +189,12 @@ cat(sprintf("BIC: %.3f\n", x$bic))
 
 }
 
-print.summary.normalregMix.old <- function(x, ...) {
-
-m   <- x$m
-tab <- x$coefficients
-reorder <- x$reorder
-k <- nrow(x$parlist$mubeta)
-if (is.null(k)) { k <- 1 }
-
-if (reorder) {
-  cat(sprintf("Number of components: %d\n",m))
-  for (j in 1:m){
-    cat(sprintf("\nComponent %i\n",j))
-    coef.j = tab[c(j, (m+(j-1)*k+1):(m+j*k), j+m*(k+1)), ]
-    # rownames(coef.j) <- c("alpha","mu","sigma")
-    printCoefmat(coef.j, P.values = TRUE, has.Pvalue = TRUE, signif.legend = FALSE, digits=x$digits)
-  }
-  if (!is.null(x$parlist$gam)) {
-    # browser()
-    p <- length(x$parlist$gam)
-    gam <- tab[(nrow(tab)-p+1):nrow(tab), , drop = FALSE]
-    cat("\ngam\n")
-    printCoefmat(gam, P.values = TRUE, has.Pvalue = TRUE, signif.legend = FALSE, digits=x$digits)
-  }
-  cat("---\n Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1")
-} else {
-  printCoefmat(x$coefficients, P.values = TRUE, has.Pvalue = TRUE, digits = x$digits)
-  cat(sprintf("\nloglik at estimate: %.3f\n", x$loglik))
-  cat(sprintf("penloglik at estimate: %.3f\n", x$penloglik))
-  cat(sprintf("AIC: %.3f\n", x$aic))
-  cat(sprintf("BIC: %.3f\n", x$bic))
-}
-
-}
-
-
+#' @description Prints the description of a normalregMix instance
+#' @export
+#' @title print.normalregMix
+#' @name print.normalregMix
+#' @param x normalregMix instance
+#' @param ... Other arguments that do not affect the function
 print.normalregMix <- function(x, ...) {
 
 cat("\nCall:\n")
@@ -227,7 +222,7 @@ if (x$label == "MEMtest") {
 }
 
 
-#' Computes a_n based on empirical results found in Kasahara and Shimotsu (2015)
+#' @description Computes a_n based on empirical results found in Kasahara and Shimotsu (2015)
 #' @export
 #' @title anFormula
 #' @name anFormula

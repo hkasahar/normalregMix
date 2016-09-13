@@ -1,11 +1,11 @@
-#' Computes the variance-covariance matrix of the MLE of m-component normal mixture.
+#' @description Computes the variance-covariance matrix of the MLE of 
+#' m-component normal mixture.
 #' @export
 #' @title normalmixVcov
 #' @name normalmixVcov
 #' @param y n by 1 vector of data
 #' @param coefficients (alpha_1, ..., alpha_m, mu_1, ..., mu_m, sigma_1, ..., sigma_m, gam)
 #' @param z n by p matrix of regressor associated with gamma
-#' @param p Dimension of z
 #' @param vcov.method Method used to compute the variance-covariance matrix,
 #' one of \code{"Hessian"} and \code{"OPG"}. #' The default option is \code{"Hessian"}.
 #' When \code{method = "Hessian"}, the variance-covarince matrix is
@@ -217,7 +217,8 @@ normalmixVcov <- function(y, coefficients, z = NULL, vcov.method = c("Hessian", 
 }  # end function normalmixVcov
 
 
-#' Estimates parameters of a finite mixture of univariate normals by the method of penalized maximum likelhood.
+#' @description Estimates parameters of a finite mixture of univariate normals by 
+#' penalized maximum log-likelhood functions.
 #' @export
 #' @title normalmixPMLE
 #' @name normalmixPMLE
@@ -275,7 +276,7 @@ normalmixVcov <- function(y, coefficients, z = NULL, vcov.method = c("Hessian", 
 #' normalmixPMLE(y = eruptions, m = 1)
 #' normalmixPMLE(y = eruptions, m = 2)
 #'
-#' out<-normalmixPMLE(y = eruptions, m = 2)
+#' out <- normalmixPMLE(y = eruptions, m = 2)
 #' summary(out)
 normalmixPMLE <- function (y, m = 2, z = NULL, vcov.method = c("Hessian", "OPG", "none"),
                            ninits = 25, epsilon = 1e-08, maxit = 2000,
@@ -390,7 +391,8 @@ normalmixPMLE <- function (y, m = 2, z = NULL, vcov.method = c("Hessian", "OPG",
   a
 }  # end function normalmixPMLE
 
-#' Compute ordinary & penalized log-likelihood ratio resulting from MEM algorithm at k=1,2,3.
+#' @description Compute ordinary & penalized log-likelihood ratio resulting from 
+#' MEM algorithm at k=1,2,3.
 #' @export
 #' @title normalmixMaxPhi
 #' @name normalmixMaxPhi
@@ -406,6 +408,7 @@ normalmixPMLE <- function (y, m = 2, z = NULL, vcov.method = c("Hessian", "OPG",
 #' @param epsilon The convergence criterion. Convergence is declared when the penalized log-likelihood increases by less than \code{epsilon}.
 #' @param maxit.short The maximum number of iterations in short EM.
 #' @param maxit The maximum number of iterations.
+#' @param verb Determines whether to print a message if an error occurs.
 #' @param parallel Determines whether package \code{doParallel} is used for calculation
 #' @param cl Cluster used for parallelization; if it is \code{NULL}, the system will automatically
 #' create a new one for computation accordingly.
@@ -483,8 +486,9 @@ normalmixMaxPhi <- function (y, parlist, z = NULL, an, tauset = c(0.1,0.3,0.5),
 
 
 }  # end normalmixMaxPhi
-#' Given a pair of h and tau and data, compute ordinary &
-#' penalized log-likelihood ratio resulting from MEM algorithm at k=1,2,3, tailored for parallelization.
+#' @description Given a pair of h and tau and data, compute ordinary &
+#' penalized log-likelihood ratio resulting from MEM algorithm at k=1,2,3, 
+#' tailored for parallelization.
 #' @export
 #' @title normalmixMaxPhiStep
 #' @name normalmixMaxPhiStep
@@ -502,6 +506,7 @@ normalmixMaxPhi <- function (y, parlist, z = NULL, an, tauset = c(0.1,0.3,0.5),
 #' @param epsilon The convergence criterion. Convergence is declared when the penalized log-likelihood increases by less than \code{epsilon}.
 #' @param maxit.short The maximum number of iterations in short EM.
 #' @param maxit The maximum number of iterations.
+#' @param verb Determines whether to print a message if an error occurs.
 #' @return A list of phi, log-likelihood, and penalized log-likelihood resulting from MEM algorithm.
 normalmixMaxPhiStep <- function (htaupair, y, parlist, z = NULL, p,
                                  an,
@@ -599,73 +604,7 @@ normalmixMaxPhiStep <- function (htaupair, y, parlist, z = NULL, p,
   return (list(coefficient = coefficient, loglik = loglik, penloglik = penloglik))
 }
 
-#' #' Starting from a parameter estimate, take two EM steps to compute the
-#' #' local modified EM test statistic for testing H_0 of m components
-#' #' against H_1 of m+1 at K=2,3 for a univariate normal finite mixture.
-#' #' @export
-#' #' @title normalmixPhi2
-#' #' @name normalmixPhi2
-#' #' @param b the parameter estimates at k=1 in the form of b=(alpha_1, ..., alpha_m, mu_1, ..., mu_m,
-#' #' sigma_1, ..., sigma_m, gam_1, ..., gam_m)
-#' #' @param y n by 1 vector of data
-#' #' @param z n by p matrix of regressor associated with gam
-#' #' @param parlist The parameter estimates as a list containing alpha, mu, sigma, and gam
-#' #' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m),
-#' #' sigma = (sigma_1, ..., sigma_m), gam = (gam_1, ..., gam_m))
-#' #' @param sigma0h m1 by 1 vector for the initial sigma
-#' #' @param h h used as index for pivoting
-#' #' @param tau Tau used to split the h-th component
-#' #' @param an a term used for penalty function
-#' #' @return A list of length 2, where the first element is the local modified
-#' #' MEM test statistic at k=2, the second element is
-#' #' the local modified MEM test statistic at k=3
-#' normalmixPhi2 <- function (b, y, z = NULL, sigma0h, m1, h, tau, an) {
-#'
-#'   n     <- length(y)
-#'   a     <- vector('list',3)
-#'   mu0   <- double(m1) # dummy
-#'   ninits <- 1
-#'   maxit <- 2
-#'   tol <- 1e-8
-#'
-#'   if (is.null(z)) {
-#'     ztilde <- matrix(0) # dummy
-#'     p <- 0
-#'     gam  <- NULL
-#'   } else {
-#'     ztilde <- z
-#'     p <- ncol(z)
-#'   }
-#'
-#'   for (k in 2:3) {
-#'     # Two EM steps
-#'     out <- cppNormalmixPMLE(b, y, ztilde, mu0, sigma0h, m1, p, an, maxit, ninits, tol, tau, h, k)
-#'     alpha <- b[1:m1,1] # b has been updated
-#'     mu <- b[(1+m1):(2*m1),1]
-#'     sigma <- b[(1+2*m1):(3*m1),1]
-#'     if (p>0) {
-#'       gam     <- b[(3*m1+1):(3*m1+p),1]
-#'     }
-#'     loglik    <- out$loglik[1]
-#'     penloglik   <- out$penloglik[1]
-#'
-#'     # Check singularity: if singular, break from the loop
-#'     if ( any(sigma < 1e-06) || any(alpha < 1e-06) || is.na(sum(alpha)) ) {
-#'       for (k in 2:3) {
-#'         a[[k]] <- list(penloglik = -Inf, loglik = -Inf)
-#'       }
-#'       break
-#'     }
-#'
-#'     a[[k]] <- list(alpha = alpha, mu = mu, sigma = sigma, gam = gam, penloglik = penloglik, loglik = loglik)
-#'
-#'   }
-#'
-#'   a
-#'
-#' }  # end function normalmixPhi2
-
-#' Generates lists of parameters for initial candidates used by
+#' @description Generates lists of parameters for initial candidates used by
 #' the modified EM test for mixture of normals.
 #' @export
 #' @title normalmixPhiInit
@@ -730,7 +669,7 @@ normalmixPhiInit <- function (y, parlist, z = NULL, h, tau, ninits = 1)
 }  # end function normalmixPhiInit
 
 
-#' Generate initial values used by the PMLE of mixture of normals
+#' @description Generate initial values used by the PMLE of mixture of normals
 #' @export
 #' @title normalmixPMLEinit
 #' @name normalmixPMLEinit
@@ -767,8 +706,7 @@ normalmixPMLEinit <- function (y, z = NULL, ninits = 1, m = 2)
 
 }  # end function normalmixPMLEinit
 
-## TODO: This has not been used. Do I remove this?
-#' Generates mixed normal random variables with regressor x
+#' @description Generates mixed normal random variables with regressor x
 #' @export
 #' @title rnormregmix
 #' @name rnormregmix
@@ -811,7 +749,7 @@ rnormregmix <- function (n, x = NULL, alpha, mubeta, sigma) {
 
 
 
-#' Computes omega_{j|i} defined in (2.1) of Maitra and Melnykov (2010)
+#' @description Computes omega_{j|i} defined in (2.1) of Maitra and Melnykov (2010)
 #' @export
 #' @title omega.ji
 #' @name omega.ji
@@ -858,7 +796,7 @@ omega.ji <- function(phi_i, phi_j) {
   return (omega_ji)
 }
 
-#' Computes omega_{12} defined in Maitra and Melnykov (2010)
+#' @description Computes omega_{12} defined in Maitra and Melnykov (2010)
 #' @export
 #' @title omega.12
 #' @name omega.12
@@ -913,7 +851,7 @@ omega.123 <- function(parlist)
 
 }  # end function omega.123
 
-#' Computes omega_{12}, omega_{23}, and omega_{34} defined in Maitra and Melnykov (2010)
+#' @description Computes omega_{12}, omega_{23}, and omega_{34} defined in Maitra and Melnykov (2010)
 #' @export
 #' @title omega.1234
 #' @name omega.1234
@@ -948,7 +886,6 @@ omega.1234 <- function(parlist)
 
 }  # end function omega.1234
 
-# TODO: This has not been used. Do I remove this? The same functions is in other_funcs.R.
 coef.to.list <- function(coefficients, z = NULL) {
   # 　Convert coefficients to list
   len     <- length(coefficients)

@@ -1,4 +1,4 @@
-PKG_LIBS = $(LAPACK_LIBS) $(BLAS_LIBS)
+PKG_LIBS = $(FLIBS) $(LAPACK_LIBS) $(BLAS_LIBS)
 ARMA_NO_DEBUG = TRUE
 # The above version gives a warning but you can build the package successfully. 
 # The following version is the "correct" one but returns an error message

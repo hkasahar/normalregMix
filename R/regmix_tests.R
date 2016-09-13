@@ -1,5 +1,5 @@
-#' Sequentially performs MEM test given the data for y and x on the null hypothesis H_0: m = m_0
-#' where m_0 is in {1, 2, ..., maxm}
+#' @description Sequentially performs MEM test given the data for y and x on 
+#' the null hypothesis H_0: m = m_0 where m_0 is in {1, 2, ..., maxm}
 #' @export
 #' @title regmixMEMtestSeq
 #' @name regmixMEMtestSeq
@@ -153,7 +153,8 @@ regmixMEMtestSeq <- function (y, x, z = NULL, maxm = 3, ninits = 10, maxit = 200
   a
 }  # end regmixMEMtestSeq
 
-#' Performs MEM test given the data for y and x on the null hypothesis H_0: m = m_0.
+#' @description Performs MEM test given the data for y and x on 
+#' the null hypothesis H_0: m = m_0.
 #' @export
 #' @title regmixMEMtest
 #' @name regmixMEMtest

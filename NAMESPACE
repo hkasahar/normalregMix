@@ -1,5 +1,5 @@
 useDynLib(normalregMix)
-
+import(stats, utils, doParallel, RcppArmadillo, ggplot2, foreach, minpack.lm)
 export(normalmixCrit, normalmixCritBoot, normalmixMEMtest, normalmixMEMtestSeq,
        normalmixPMLE, normalmixMaxPhi, normalmixVcov, rnormregmix,
        regmixCrit, regmixCritBoot, regmixMEMtest, regmixMEMtestSeq,
