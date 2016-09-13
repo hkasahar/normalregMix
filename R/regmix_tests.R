@@ -29,7 +29,7 @@
 #' @examples
 #' data(faithful)
 #' attach(faithful)
-#' regmixMEMtestSeq(y = eruptions, x = waiting, parallel = TRUE)
+#' \dontrun{regmixMEMtestSeq(y = eruptions, x = waiting, parallel = TRUE)}
 regmixMEMtestSeq <- function (y, x, z = NULL, maxm = 3, ninits = 10, maxit = 2000,
                               nbtsp = 199, parallel = FALSE, cl = NULL) {
   # Compute the modified EM test statistic for testing H_0 of m components
@@ -191,8 +191,8 @@ regmixMEMtestSeq <- function (y, x, z = NULL, maxm = 3, ninits = 10, maxit = 200
 #' @examples
 #' data(faithful)
 #' attach(faithful)
-#' regmixMEMtest(y = eruptions, x = waiting, m = 1, crit.method = "asy")
-#' regmixMEMtest(y = eruptions, x = waiting, m = 2, parallel = TRUE, crit.method = "asy")
+#' \dontrun{regmixMEMtest(y = eruptions, x = waiting, m = 1, crit.method = "asy")}
+#' \dontrun{regmixMEMtest(y = eruptions, x = waiting, m = 2, parallel = TRUE, crit.method = "asy")}
 regmixMEMtest <- function (y, x, m = 2, z = NULL, tauset = c(0.1,0.3,0.5),
                            an = NULL, ninits = 100,
                            crit.method = c("none", "asy", "boot"), nbtsp = 199,
