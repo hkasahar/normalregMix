@@ -40,8 +40,10 @@ List cppNormalmixPMLE(NumericMatrix bs,
   arma::mat zz(p,p);
   arma::mat ze(p,1);
   int sing;
-  double oldpenloglik, penloglik, s0j, diff, minr, w_j, sum_l_j, ll, ssr_j, alphah, tauhat;
-
+  double oldpenloglik, s0j, diff, minr, w_j, sum_l_j, ssr_j, alphah;
+  double ll = 0; // force initilization
+  double penloglik = 0; // force initialization
+ 
   /* Lower and upper bound for mu */
   if (k==1) {  // If k==1, compute upper and lower bounds
     mu0(0) = R_NegInf;

@@ -47,8 +47,10 @@ List cppRegmixPMLE(NumericMatrix bs,
   arma::mat zz(p,p);
   arma::mat ze(p,1);
   int emit, sing;
-  double oldpenloglik, penloglik, s0j, diff, minr, w_j, sum_l_j, ll, ssr_j, alphah, tauhat;
+  double oldpenloglik, s0j, diff, minr, w_j, sum_l_j, ssr_j, alphah;
   arma::mat x1(n,q1);
+  double penloglik = 0; // force initialization
+  double ll = 0; // force initialization
 
   x1.col(0) = arma::ones(n);
   for (int i=1; i < q1; ++i) {
