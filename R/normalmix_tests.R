@@ -12,6 +12,8 @@
 #' @param parallel Determines whether package \code{doParallel} is used for calculation
 #' @param cl Cluster used for parallelization; if it is \code{NULL}, the system will automatically
 #' create a new one for computation accordingly.
+#' @param crit.bootstrap.from The minimum m in null hypothesis to have critical values 
+#' calculated from bootstrap for the test statistics
 #' @return A list of with the following items:
 #' \item{alpha}{maxm by maxm matrix, whose i-th column is a vector of alphas estimated given the null hypothesis m_0 = i}
 #' \item{mu}{maxm by maxm matrix, whose i-th column is a vector of mus estimated given the null hypothesis m_0 = i}
@@ -30,7 +32,8 @@
 #' attach(faithful)
 #' normalmixMEMtestSeq(y = eruptions)
 normalmixMEMtestSeq <- function (y, z = NULL,  maxm = 3, ninits = 10, maxit = 2000,
-                                 nbtsp = 199, parallel = FALSE, cl = NULL) {
+                                 nbtsp = 199, parallel = FALSE, cl = NULL,
+                                 crit.bootstrap.from = 3) {
   # Compute the modified EM test statistic for testing H_0 of m components
   # against H_1 of m+1 components for a univariate finite mixture of normals
 
@@ -100,7 +103,7 @@ normalmixMEMtestSeq <- function (y, z = NULL,  maxm = 3, ninits = 10, maxit = 20
       binit <- par1$coefficient
 
       cat(c("modified EM-test statitic ", sprintf('%.3f',emstat.m)),"\n")
-      if (m <= 4 ) {
+      if (m <= crit.bootstrap.from) {
         em.out <- normalmixCrit(y=y, parlist=parlist, z=z, values = emstat.m)
         cat(c("asymptotic p-values       ", sprintf('%.3f',em.out$pvals)),"\n \n")
       } else {
