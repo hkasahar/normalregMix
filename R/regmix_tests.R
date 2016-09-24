@@ -97,7 +97,7 @@ regmixMEMtestSeq <- function (y, x, z = NULL, maxm = 3, ninits = 10, maxit = 200
     if (!is.null(z)){
       gam[, m] <- gam0
     }
-    cat(sprintf("\nAIC, BIC, and loglike of 1 to %.i", m), "component models \n")
+    cat(sprintf("\nAIC, BIC, and log-likelihood of 1 to %.i", m), "component models \n")
     cat(c("AIC    =", sprintf(' %.2f', aic[1:m])), "\n")
     cat(c("BIC    =", sprintf(' %.2f', bic[1:m])), "\n")
     cat(c("loglik =", sprintf('%.2f', loglik[1:m])), "\n\n")
@@ -143,7 +143,7 @@ regmixMEMtestSeq <- function (y, x, z = NULL, maxm = 3, ninits = 10, maxit = 200
       binit <- as.vector(c(alpha[1:m,m], as.vector(mubeta), sigma[1:m,m],  gam[,m]))
       pmle.result   <- regmixPMLE(y = y, x = x, m = m, z = z,
                                      ninits = 2, maxit = maxit, binit = binit)
-      cat(sprintf("\nThe summary of estimated %.i", m), "component model is as follows \n")
+      cat(sprintf("\nThe summary of the estimated %.i", m), "component model: \n")
       print(summary(pmle.result))
       break
     }
