@@ -117,12 +117,12 @@ regmixMEMtestSeq <- function (y, x, z = NULL, maxm = 3, ninits = 10, maxit = 200
       if (m <= crit.bootstrap.from) {
         em.out <- regmixCrit(y = y, x = x, parlist = parlist, z = z,
                              values = emstat.m)
-        cat(c("asymptotic p-values       ", sprintf('%.3f',em.out$pvals)),"\n \n")
+        cat(c("asymptotic p-value       ", sprintf('%.3f',em.out$pvals)),"\n \n")
       } else {
         em.out <- regmixCritBoot(y = y, x = x, parlist=parlist, z = z,
                                  values = emstat.m, ninits = ninits, nbtsp = nbtsp,
                                  parallel = parallel, cl = cl)
-        cat(c("bootstrap p-values        ", sprintf('%.3f',em.out$pvals)),"\n \n")
+        cat(c("bootstrap p-value        ", sprintf('%.3f',em.out$pvals)),"\n \n")
       }
       # noncg.rate[m]   <- par1$noncg.rate
       pvals[m,]     <- em.out$pvals

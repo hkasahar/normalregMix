@@ -105,11 +105,11 @@ normalmixMEMtestSeq <- function (y, z = NULL,  maxm = 3, ninits = 10, maxit = 20
       cat(c("modified EM-test statitic ", sprintf('%.3f',emstat.m)),"\n")
       if (m <= crit.bootstrap.from) {
         em.out <- normalmixCrit(y=y, parlist=parlist, z=z, values = emstat.m)
-        cat(c("asymptotic p-values       ", sprintf('%.3f',em.out$pvals)),"\n \n")
+        cat(c("asymptotic p-value       ", sprintf('%.3f',em.out$pvals)),"\n \n")
       } else {
         em.out <- normalmixCritBoot(y=y, parlist=parlist, z=z, values = emstat.m,
                                     ninits = ninits, nbtsp = nbtsp, parallel = parallel, cl = cl)
-        cat(c("bootstrap p-values        ", sprintf('%.3f',em.out$pvals)),"\n \n")
+        cat(c("bootstrap p-value        ", sprintf('%.3f',em.out$pvals)),"\n \n")
       }
       pvals[m,]     <- em.out$pvals
       emstat[m,]    <- emstat.m
