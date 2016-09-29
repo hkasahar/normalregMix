@@ -161,25 +161,22 @@ List cppRegmixPMLE(NumericMatrix bs,
         alpha(j) = fmin( fmax(alpha(j),0.01), 0.99);
       }
       
-      /* if k!=0, update alpha and/or tau */
-      // if (k!=0){
-      //   alphah = (alpha(h-1)+alpha(h));
-      //   /* If k!=1, update tau. If k==1, no update of tau. */
-      //   if (k!=1) {
-      //     tauhat = alpha(h-1)/(alpha(h-1)+alpha(h));
-      //     if (tauhat <= 0.5) {
-      //       tau = fmin((alpha(h-1)*n + 1.0)/(alpha(h-1)*n + alpha(h)*n + 1.0), 0.5);
-      //     } else {
-      //       tau = fmax(alpha(h-1)*n /(alpha(h-1)*n + alpha(h)*n + 1.0), 0.5);
-      //     }
-      //   }
-      //   /* Using tau, revise the h and h+1 th element of alpha */
-      //   alpha(h-1) = alphah*tau;
-      //   alpha(h) = alphah*(1-tau);
-      // }
+      /* for PMLE, we set k=0 (default value) */
+      /* for EM test, we start from k=1       */
+      /*   if k==1, we don't update tau       */
+      /*   if k>1, we update tau              */
       if (k==1){
         alphah = (alpha(h-1)+alpha(h));
-        /* Using tau, revise the h and h+1 th element of alpha */
+        alpha(h-1) = alphah*tau;
+        alpha(h) = alphah*(1-tau);
+      } else if (k>1) {
+        alphah = (alpha(h-1)+alpha(h));
+        tauhat = alpha(h-1)/(alpha(h-1)+alpha(h));
+        if(tauhat <= 0.5) {
+          tau = fmin((alpha(h-1)*n + 1.0)/(alpha(h-1)*n + alpha(h)*n + 1.0), 0.5);
+        } else {
+          tau = fmax(alpha(h-1)*n /(alpha(h-1)*n + alpha(h)*n + 1.0), 0.5);
+        }
         alpha(h-1) = alphah*tau;
         alpha(h) = alphah*(1-tau);
       }
