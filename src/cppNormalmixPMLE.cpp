@@ -40,7 +40,7 @@ List cppNormalmixPMLE(NumericMatrix bs,
   arma::mat zz(p,p);
   arma::mat ze(p,1);
   int sing;
-  double oldpenloglik, s0j, diff, minr, w_j, sum_l_j, ssr_j, alphah;
+  double oldpenloglik, s0j, diff, minr, w_j, sum_l_j, ssr_j, alphah, tauhat;
   double ll = 0; // force initilization
   double penloglik = 0; // force initialization
  
