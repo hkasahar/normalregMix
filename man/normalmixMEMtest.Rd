@@ -4,12 +4,14 @@
 \alias{normalmixMEMtest}
 \title{normalmixMEMtest}
 \usage{
-normalmixMEMtest(y, m = 2, z = NULL, an = NULL, tauset = c(0.1, 0.3,
-  0.5), ninits = 10, crit.method = c("asy", "boot", "none"), nbtsp = 199,
-  cl = NULL, parallel = FALSE)
+normalmixMEMtest(y, x = NULL, m = 2, z = NULL, an = NULL,
+  tauset = c(0.1, 0.3, 0.5), ninits = 10, crit.method = c("asy", "boot",
+  "none"), nbtsp = 199, cl = NULL, parallel = FALSE)
 }
 \arguments{
 \item{y}{n by 1 vector of data}
+
+\item{x}{n by q matrix of data for x (if exists)}
 
 \item{m}{The number of components in the mixture defined by a null hypothesis, m_0}
 

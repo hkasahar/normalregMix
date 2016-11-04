@@ -1,6 +1,5 @@
 #' @description Computes the variance-covariance matrix of the MLE of 
 #' m-component normal mixture.
-#' @export
 #' @title normalmixVcov
 #' @name normalmixVcov
 #' @param y n by 1 vector of data
@@ -223,6 +222,7 @@ normalmixVcov <- function(y, coefficients, z = NULL, vcov.method = c("Hessian", 
 #' @title normalmixPMLE
 #' @name normalmixPMLE
 #' @param y n by 1 vector of data
+#' @param x n by q matrix of data for x (if exists)
 #' @param m The number of components in the mixture
 #' @param z n by p matrix of regressor associated with gamma
 #' @param vcov.method Method used to compute the variance-covariance matrix, one of \code{"Hessian"} and \code{"OPG"}.
@@ -278,10 +278,15 @@ normalmixVcov <- function(y, coefficients, z = NULL, vcov.method = c("Hessian", 
 #'
 #' out <- normalmixPMLE(y = eruptions, m = 2)
 #' summary(out)
-normalmixPMLE <- function (y, m = 2, z = NULL, vcov.method = c("Hessian", "OPG", "none"),
+normalmixPMLE <- function (y, x = NULL, m = 2, z = NULL, vcov.method = c("Hessian", "OPG", "none"),
                            ninits = 25, epsilon = 1e-08, maxit = 2000,
                            epsilon.short = 1e-02, maxit.short = 500, binit = NULL) {
   y <- as.vector(y)
+  if (!is.null(x))
+    return (regmixPMLE(y = y, x = x, m = m, z = z, vcov.method = vcov.method,
+                       ninits= ninits, epsilon = epsilon, maxit = maxit,
+                       epsilon.short = epsilon.short, maxit.short = maxit.short,
+                       binit = binit))
   n <- length(y)
   p <- 0
   gam <- NULL
@@ -393,7 +398,6 @@ normalmixPMLE <- function (y, m = 2, z = NULL, vcov.method = c("Hessian", "OPG",
 
 #' @description Compute ordinary & penalized log-likelihood ratio resulting from 
 #' MEM algorithm at k=1,2,3.
-#' @export
 #' @title normalmixMaxPhi
 #' @name normalmixMaxPhi
 #' @param y n by 1 vector of data
@@ -489,7 +493,6 @@ normalmixMaxPhi <- function (y, parlist, z = NULL, an, tauset = c(0.1,0.3,0.5),
 #' @description Given a pair of h and tau and data, compute ordinary &
 #' penalized log-likelihood ratio resulting from MEM algorithm at k=1,2,3, 
 #' tailored for parallelization.
-#' @export
 #' @title normalmixMaxPhiStep
 #' @name normalmixMaxPhiStep
 #' @param htaupair A set of h and tau
@@ -606,7 +609,6 @@ normalmixMaxPhiStep <- function (htaupair, y, parlist, z = NULL, p,
 
 #' @description Generates lists of parameters for initial candidates used by
 #' the modified EM test for mixture of normals.
-#' @export
 #' @title normalmixPhiInit
 #' @name normalmixPhiInit
 #' @param y n by 1 vector of data
@@ -670,7 +672,6 @@ normalmixPhiInit <- function (y, parlist, z = NULL, h, tau, ninits = 1)
 
 
 #' @description Generate initial values used by the PMLE of mixture of normals
-#' @export
 #' @title normalmixPMLEinit
 #' @name normalmixPMLEinit
 #' @param y n by 1 vector of data
@@ -707,7 +708,6 @@ normalmixPMLEinit <- function (y, z = NULL, ninits = 1, m = 2)
 }  # end function normalmixPMLEinit
 
 #' @description Generates mixed normal random variables with regressor x
-#' @export
 #' @title rnormregmix
 #' @name rnormregmix
 #' @param n The number of observations

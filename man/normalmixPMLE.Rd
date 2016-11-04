@@ -4,12 +4,14 @@
 \alias{normalmixPMLE}
 \title{normalmixPMLE}
 \usage{
-normalmixPMLE(y, m = 2, z = NULL, vcov.method = c("Hessian", "OPG",
-  "none"), ninits = 25, epsilon = 1e-08, maxit = 2000,
+normalmixPMLE(y, x = NULL, m = 2, z = NULL, vcov.method = c("Hessian",
+  "OPG", "none"), ninits = 25, epsilon = 1e-08, maxit = 2000,
   epsilon.short = 0.01, maxit.short = 500, binit = NULL)
 }
 \arguments{
 \item{y}{n by 1 vector of data}
+
+\item{x}{n by q matrix of data for x (if exists)}
 
 \item{m}{The number of components in the mixture}
 

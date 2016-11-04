@@ -4,11 +4,14 @@
 \alias{normalmixMEMtestSeq}
 \title{normalmixMEMtestSeq}
 \usage{
-normalmixMEMtestSeq(y, z = NULL, maxm = 3, ninits = 10, maxit = 2000,
-  nbtsp = 199, parallel = FALSE, cl = NULL)
+normalmixMEMtestSeq(y, x = NULL, z = NULL, maxm = 3, ninits = 10,
+  maxit = 2000, nbtsp = 199, parallel = FALSE, cl = NULL,
+  crit.bootstrap.from = 3)
 }
 \arguments{
 \item{y}{n by 1 vector of data for y}
+
+\item{x}{n by q matrix of data for x (if exists)}
 
 \item{z}{n by p matrix of regressor associated with gamma}
 
@@ -24,6 +27,9 @@ normalmixMEMtestSeq(y, z = NULL, maxm = 3, ninits = 10, maxit = 2000,
 
 \item{cl}{Cluster used for parallelization; if it is \code{NULL}, the system will automatically
 create a new one for computation accordingly.}
+
+\item{crit.bootstrap.from}{The minimum m in null hypothesis to have critical values 
+calculated from bootstrap for the test statistics}
 }
 \value{
 A list of with the following items:

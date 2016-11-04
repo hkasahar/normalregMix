@@ -4,6 +4,7 @@
 #' @title normalmixMEMtestSeq
 #' @name normalmixMEMtestSeq
 #' @param y n by 1 vector of data for y
+#' @param x n by q matrix of data for x (if exists)
 #' @param z n by p matrix of regressor associated with gamma
 #' @param maxm The maximum number of components set as null hypothesis in the mixture
 #' @param ninits The number of randomly drawn initial values.
@@ -31,12 +32,18 @@
 #' data(faithful)
 #' attach(faithful)
 #' normalmixMEMtestSeq(y = eruptions)
-normalmixMEMtestSeq <- function (y, z = NULL,  maxm = 3, ninits = 10, maxit = 2000,
+normalmixMEMtestSeq <- function (y, x = NULL, z = NULL,  maxm = 3, ninits = 10, maxit = 2000,
                                  nbtsp = 199, parallel = FALSE, cl = NULL,
                                  crit.bootstrap.from = 3) {
   # Compute the modified EM test statistic for testing H_0 of m components
   # against H_1 of m+1 components for a univariate finite mixture of normals
 
+
+  if (!is.null(x))
+    return (regmixMEMtestSeq(y = y, x = x, z = z, maxm = maxm, ninits = ninits, maxit = maxit,
+                             nbtsp = nbtsp, parallel = parallel, cl = cl,
+                             crit.bootstrap.from = crit.bootstrap.from))
+  
   y   <- as.vector(y)
   n   <- length(y)
   p   <- 0
@@ -139,6 +146,7 @@ normalmixMEMtestSeq <- function (y, z = NULL,  maxm = 3, ninits = 10, maxit = 20
 #' @title normalmixMEMtest
 #' @name normalmixMEMtest
 #' @param y n by 1 vector of data
+#' @param x n by q matrix of data for x (if exists)
 #' @param m The number of components in the mixture defined by a null hypothesis, m_0
 #' @param z n by p matrix of regressor associated with gamma
 #' @param tauset A set of initial tau value candidates
@@ -170,14 +178,17 @@ normalmixMEMtestSeq <- function (y, z = NULL,  maxm = 3, ninits = 10, maxit = 20
 #' attach(faithful)
 #' normalmixMEMtest(y = eruptions, m = 1, crit.method = "asy")
 #' normalmixMEMtest(y = eruptions, m = 2, crit.method = "asy")
-normalmixMEMtest <- function (y, m = 2, z = NULL, an = NULL, tauset = c(0.1,0.3,0.5),
+normalmixMEMtest <- function (y, x = NULL, m = 2, z = NULL, an = NULL, tauset = c(0.1,0.3,0.5),
                               ninits = 10,
                               crit.method = c("asy", "boot", "none"), nbtsp = 199,
                               cl = NULL,
                               parallel = FALSE) {
   # Compute the modified EM test statistic for testing H_0 of m components
   # against H_1 of m+1 components for a univariate finite mixture of normals
-
+  if (!is.null(x))
+    return (regmixMEMtest(y = y, x = x, m = m, z = z, tauset = tauset, an = an,
+                          ninits = ninits, crit.method = crit.method, nbtsp = nbtsp,
+                          cl = cl, parallel = parallel))
   y     <- as.vector(y)
   n     <- length(y)
   if (!is.null(z)) {z <- as.matrix(z)}
