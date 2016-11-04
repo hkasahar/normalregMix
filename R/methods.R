@@ -243,18 +243,18 @@ anFormula <- function(parlist, m, n, q = 0)
 {
 
   if (q != 0) # an when the dimension of X is not zero.
-    return (switch(as.character(q), "1" = 0.4, "2" = 2.3, "3" = 2.4, "4" = 2.4, 0.4))
+    return (switch(as.character(q), "1" = 0.5, "2" = 2.0, "3" = 2.4, "4" = 2.4, 0.5))
   
   if (m == 1) {
     #   an <- 1.0
-    an <- 0.40
+    an <- 0.50
     #   an <- 0.25
   }
   else if (m == 2) {
     omega <- omega.12(parlist)
     omega <- pmin(pmax(omega, 1e-16), 1-1e-16)  # an becomes NaN if omega[j]=0 or 1
     omega.term <- log(omega /(0.5-omega))
-    b <- c(-2.1767654, -0.2865645, 70.3372779) # coefficients of -(intercept, misclterm, nterm)/atermcoeff
+    b <- c(-2.2312929, -0.3128247, 31.0013613) # coefficients of -(intercept, misclterm, nterm)/atermcoeff
     x <- exp(- b[1] - b[2] * omega.term - b[3] / n)  # maxa=1
     an <- 0.25 * x / (1 + x)
     #   x <- exp(-1.642 - 0.434 * log(omega / (1 - omega)) - 101.80/n)  # maxa=2
@@ -267,7 +267,7 @@ anFormula <- function(parlist, m, n, q = 0)
     omega.23 <- omega[2]
     omega.term <- log(omega.12 * omega.23 / ((0.5-omega.12)*(0.5-omega.23)))
 
-    b <- c(-1.9799330, -0.1722206, 28.1660611)
+    b <- c(-1.497017, -0.095573, 65.205310)
     x <- exp(- b[1] - b[2] * omega.term - b[3] / n)
     an <- 0.25 * x / (1 + x)
     # an <- 0.80 * x / (1 + x)
@@ -281,7 +281,7 @@ anFormula <- function(parlist, m, n, q = 0)
     omega.34 <- omega[3]
     omega.term <- log(omega.12 * omega.23 * omega.34 / 
                   ((0.5-omega.12)*(0.5-omega.23)*(0.5-omega.34)))
-    b <- c(-4.3727106, -0.2290375, -180.6050362)
+    b <- c(-3.0894365, -0.1469525, -62.0436999)
     x <- exp(- b[1] - b[2] * omega.term - b[3] / n)
     an <- 0.25 * x / (1 + x)
   }
