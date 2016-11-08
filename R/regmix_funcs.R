@@ -304,7 +304,8 @@ regmixPhiInit <- function (y, x, z = NULL, parlist, h, tau, ninits = 1)
 }  # end function regmixPhiInit
 
 #' @description Estimates parameters of a finite mixture of univariate normals by 
-#' the method of penalized maximum likelhood.
+#' the method of penalized maximum likelhood. Using this function is equivalent to
+#' calling normalmixPMLE with regressors specified by x as a parameter.
 #' @export
 #' @title regmixPMLE
 #' @name regmixPMLE
