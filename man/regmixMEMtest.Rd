@@ -55,7 +55,8 @@ each observation belongs to based on computed posterior probabilities}
 }
 \description{
 Performs MEM test given the data for y and x on 
-the null hypothesis H_0: m = m_0.
+the null hypothesis H_0: m = m_0. Using this function is equivalent to 
+calling normalmixMEMtest with regressors specified by x as a parameter.
 }
 \examples{
 data(faithful)

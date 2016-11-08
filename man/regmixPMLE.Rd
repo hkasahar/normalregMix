@@ -51,7 +51,8 @@ each observation belongs to based on computed posterior probabilities}
 }
 \description{
 Estimates parameters of a finite mixture of univariate normals by 
-the method of penalized maximum likelhood.
+the method of penalized maximum likelhood. Using this function is equivalent to
+calling normalmixPMLE with regressors specified by x as a parameter.
 }
 \note{
 \code{regmixPMLE} maximizes the penalized log-likelihood function
