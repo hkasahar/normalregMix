@@ -1,9 +1,9 @@
 Package: normalregMix
 Type: Package
 Title: normalregMix: An R Package for Normal Mixture Regression Models
-Version: 1.0
+Version: 1.0.0
 Date: 2016-06-28
-Author: Hiroyuki Kasahara and Katsumi Shimotsu
+Author: Hiroyuki Kasahara, Katsumi Shimotsu, and Chiyoung Ahn
 Maintainer: Hiroyuki Kasahara <hkasahar@mail.ubc.ca>
 Depends:
     R (>= 2.14.0),
