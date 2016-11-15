@@ -1,2 +1,16 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
+experiments
+examples
+/vignettes/using-regmix.aux
+/vignettes/using-regmix.bbl
+/vignettes/using-regmix.blg
+/vignettes/using-regmix.dvi
+/vignettes/using-regmix.log
+/vignettes/using-regmix.out
+aux$
+bbl$
+blg$
+dvi$
+log$
+out$
