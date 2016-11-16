@@ -5,7 +5,7 @@
 \title{normalmixMEMtestSeq}
 \usage{
 normalmixMEMtestSeq(y, x = NULL, z = NULL, maxm = 3, ninits = 10,
-  maxit = 2000, nbtsp = 199, parallel = FALSE, cl = NULL,
+  maxit = 2000, nbtsp = 199, parallel = 0.75, cl = NULL,
   crit.bootstrap.from = 3)
 }
 \arguments{
@@ -23,7 +23,7 @@ normalmixMEMtestSeq(y, x = NULL, z = NULL, maxm = 3, ninits = 10,
 
 \item{nbtsp}{The number of bootstrap observations; by default, it is set to be 199}
 
-\item{parallel}{Determines whether package \code{doParallel} is used for calculation}
+\item{parallel}{Determines what percentage of available cores are used, represented by a double in [0,1]. 0.75 is default.}
 
 \item{cl}{Cluster used for parallelization; if it is \code{NULL}, the system will automatically
 create a new one for computation accordingly.}

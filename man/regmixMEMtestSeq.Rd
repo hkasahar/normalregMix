@@ -5,7 +5,7 @@
 \title{regmixMEMtestSeq}
 \usage{
 regmixMEMtestSeq(y, x, z = NULL, maxm = 3, ninits = 10, maxit = 2000,
-  nbtsp = 199, parallel = FALSE, cl = NULL, crit.bootstrap.from = 3)
+  nbtsp = 199, parallel = 0, cl = NULL, crit.bootstrap.from = 3)
 }
 \arguments{
 \item{y}{n by 1 vector of data for y}

@@ -10,7 +10,7 @@
 #' @param ninits The number of randomly drawn initial values.
 #' @param maxit The maximum number of iterations.
 #' @param nbtsp The number of bootstrap observations; by default, it is set to be 199
-#' @param parallel Determines whether package \code{doParallel} is used for calculation
+#' @param parallel Determines what percentage of available cores are used, represented by a double in [0,1]. 0.75 is default.
 #' @param cl Cluster used for parallelization; if it is \code{NULL}, the system will automatically
 #' create a new one for computation accordingly.
 #' @param crit.bootstrap.from The minimum m in null hypothesis to have critical values 
@@ -33,7 +33,7 @@
 #' attach(faithful)
 #' normalmixMEMtestSeq(y = eruptions)
 normalmixMEMtestSeq <- function (y, x = NULL, z = NULL,  maxm = 3, ninits = 10, maxit = 2000,
-                                 nbtsp = 199, parallel = FALSE, cl = NULL,
+                                 nbtsp = 199, parallel = 0.75, cl = NULL,
                                  crit.bootstrap.from = 3) {
   # Compute the modified EM test statistic for testing H_0 of m components
   # against H_1 of m+1 components for a univariate finite mixture of normals
@@ -182,7 +182,7 @@ normalmixMEMtest <- function (y, x = NULL, m = 2, z = NULL, an = NULL, tauset = 
                               ninits = 10,
                               crit.method = c("asy", "boot", "none"), nbtsp = 199,
                               cl = NULL,
-                              parallel = FALSE) {
+                              parallel = 0) {
   # Compute the modified EM test statistic for testing H_0 of m components
   # against H_1 of m+1 components for a univariate finite mixture of normals
   if (!is.null(x))

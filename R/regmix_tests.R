@@ -35,7 +35,7 @@
 #' attach(faithful)
 #' \dontrun{regmixMEMtestSeq(y = eruptions, x = waiting, parallel = 1)}
 regmixMEMtestSeq <- function (y, x, z = NULL, maxm = 3, ninits = 10, maxit = 2000,
-                              nbtsp = 199, parallel = FALSE, cl = NULL,
+                              nbtsp = 199, parallel = 0, cl = NULL,
                               crit.bootstrap.from = 3) {
   # Compute the modified EM test statistic for testing H_0 of m components
   # against H_1 of m+1 components for a univariate finite mixture of normals
@@ -179,7 +179,7 @@ regmixMEMtestSeq <- function (y, x, z = NULL, maxm = 3, ninits = 10, maxit = 200
 #' @param nbtsp The number of bootstrap observations; by default, set as 199.
 #' @param cl Cluster used for parallelization; if it is \code{NULL}, the system
 #' will automatically generate a new one for computation accordingly.
-#' @param parallel Determines whether package \code{doParallel} is used for calculation
+#' @param parallel Determines what percentage of available cores are used, represented by a double in [0,1]. 0.75 is default.
 #' @return A list of class \code{normalMix} with items:
 #' \item{coefficients}{A vector of parameter estimates. Ordered as \eqn{
 #' '\alpha_1,\ldots,\alpha_m,\mu_1,\ldots,\mu_m,\sigma_1,\ldots,\sigma_m,\gam}.}
@@ -204,7 +204,7 @@ regmixMEMtest <- function (y, x, m = 2, z = NULL, tauset = c(0.1,0.3,0.5),
                            an = NULL, ninits = 100,
                            crit.method = c("none", "asy", "boot"), nbtsp = 199,
                            cl = NULL,
-                           parallel = FALSE) {
+                           parallel = 0.75) {
   # Compute the modified EM test statistic for testing H_0 of m components
   # against H_1 of m+1 components for a univariate finite mixture of normals
   y <- as.vector(y)

@@ -6,7 +6,7 @@
 \usage{
 normalmixMEMtest(y, x = NULL, m = 2, z = NULL, an = NULL,
   tauset = c(0.1, 0.3, 0.5), ninits = 10, crit.method = c("asy", "boot",
-  "none"), nbtsp = 199, cl = NULL, parallel = FALSE)
+  "none"), nbtsp = 199, cl = NULL, parallel = 0)
 }
 \arguments{
 \item{y}{n by 1 vector of data}
