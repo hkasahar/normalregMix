@@ -54,6 +54,6 @@ specified by x as a parameter.
 \examples{
 data(faithful)
 attach(faithful)
-\dontrun{regmixMEMtestSeq(y = eruptions, x = waiting, parallel = TRUE)}
+\dontrun{regmixMEMtestSeq(y = eruptions, x = waiting, parallel = 1)}
 }
 

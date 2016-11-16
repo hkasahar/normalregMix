@@ -6,7 +6,7 @@
 \usage{
 regmixMaxPhi(y, x, parlist, z = NULL, an, tauset = c(0.1, 0.3, 0.5),
   ninits = 10, epsilon.short = 0.01, epsilon = 1e-08, maxit.short = 500,
-  maxit = 2000, verb = FALSE, parallel = FALSE, cl = NULL)
+  maxit = 2000, verb = FALSE, parallel = 0.75, cl = NULL)
 }
 \arguments{
 \item{y}{n by 1 vector of data for y}
@@ -35,7 +35,7 @@ sigma = (sigma_1, ..., sigma_m), gam = (gam_1, ..., gam_m))}
 
 \item{verb}{Determines whether to print a message if an error occurs.}
 
-\item{parallel}{Determines whether package \code{doParallel} is used for calculation}
+\item{parallel}{Determines what percentage of available cores are used, represented by a double in [0,1]. 0.75 is default.}
 
 \item{cl}{Cluster used for parallelization; if it is \code{NULL}, the system will automatically
 create a new one for computation accordingly.}

@@ -4,7 +4,7 @@
 \alias{regmixCrit}
 \title{regmixCrit}
 \usage{
-regmixCrit(y, x, parlist, z = NULL, values = NULL, parallel = TRUE,
+regmixCrit(y, x, parlist, z = NULL, values = NULL, parallel = 1,
   cl = NULL, nrep = 1000, ninits.crit = 25)
 }
 \arguments{

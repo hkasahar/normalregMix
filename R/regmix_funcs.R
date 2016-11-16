@@ -17,7 +17,7 @@
 #' @param maxit.short The maximum number of iterations in short EM.
 #' @param maxit The maximum number of iterations.
 #' @param verb Determines whether to print a message if an error occurs.
-#' @param parallel Determines whether package \code{doParallel} is used for calculation
+#' @param parallel Determines what percentage of available cores are used, represented by a double in [0,1]. 0.75 is default.
 #' @param cl Cluster used for parallelization; if it is \code{NULL}, the system will automatically
 #' create a new one for computation accordingly.
 #' @return A list with items:
@@ -28,7 +28,7 @@ regmixMaxPhi <- function (y, x, parlist, z = NULL, an, tauset = c(0.1,0.3,0.5),
                           epsilon.short = 1e-02, epsilon = 1e-08,
                           maxit.short = 500, maxit = 2000,
                           verb = FALSE,
-                          parallel = FALSE,
+                          parallel = 0.75,
                           cl = NULL) {
   # Given a parameter estiamte of an m component model and tuning paramter an,
   # maximize the objective function for computing the modified EM test statistic
@@ -51,10 +51,11 @@ regmixMaxPhi <- function (y, x, parlist, z = NULL, an, tauset = c(0.1,0.3,0.5),
   loglik.all <- matrix(0,nrow=m*length(tauset),ncol=3)
   penloglik.all <- matrix(0,nrow=m*length(tauset),ncol=3)
   coefficient.all <- matrix(0,nrow=m*length(tauset),ncol=((q1+2)*(m+1)+p))
-
-  if (parallel) {
+  num.cores <- max(1,floor(detectCores()*parallel))
+  
+  if (num.cores > 1) {
     if (is.null(cl))
-      cl <- makeCluster(detectCores())
+      cl <- makeCluster(num.cores)
     registerDoParallel(cl)
     results <- foreach (t = 1:length(tauset),
                         .export = 'regmixPhiStep', .combine = c)  %:%

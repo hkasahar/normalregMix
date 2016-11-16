@@ -62,6 +62,6 @@ calling normalmixMEMtest with regressors specified by x as a parameter.
 data(faithful)
 attach(faithful)
 \dontrun{regmixMEMtest(y = eruptions, x = waiting, m = 1, crit.method = "asy")}
-\dontrun{regmixMEMtest(y = eruptions, x = waiting, m = 2, parallel = TRUE, crit.method = "asy")}
+\dontrun{regmixMEMtest(y = eruptions, x = waiting, m = 2, parallel = 1, crit.method = "asy")}
 }
 

@@ -16,7 +16,7 @@
 #' @return A list with the following items:
 #' \item{crit}{3 by 3 matrix of (0.1, 0.05, 0.01 critical values), jth row corresponding to k=j}
 #' \item{pvals}{A vector of p-values at k = 1, 2, 3}
-regmixCrit <- function(y, x, parlist, z = NULL, values = NULL, parallel = TRUE,
+regmixCrit <- function(y, x, parlist, z = NULL, values = NULL, parallel = 1,
                        cl = NULL, nrep = 1000, ninits.crit = 25)
 {
   # Computes the critical values of the modified EM test
@@ -197,13 +197,13 @@ regmixCrit <- function(y, x, parlist, z = NULL, values = NULL, parallel = TRUE,
 #' @param values 3 by 1 Vector of length 3 (k = 1, 2, 3) at which the p-values are computed
 #' @param ninits The number of initial candidates to be generated
 #' @param nbtsp The number of bootstrap observations; by default, it is set to be 199
-#' @param parallel Determines whether package \code{doParallel} is used for calculation
+#' @param parallel Determines what percentage of available cores are used, represented by a double in [0,1]. 0.75 is default.
 #' @param cl Cluster used for parallelization (optional)
 #' @return A list with the following items:
 #' \item{crit}{3 by 3 matrix of (0.1, 0.05, 0.01 critical values), jth row corresponding to k=j}
 #' \item{pvals}{A vector of p-values at k = 1, 2, 3}
 regmixCritBoot <- function (y, x, parlist, z = NULL, values = NULL, ninits = 100,
-                            nbtsp = 199, parallel = TRUE, cl = NULL) {
+                            nbtsp = 199, parallel = 0.75, cl = NULL) {
   if (normalregMix.test.on) # initial values controlled by normalregMix.test.on
     set.seed(normalregMix.test.seed)
 
@@ -227,9 +227,10 @@ regmixCritBoot <- function (y, x, parlist, z = NULL, values = NULL, ninits = 100
     ybset <- ybset + replicate(nbtsp, as.vector(zgam))
   }
 
-  if (parallel) {
+  num.cores <- max(1,floor(detectCores()*parallel))
+  if (num.cores > 1) {
     if (is.null(cl))
-      cl <- makeCluster(detectCores())
+      cl <- makeCluster(num.cores)
     registerDoParallel(cl)
     out <- foreach (j.btsp = 1:nbtsp) %dopar% {
       regmixMEMtest (ybset[,j.btsp], x = x, m = m,
