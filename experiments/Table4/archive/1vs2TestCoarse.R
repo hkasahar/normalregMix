@@ -42,7 +42,7 @@ PerformEMtests <- function (an, data, crit = 0.05, q = 1, m = 1,
 # the value of optimal an that is closest to given sig. level (0.05 by default), and
 # the frequency of rejection according to the optimal an.
 FindOptimal1vs2an <- function (phidatapair, anset, m = 1,
-                               parallel = FALSE, rmpi = TRUE) { 
+                               parallel = 0, rmpi = TRUE) { 
   phi  <- phidatapair$phi
   data <- phidatapair$data
   crit <- phi$crit

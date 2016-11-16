@@ -45,7 +45,7 @@ performEMtest <- function (sampl, an, m)
   library(normalregMix)  # workers might need information
 	testMode(TRUE) # for replication
   return (normalmixMEMtest (sampl, m = m, z = NULL, an = an, c(0.1,0.3,0.5),
-                              crit.method = "asy",  parallel = FALSE))
+                              crit.method = "asy",  parallel = 0))
 }
 
 # Returns frequency that the null H0: m=1 is rejected

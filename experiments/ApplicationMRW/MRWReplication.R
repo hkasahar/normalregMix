@@ -101,9 +101,9 @@ x <- cbind(IOVERY = log(data.use$IOVERY),
 #            NONOIL = data.use$NONOIL)
 
 # Test H_0: m = 1 vs H_1: m = 2
-# model.m2 <- regmixMEMtest(y = y, m = 1, x = x, parallel = TRUE, crit.method = "boot")  # took 6 mins in my i5 laptop
+# model.m2 <- regmixMEMtest(y = y, m = 1, x = x, parallel = 1, crit.method = "boot")  # took 6 mins in my i5 laptop
 # Test H_0: m = 2 vs H_1: m = 3 
-# model.m3 <- regmixMEMtest(y = y, m = 2, x = x, parallel = TRUE, crit.method = "boot")
+# model.m3 <- regmixMEMtest(y = y, m = 2, x = x, parallel = 1, crit.method = "boot")
 
 # print(model.m2)
 # print(model.m3)

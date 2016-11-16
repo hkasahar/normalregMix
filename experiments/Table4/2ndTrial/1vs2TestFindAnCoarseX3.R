@@ -44,7 +44,7 @@ PerformEMtests <- function (an, data, q = 1, m = 1,
 # the value of optimal an that is closest to given sig. level (0.05 by default), and
 # the frequency of rejection according to the optimal an.
 FindOptimal1vs2an <- function (phidatapair, anset, m = 1,
-                               parallel = FALSE, rmpi = TRUE) { 
+                               parallel = 0, rmpi = TRUE) { 
   phi  <- phidatapair$phi
   data <- phidatapair$data
   q		 <- length(phi$betaset)
@@ -111,9 +111,9 @@ print("workers loaded.")
 # Model specification (per row of the table)
 # dim(X) = 3
 dimx <- 3
-anlb <- 2.6
-anub <- 2.75
-ancount <- 5
+anlb <- 2.4
+anub <- 2.7
+ancount <- 4
 SEED <- 333333
 
 # init.

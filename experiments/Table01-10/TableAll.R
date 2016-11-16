@@ -18,13 +18,13 @@ PerformEMtest <- function (sample, q, m = 1, z = NULL, parallel) {
 ## Returns frequency that the null H0: m=1 is rejected
 # out of replications of given an and data that consists of columns of samples
 PerformEMtests <- function (data, crit = 0.05, q = 0, m = 1,
-                            parallel = TRUE, rmpi = FALSE) {
+                            parallel = 1, rmpi = FALSE) {
   if (rmpi)
   {
     # need to transform data (matrix) to a list first; each element is a column (y x_1' x_2' ... x_n')'
     ldata <- lapply(seq_len(ncol(data)), function(i) data[,i])
     out  <- mpi.applyLB(ldata, PerformEMtest, q = q, m = m, z = NULL,
-                        parallel = FALSE)
+                        parallel = 0)
   }
   else
     out <- apply(data, 2, PerformEMtest, q = q, m = m, z = NULL,
