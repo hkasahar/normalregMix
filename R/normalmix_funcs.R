@@ -788,7 +788,7 @@ omega.ji <- function(phi_i, phi_j) {
     da <- max(d/a, 0)
     if (sigma_i > sigma_j)
       omega_ji = pnorm(sqrt(da)-b/a, mean = mu_i, sd = sigma_i) -
-      pnorm(-sqrt(da)-b/a, mean = mu_i, sd = sigma_i)
+        pnorm(-sqrt(da)-b/a, mean = mu_i, sd = sigma_i)
     else
       omega_ji = 1 +
       pnorm(-sqrt(da)-b/a, mean = mu_i, sd = sigma_i) -
@@ -817,7 +817,9 @@ omega.12 <- function(parlist)
 
   part1 <- omega.ji(phi1, phi2)
   part2 <- omega.ji(phi2, phi1)
-
+  
+  if (omega.12 >= 0.5)
+    return (0.49) # da is on ub
   return((part1 + part2) / 2)
 }  # end function omega.12
 
@@ -847,6 +849,11 @@ omega.123 <- function(parlist)
   part3 <- omega.ji(phi2, phi3)
   part4 <- omega.ji(phi3, phi2)
   w23 <- (part3 + part4)/2
+  
+  if (w12 >= 0.5)
+    w12 <- 0.49 # da is on ub
+  if (w23 >= 0.5)
+    w23 <- 0.49 # da is on ub
 
   return(c(w12, w23))
 
@@ -883,6 +890,13 @@ omega.1234 <- function(parlist)
   part6 <- omega.ji(phi4, phi3)
   w34 <- (part5 + part6)/2
 
+  
+  if (w12 >= 0.5)
+    w12 <- 0.49 # da is on ub
+  if (w23 >= 0.5)
+    w23 <- 0.49 # da is on ub
+  if (w34 >= 0.5)
+    w34 <- 0.49 # da is on ub
   return(c(w12, w23, w34))
 
 }  # end function omega.1234
