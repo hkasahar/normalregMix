@@ -31,7 +31,7 @@
 #' @examples
 #' data(faithful)
 #' attach(faithful)
-#' normalmixMEMtestSeq(y = eruptions)
+#' normalmixMEMtestSeq(y = eruptions, parallel = 0)
 normalmixMEMtestSeq <- function (y, x = NULL, z = NULL,  maxm = 3, ninits = 10, maxit = 2000,
                                  nbtsp = 199, parallel = 0.75, cl = NULL,
                                  crit.bootstrap.from = 3) {
