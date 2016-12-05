@@ -13,6 +13,6 @@ Depends:
     iterators
 Description: normalregMix provides tools for analyzing normal mixture models and Gaussian regression mixture models.
 License: GPL (>= 2)
-Imports: Rcpp (>= 0.11.1), RcppArmadillo (>= 0.4.200.0), ggplot2
+Imports: Rcpp (>= 0.11.1), RcppArmadillo (>= 0.4.200.0)
 LinkingTo: Rcpp, RcppArmadillo
 RoxygenNote: 5.0.1
