@@ -10,7 +10,8 @@ Depends:
     minpack.lm,
     foreach,
     doParallel,
-    iterators
+    iterators,
+    ggplot2
 Description: normalregMix provides tools for analyzing normal mixture models and Gaussian regression mixture models.
 License: GPL (>= 2)
 Imports: Rcpp (>= 0.11.1), RcppArmadillo (>= 0.4.200.0)
