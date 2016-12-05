@@ -818,9 +818,10 @@ omega.12 <- function(parlist)
   part1 <- omega.ji(phi1, phi2)
   part2 <- omega.ji(phi2, phi1)
   
+  omega.12 <- (part1 + part2) / 2
   if (omega.12 >= 0.5)
     return (0.49) # da is on ub
-  return((part1 + part2) / 2)
+  return (omega.12)
 }  # end function omega.12
 
 
