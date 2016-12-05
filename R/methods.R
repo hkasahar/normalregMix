@@ -34,13 +34,8 @@ testMode <- function(on = FALSE, seed = 8888577, hide.message = TRUE)
 #' @name plotDiag
 #' @param components n vector of the indices of components for each observation
 #' @param y n vector of data that represents dependent variables
-#' @param x n by q matrix of data that represent(s) covariates
+#' @param x n by q matrix of data that represent(s) covariates where q >= 1
 #' @param m The number of components
-#' @examples
-#' data(faithful)
-#' attach(faithful)
-#' regmix.model.m2 <- regmixPMLE(y = eruptions, x = waiting, m = 2)
-#' \dontrun{plotDiag(regmix.model.m2$components, y = eruptions, x = waiting, m  = 2)}
 plotDiag <- function(components, y = y, x = x, m = 2)
 {
   dimx <- dim(as.matrix(x))[2]
@@ -253,7 +248,7 @@ anFormula <- function(parlist, m, n, q = 0)
   else if (m == 2) {
     omega <- omega.12(parlist)
     omega <- pmin(pmax(omega, 1e-16), 1-1e-16)  # an becomes NaN if omega[j]=0 or 1
-    omega.term <- log(omega /(0.5-omega))
+    omega.term <- log(omega /(0.5-omega)) 
     b <- c(-2.2312929, -0.3128247, 31.0013613) # coefficients of -(intercept, misclterm, nterm)/atermcoeff
     x <- exp(- b[1] - b[2] * omega.term - b[3] / n)  # maxa=1
     an <- 0.25 * x / (1 + x)
@@ -288,5 +283,5 @@ anFormula <- function(parlist, m, n, q = 0)
   else 
     an <- 1.0
   
-
+  return (an)
 }  # end function anFormula
