@@ -15,6 +15,7 @@
 #' create a new one for computation accordingly.
 #' @param crit.bootstrap.from The minimum m in null hypothesis to have critical values 
 #' calculated from bootstrap for the test statistics
+#' @param significance.level Significance level used for rejecting a null hypothesis.
 #' @return A list of with the following items:
 #' \item{alpha}{maxm by maxm matrix, whose i-th column is a vector of alphas estimated given the null hypothesis m_0 = i}
 #' \item{mu}{maxm by maxm matrix, whose i-th column is a vector of mus estimated given the null hypothesis m_0 = i}
@@ -34,11 +35,12 @@
 #' normalmixMEMtestSeq(y = eruptions, parallel = 0)
 normalmixMEMtestSeq <- function (y, x = NULL, z = NULL,  maxm = 3, ninits = 10, maxit = 2000,
                                  nbtsp = 199, parallel = 0.75, cl = NULL,
-                                 crit.bootstrap.from = 3) {
+                                 crit.bootstrap.from = 3, significance.level = 0.05) {
   # Compute the modified EM test statistic for testing H_0 of m components
   # against H_1 of m+1 components for a univariate finite mixture of normals
 
-
+  if (significance.level >= 1 || significance.level < 0)
+    stop ("significance level is not valid.")
   if (!is.null(x))
     return (regmixMEMtestSeq(y = y, x = x, z = z, maxm = maxm, ninits = ninits, maxit = maxit,
                              nbtsp = nbtsp, parallel = parallel, cl = cl,
@@ -124,8 +126,9 @@ normalmixMEMtestSeq <- function (y, x = NULL, z = NULL,  maxm = 3, ninits = 10, 
   }
 
   for (m in 1:maxm)
-    if ( pvals[m,2] >= 0.05 ) {
-      cat(sprintf("\nThe number of components selected by Sequential Hypothesis Testing (alpha=0.05) = %.i", m), " \n")
+    if ( pvals[m,2] >= significance.level ) {
+      cat(sprintf("\nThe number of components selected by Sequential Hypothesis Testing (alpha = %.2f) = %.i", 
+                  significance.level, m), " \n")
       cat(sprintf("The number of components selected by AIC = %.i", which.min(aic)), " \n")
       cat(sprintf("The number of components selected by BIC = %.i", which.min(bic)), " \n")
       binit <- as.vector(c(alpha[1:m,m], mu[1:m,m], sigma[1:m,m],  gam[,m]))
