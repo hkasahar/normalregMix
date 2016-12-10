@@ -10,7 +10,8 @@
 #' @param ninits The number of randomly drawn initial values.
 #' @param maxit The maximum number of iterations.
 #' @param nbtsp The number of bootstrap observations; by default, it is set to be 199
-#' @param parallel Determines what percentage of available cores are used, represented by a double in [0,1]. 0.75 is default.
+#' @param parallel Determines what percentage of available cores are used, 
+#' represented by a double in [0,1]. 0.75 is default.
 #' @param cl Cluster used for parallelization; if it is \code{NULL}, the system will automatically
 #' create a new one for computation accordingly.
 #' @param crit.bootstrap.from The minimum m in null hypothesis to have critical values 
@@ -168,7 +169,8 @@ normalmixMEMtestSeq <- function (y, x = NULL, z = NULL,  maxm = 3, ninits = 10, 
 #' @param nbtsp The number of bootstrap observations; by default, it is set to be 199
 #' @param cl Cluster used for parallelization; if it is \code{NULL}, the system will automatically
 #' create a new one for computation accordingly.
-#' @param parallel Determines whether package \code{doParallel} is used for calculation
+#' @param parallel Determines what percentage of available cores are used, 
+#' represented by a double in [0,1]. 0.75 is default.
 #' @param LRT.penalized Determines whether penalized likelihood is used in calculation of LRT
 #' statistic for likelihood in an alternative hypothesis.
 #' @return A list of class \code{normalMix} with items:
@@ -193,7 +195,7 @@ normalmixMEMtest <- function (y, x = NULL, m = 2, z = NULL, an = NULL, tauset = 
                               ninits = 10,
                               crit.method = c("asy", "boot", "none"), nbtsp = 199,
                               cl = NULL,
-                              parallel = 0,
+                              parallel = 0.75,
                               LRT.penalized = FALSE) {
   # Compute the modified EM test statistic for testing H_0 of m components
   # against H_1 of m+1 components for a univariate finite mixture of normals

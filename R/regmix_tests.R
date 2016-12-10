@@ -12,7 +12,8 @@
 #' @param ninits The number of randomly drawn initial values.
 #' @param maxit The maximum number of iterations.
 #' @param nbtsp The number of bootstrap observations; by default, it is set to be 199
-#' @param parallel Determines whether package \code{doParallel} is used for calculation
+#' @param parallel Determines what percentage of available cores are used, 
+#' represented by a double in [0,1]. 0.75 is default.
 #' @param cl Cluster used for parallelization; if it is \code{NULL}, the system will automatically
 #' create a new one for computation accordingly.
 #' @param crit.bootstrap.from The minimum m in null hypothesis to have critical values 
@@ -191,7 +192,8 @@ regmixMEMtestSeq <- function (y, x, z = NULL, maxm = 3, ninits = 10, maxit = 200
 #' @param nbtsp The number of bootstrap observations; by default, set as 199.
 #' @param cl Cluster used for parallelization; if it is \code{NULL}, the system
 #' will automatically generate a new one for computation accordingly.
-#' @param parallel Determines what percentage of available cores are used, represented by a double in [0,1]. 0.75 is default.
+#' @param parallel Determines what percentage of available cores are used, 
+#' represented by a double in [0,1]. 0.75 is default.
 #' @param LRT.penalized Determines whether penalized likelihood is used in calculation of LRT
 #' statistic for likelihood in an alternative hypothesis.
 #' @return A list of class \code{normalMix} with items:
