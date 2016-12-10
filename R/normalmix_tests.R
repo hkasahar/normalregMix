@@ -16,6 +16,8 @@
 #' @param crit.bootstrap.from The minimum m in null hypothesis to have critical values 
 #' calculated from bootstrap for the test statistics
 #' @param significance.level Significance level used for rejecting a null hypothesis.
+#' @param LRT.penalized Determines whether penalized likelihood is used in calculation of LRT
+#' statistic for likelihood in an alternative hypothesis.
 #' @return A list of with the following items:
 #' \item{alpha}{maxm by maxm matrix, whose i-th column is a vector of alphas estimated given the null hypothesis m_0 = i}
 #' \item{mu}{maxm by maxm matrix, whose i-th column is a vector of mus estimated given the null hypothesis m_0 = i}
@@ -35,7 +37,8 @@
 #' normalmixMEMtestSeq(y = eruptions, parallel = 0)
 normalmixMEMtestSeq <- function (y, x = NULL, z = NULL,  maxm = 3, ninits = 10, maxit = 2000,
                                  nbtsp = 199, parallel = 0.75, cl = NULL,
-                                 crit.bootstrap.from = 3, significance.level = 0.05) {
+                                 crit.bootstrap.from = 3, significance.level = 0.05,
+                                 LRT.penalized = FALSE) {
   # Compute the modified EM test statistic for testing H_0 of m components
   # against H_1 of m+1 components for a univariate finite mixture of normals
 
@@ -106,7 +109,10 @@ normalmixMEMtestSeq <- function (y, x = NULL, z = NULL,  maxm = 3, ninits = 10, 
       an    <- anFormula(parlist = parlist, m = m, n = n)
       par1  <- normalmixMaxPhi(y = y, parlist = parlist, z = z, an = an,
                                ninits = ninits, maxit = maxit, parallel = parallel)
-      emstat.m  <- 2*(par1$penloglik - loglik0)
+      
+      emstat.m  <- 2*(par1$loglik - loglik0)
+      if (LRT.penalized) # use the penalized log-likelihood.
+        emstat.m  <- 2*(par1$penloglik - loglik0)
 
       # use the estimate of b as one of the initial values
       binit <- par1$coefficient
@@ -163,6 +169,8 @@ normalmixMEMtestSeq <- function (y, x = NULL, z = NULL,  maxm = 3, ninits = 10, 
 #' @param cl Cluster used for parallelization; if it is \code{NULL}, the system will automatically
 #' create a new one for computation accordingly.
 #' @param parallel Determines whether package \code{doParallel} is used for calculation
+#' @param LRT.penalized Determines whether penalized likelihood is used in calculation of LRT
+#' statistic for likelihood in an alternative hypothesis.
 #' @return A list of class \code{normalMix} with items:
 #' \item{coefficients}{A vector of parameter estimates. Ordered as \eqn{\alpha_1,\ldots,\alpha_m,\mu_1,\ldots,\mu_m,\sigma_1,\ldots,\sigma_m,\gam}.}
 #' \item{parlist}{The parameter estimates as a list containing alpha, mu, and sigma (and gam if z is included in the model).}
@@ -185,7 +193,8 @@ normalmixMEMtest <- function (y, x = NULL, m = 2, z = NULL, an = NULL, tauset = 
                               ninits = 10,
                               crit.method = c("asy", "boot", "none"), nbtsp = 199,
                               cl = NULL,
-                              parallel = 0) {
+                              parallel = 0,
+                              LRT.penalized = FALSE) {
   # Compute the modified EM test statistic for testing H_0 of m components
   # against H_1 of m+1 components for a univariate finite mixture of normals
   if (!is.null(x))
@@ -206,9 +215,9 @@ normalmixMEMtest <- function (y, x = NULL, m = 2, z = NULL, an = NULL, tauset = 
                            an=an, tauset = tauset, ninits=ninits,
                            parallel = parallel, cl = cl)
 
-
-  emstat  <- 2*(par1$penloglik - loglik0)
-  # emstat  <- 2*(par1$loglik - loglik0)
+  emstat  <- 2*(par1$loglik - loglik0)
+  if (LRT.penalized) # use the penalized log-likelihood.
+    emstat  <- 2*(par1$penloglik - loglik0)
 
   if (crit.method == "asy"){
     result  <- normalmixCrit(y=y, parlist=pmle.result$parlist, z=z, values=emstat)
