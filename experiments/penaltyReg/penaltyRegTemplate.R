@@ -44,7 +44,7 @@ performEMtest <- function (sampl, an, m)
   library(doParallel) # workers might need information
   library(normalregMix)  # workers might need information
 	testMode(TRUE) # for replication
-  return (normalmixMEMtest (sampl, m = m, z = NULL, an = an, c(0.1,0.3,0.5),
+  return (normalmixMEMtest (sampl, m = m, z = NULL, an = an, tauset = c(0.1,0.3,0.5),
                               crit.method = "asy",  parallel = 0))
 }
 
