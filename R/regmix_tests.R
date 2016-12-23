@@ -116,7 +116,7 @@ regmixMEMtestSeq <- function (y, x, z = NULL, maxm = 3, ninits = 10, maxit = 200
 
       cat(sprintf("Testing the null hypothesis of %d components\n", m))
 
-      an    <- anFormula(parlist = parlist, m = m, n = n)
+      an    <- anFormula(parlist = parlist, m = m, n = n, LRT.penalized = LRT.penalized)
       par1  <- regmixMaxPhi(y = y, x = x, parlist = parlist, z = z, an = an,
                             ninits = ninits, maxit = maxit, parallel = parallel)
       
@@ -235,7 +235,8 @@ regmixMEMtest <- function (y, x, m = 2, z = NULL, tauset = c(0.1,0.3,0.5),
   loglik0 <- regmix.pmle.result$loglik
 
   if (is.null(an))
-    an <- anFormula(parlist = regmix.pmle.result$parlist, m = m, n = n, q = q)
+    an <- anFormula(parlist = regmix.pmle.result$parlist, m = m, n = n, q = q, 
+                    LRT.penalized = LRT.penalized)
 
   par1    <- regmixMaxPhi(y=y, x=x, parlist=regmix.pmle.result$parlist, z=z,
                           an=an, tauset = tauset, ninits=ninits,

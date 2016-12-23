@@ -107,7 +107,7 @@ normalmixMEMtestSeq <- function (y, x = NULL, z = NULL,  maxm = 3, ninits = 10, 
 
       cat(sprintf("Testing the null hypothesis of %d components\n", m))
 
-      an    <- anFormula(parlist = parlist, m = m, n = n)
+      an    <- anFormula(parlist = parlist, m = m, n = n, LRT.penalized = LRT.penalized)
       par1  <- normalmixMaxPhi(y = y, parlist = parlist, z = z, an = an,
                                ninits = ninits, maxit = maxit, parallel = parallel)
       
@@ -124,7 +124,8 @@ normalmixMEMtestSeq <- function (y, x = NULL, z = NULL,  maxm = 3, ninits = 10, 
         cat(c("asymptotic p-value       ", sprintf('%.3f',em.out$pvals)),"\n \n")
       } else {
         em.out <- normalmixCritBoot(y=y, parlist=parlist, z=z, values = emstat.m,
-                                    ninits = ninits, nbtsp = nbtsp, parallel = parallel, cl = cl)
+                                    ninits = ninits, nbtsp = nbtsp, parallel = parallel, cl = cl,
+                                    LRT.penalized = LRT.penalized)
         cat(c("bootstrap p-value        ", sprintf('%.3f',em.out$pvals)),"\n \n")
       }
       pvals[m,]     <- em.out$pvals
@@ -211,7 +212,8 @@ normalmixMEMtest <- function (y, x = NULL, m = 2, z = NULL, an = NULL, tauset = 
   pmle.result    <- normalmixPMLE(y=y, m=m, z=z, vcov.method = "none", ninits=ninits)
   loglik0 <- pmle.result$loglik
 
-  if (is.null(an)){ an <- anFormula(parlist = pmle.result$parlist, m = m, n = n) }
+  if (is.null(an)){ an <- anFormula(parlist = pmle.result$parlist, m = m, n = n, 
+                                    LRT.penalized = LRT.penalized) }
 
   par1  <- normalmixMaxPhi(y=y, parlist=pmle.result$parlist, z=z,
                            an=an, tauset = tauset, ninits=ninits,
@@ -225,7 +227,8 @@ normalmixMEMtest <- function (y, x = NULL, m = 2, z = NULL, an = NULL, tauset = 
     result  <- normalmixCrit(y=y, parlist=pmle.result$parlist, z=z, values=emstat)
   } else if (crit.method == "boot") {
     result  <- normalmixCritBoot(y=y, parlist= pmle.result$parlist, z=z, values=emstat,
-                                 ninits=ninits, nbtsp=nbtsp, parallel, cl=cl)
+                                 ninits=ninits, nbtsp=nbtsp, parallel, cl=cl,
+                                 LRT.penalized = LRT.penalized)
   } else {
     result <- list()
     result$crit <- result$pvals <- rep(NA,3)

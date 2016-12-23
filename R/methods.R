@@ -227,16 +227,19 @@ if (x$label == "MEMtest") {
 #' @param m The number of components in the mixture
 #' @param n The number of observations
 #' @param q The dimension of x (by default, 0)
+#' @param LRT.penalized Determines whether penalized likelihood is used in calculation of LRT
+#' statistic for likelihood in an alternative hypothesis.
 #' @return a_n used to initialize values
 #' @references Kasahara, H., and Shimotsu, K. (2015)
 #' Testing the Number of Components in Normal Mixture Regression Models,
 #' \emph{Journal of the American Statistical Association},
 #' \bold{110}, 1632--1645.
-anFormula <- function(parlist, m, n, q = 0)
+anFormula <- function(parlist, m, n, q = 0, LRT.penalized = FALSE)
   # Computes a_n for testing H_0 of m components
   # against H_1 of m+1 components
 {
-
+  if (!LRT.penalized)
+    return (anFormulaNotPenalized(parlist = parlist, m = m, n = n, q = q))
   if (q != 0) # an when the dimension of X is not zero.
     return (switch(as.character(q), "1" = 0.5, "2" = 2.0, "3" = 2.4, "4" = 2.4, 0.5))
   
@@ -250,7 +253,7 @@ anFormula <- function(parlist, m, n, q = 0)
     omega <- pmin(pmax(omega, 1e-16), 1-1e-16)  # an becomes NaN if omega[j]=0 or 1
     omega.term <- log(omega /(0.5-omega)) 
     b <- c(-2.2312929, -0.3128247, 31.0013613) # coefficients of -(intercept, misclterm, nterm)/atermcoeff
-    x <- exp(- b[1] - b[2] * omega.term - b[3] / n)  # maxa=1
+    x <- exp(b[1] + b[2] * omega.term + b[3] / n)  # maxa=1
     an <- 0.25 * x / (1 + x)
     #   x <- exp(-1.642 - 0.434 * log(omega / (1 - omega)) - 101.80/n)  # maxa=2
     #   an <- 1.8 * x / (1 + x)
@@ -263,7 +266,7 @@ anFormula <- function(parlist, m, n, q = 0)
     omega.term <- log(omega.12 * omega.23 / ((0.5-omega.12)*(0.5-omega.23)))
 
     b <- c(-1.497017, -0.095573, 65.205310)
-    x <- exp(- b[1] - b[2] * omega.term - b[3] / n)
+    x <- exp(b[1] + b[2] * omega.term + b[3] / n)
     an <- 0.25 * x / (1 + x)
     # an <- 0.80 * x / (1 + x)
     #   x <- exp(-1.678 - 0.232 * log(t_omega) - 175.50/n)
@@ -277,7 +280,7 @@ anFormula <- function(parlist, m, n, q = 0)
     omega.term <- log(omega.12 * omega.23 * omega.34 / 
                   ((0.5-omega.12)*(0.5-omega.23)*(0.5-omega.34)))
     b <- c(-3.0894365, -0.1469525, -62.0436999)
-    x <- exp(- b[1] - b[2] * omega.term - b[3] / n)
+    x <- exp(b[1] + b[2] * omega.term + b[3] / n)
     an <- 0.25 * x / (1 + x)
   }
   else 
@@ -285,3 +288,67 @@ anFormula <- function(parlist, m, n, q = 0)
   
   return (an)
 }  # end function anFormula
+
+#' @description Computes a_n based on empirical results found in Kasahara and Shimotsu (2015)
+#' for the case where penalty term is not included in computation of LRT statistic.
+#' @title anFormulaNotPenalized
+#' @name anFormulaNotPenalized
+#' @param parlist The parameter estimates as a list containing alpha, mu, sigma, and gamma
+#' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m),
+#' sigma = (sigma_1, ..., sigma_m), gam = (gamma_1, ..., gamma_m))
+#' @param m The number of components in the mixture
+#' @param n The number of observations
+#' @param q The dimension of x (by default, 0)
+#' @return a_n used to initialize values
+#' @references Kasahara, H., and Shimotsu, K. (2015)
+#' Testing the Number of Components in Normal Mixture Regression Models,
+#' \emph{Journal of the American Statistical Association},
+#' \bold{110}, 1632--1645.
+anFormulaNotPenalized <- function(parlist, m, n, q = 0, ..)
+{
+  if (q != 0) # an when the dimension of X is not zero.
+    return (switch(as.character(q), "1" = 0.01, "2" = 0.24, "3" = 0.31, "4" = 0.54, 0.5))
+  
+  if (m == 1) {
+    an <- 0.50
+  }
+  else if (m == 2) {
+    omega <- omega.12(parlist)
+    omega <- pmin(pmax(omega, 1e-16), 1-1e-16)  # an becomes NaN if omega[j]=0 or 1
+    omega.term <- log(omega /(0.5-omega)) 
+    b <- c(0.6390811, -0.4031592, -166.3049882) # coefficients of -(intercept, misclterm, nterm)/atermcoeff
+    x <- exp(b[1] + b[2] * omega.term + b[3] / n)  # maxa=1
+    an <- 1.5 * x / (1 + x)
+    #   x <- exp(-1.642 - 0.434 * log(omega / (1 - omega)) - 101.80/n)  # maxa=2
+    #   an <- 1.8 * x / (1 + x)
+  }
+  else if (m == 3) {
+    omega <- omega.123(parlist)
+    omega <- pmin(pmax(omega, 1e-16), 1-1e-16)  # an becomes NaN if omega[j]=0 or 1
+    omega.12 <- omega[1]
+    omega.23 <- omega[2]
+    omega.term <- log(omega.12 * omega.23 / ((0.5-omega.12)*(0.5-omega.23)))
+    
+    b <- c(0.2790513, -0.1663630, -155.0598327)
+    x <- exp(b[1] + b[2] * omega.term + b[3] / n)
+    an <- 1.5 * x / (1 + x)
+    # an <- 0.80 * x / (1 + x)
+    #   x <- exp(-1.678 - 0.232 * log(t_omega) - 175.50/n)
+    #   an <- 1.5 * x / (1 + x)
+  } else if (m == 4) {
+    omega <- omega.1234(parlist)
+    omega <- pmin(pmax(omega, 1e-16), 1-1e-16)  # an becomes NaN if omega[j]=0 or 1
+    omega.12 <- omega[1]
+    omega.23 <- omega[2]
+    omega.34 <- omega[3]
+    omega.term <- log(omega.12 * omega.23 * omega.34 / 
+                        ((0.5-omega.12)*(0.5-omega.23)*(0.5-omega.34)))
+    b <- c(-1.207617, -0.217777, -500.800870)
+    x <- exp(b[1] + b[2] * omega.term + b[3] / n)
+    an <- 1.5 * x / (1 + x)
+  }
+  else 
+    an <- 1.0
+  
+  return (an)
+}  
