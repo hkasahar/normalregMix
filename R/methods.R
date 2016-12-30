@@ -315,9 +315,9 @@ anFormulaNotPenalized <- function(parlist, m, n, q = 0, ..)
   else if (m == 2) {
     omega <- omega.12(parlist)
     omega <- pmin(pmax(omega, 1e-16), 1-1e-16)  # an becomes NaN if omega[j]=0 or 1
-    omega.term <- log(omega /(0.5-omega)) 
-    b <- c(0.6390811, -0.4031592, -166.3049882) # coefficients of -(intercept, misclterm, nterm)/atermcoeff
-    x <- exp(b[1] + b[2] * omega.term + b[3] / n)  # maxa=1
+    omega.term <- log(omega /(1-omega)) 
+    b <- c(-1.0901194, -0.4300048, -182.9423157, 0.49828) # coefficients of -(intercept, misclterm, nterm, atermcoeff^2)/atermcoeff
+    x <- exp(b[1] + b[2] * omega.term + b[3] / n + b[4] * log(2))  # maxa=1
     an <- 1.5 * x / (1 + x)
     #   x <- exp(-1.642 - 0.434 * log(omega / (1 - omega)) - 101.80/n)  # maxa=2
     #   an <- 1.8 * x / (1 + x)
