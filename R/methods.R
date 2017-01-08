@@ -251,7 +251,7 @@ anFormula <- function(parlist, m, n, q = 0, LRT.penalized = FALSE)
   else if (m == 2) {
     omega <- omega.12(parlist)
     omega <- pmin(pmax(omega, 1e-16), 1-1e-16)  # an becomes NaN if omega[j]=0 or 1
-    omega.term <- log(omega /(0.5-omega)) 
+    omega.term <- log(omega /(1-omega)) 
     
     # coefficients of -(intercept, misclterm, nterm, -atermcoeff^2)/atermcoeff
     b <- c(-3.3905358, -0.5152901, -39.1238054, -0.22429) 
