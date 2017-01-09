@@ -256,7 +256,7 @@ anFormula <- function(parlist, m, n, q = 0, LRT.penalized = FALSE)
     # coefficients of -(intercept, misclterm, nterm, -atermcoeff^2)/atermcoeff
     b <- c(-3.3905358, -0.5152901, -39.1238054, -0.22429) 
     x <- exp(b[1] + b[2] * omega.term + b[3] / n - log(2) / b[4])  # maxa=1
-    an <- 1.5 * x / (1 + x)
+    an <- 0.25 * x / (1 + x)
     #   x <- exp(-1.642 - 0.434 * log(omega / (1 - omega)) - 101.80/n)  # maxa=2
     #   an <- 1.8 * x / (1 + x)
   }
