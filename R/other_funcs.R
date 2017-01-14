@@ -11,7 +11,7 @@ n <- nrow(Z)
 m    <- length(sigma)
 
 H <- array(0,dim=c(n,m,4))
-H[,,1] <- Z
+H[,,1] <- Z/sigma
 H[,,2] <- t(t(Z^2-1)/2/sigma^2)
 H[,,3] <- t(t(Z^3-3*Z)/6/sigma^3)
 H[,,4] <- t(t(Z^4-6*Z^2+3)/24/sigma^4)
