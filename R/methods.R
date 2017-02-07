@@ -318,7 +318,7 @@ anFormulaNotPenalized <- function(parlist, m, n, q = 0, ..)
     omega <- omega.12(parlist)
     omega <- pmin(pmax(omega, 1e-16), 1-1e-16)  # an becomes NaN if omega[j]=0 or 1
     omega.term <- log(omega /(1-omega)) 
-    b <- c(-1.1894707, -0.4775386, -203.6942748, -0.460122) # coefficients of -(intercept, misclterm, nterm, -atermcoeff^2)/atermcoeff
+    b <- c(-3.111849, -1.056635, -373.097585, -0.27019) # coefficients of -(intercept, misclterm, nterm, -atermcoeff^2)/atermcoeff
     x <- exp(b[1] + b[2] * omega.term + b[3] / n - log(2) / b[4])  # maxa=1
     an <- 1.5 * x / (1 + x)
     #   x <- exp(-1.642 - 0.434 * log(omega / (1 - omega)) - 101.80/n)  # maxa=2
@@ -331,7 +331,7 @@ anFormulaNotPenalized <- function(parlist, m, n, q = 0, ..)
     omega.23 <- omega[2]
     omega.term <- log(omega.12 * omega.23 / ((1-omega.12)*(1-omega.23)))
     
-    b <- c(-0.9506957, -0.1754188, -200.0194577, -0.5932) # coefficients of -(intercept, misclterm, nterm, -atermcoeff^2)/atermcoeff
+    b <- c(-1.3394916, -0.2054418, -191.9393302, -0.5673) # coefficients of -(intercept, misclterm, nterm, -atermcoeff^2)/atermcoeff
     x <- exp(b[1] + b[2] * omega.term + b[3] / n - log(2) / b[4])  # maxa=1
     an <- 1.5 * x / (1 + x)
     # an <- 0.80 * x / (1 + x)
