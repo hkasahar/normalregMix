@@ -331,7 +331,7 @@ anFormulaNotPenalized <- function(parlist, m, n, q = 0, ..)
     omega.23 <- omega[2]
     omega.term <- log(omega.12 * omega.23 / ((1-omega.12)*(1-omega.23)))
     
-    b <- c(-1.3394916, -0.2054418, -191.9393302, -0.5673) # coefficients of -(intercept, misclterm, nterm, -atermcoeff^2)/atermcoeff
+    b <- c(-2.2357167, -0.3651241, -376.0923132, -0.3397) # coefficients of -(intercept, misclterm, nterm, -atermcoeff^2)/atermcoeff
     x <- exp(b[1] + b[2] * omega.term + b[3] / n - log(2) / b[4])  # maxa=1
     an <- 1.5 * x / (1 + x)
     # an <- 0.80 * x / (1 + x)
