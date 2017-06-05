@@ -6,4 +6,4 @@ export(normalmixCrit, normalmixCritBoot, normalmixMEMtest, normalmixMEMtestSeq,
        regmixPMLE, regmixMaxPhi, regmixVcov, 
        omega.ji, omega.12, omega.123, omega.1234, testMode, plotDiag)
 
-# exportPattern("^[[:alpha:]]+")
+exportPattern("^[[:alpha:]]+")
