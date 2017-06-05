@@ -1,4 +1,4 @@
-normalregMix.test.on <- FALSE
+normalregMix.test.on <- TRUE
 normalregMix.test.seed <- 8888577
 
 #' @description Turns on/off the test mode.
