@@ -62,9 +62,9 @@ normalmixMEMtestSeq <- function (y, x = NULL, z = NULL,  maxm = 3, ninits = 10, 
     gam <- NULL
 	
   out   <- vector('list', length = maxm)
-  aic    <- bic <- double(maxm)
+  aic    <- bic <- double((maxm+1))
   pvals   <- emstat <- matrix(0, nrow = maxm, ncol = 3)
-  loglik  <- penloglik <- double(maxm)
+  loglik  <- penloglik <- double((maxm + 1))
 
   alpha   <- mu <- sigma <- matrix(0, nrow = maxm, ncol = maxm)
 
@@ -110,7 +110,6 @@ normalmixMEMtestSeq <- function (y, x = NULL, z = NULL,  maxm = 3, ninits = 10, 
       an    <- anFormula(parlist = parlist, m = m, n = n, LRT.penalized = LRT.penalized)
       par1  <- normalmixMaxPhi(y = y, parlist = parlist, z = z, an = an,
                                ninits = ninits, maxit = maxit, parallel = parallel)
-      
       emstat.m  <- 2*(par1$loglik - loglik0)
       if (LRT.penalized) # use the penalized log-likelihood.
         emstat.m  <- 2*(par1$penloglik - loglik0)
@@ -131,6 +130,17 @@ normalmixMEMtestSeq <- function (y, x = NULL, z = NULL,  maxm = 3, ninits = 10, 
       pvals[m,]     <- em.out$pvals
       emstat[m,]    <- emstat.m
     }
+    if (m == maxm)
+    {
+      pmle.result1   <- normalmixPMLE(y = y, m = (m+1), z = z, vcov.method = "none",
+                                     ninits = 2, maxit = maxit, binit = binit)
+      loglik[(m+1)] <- pmle.result1$loglik
+      penloglik[(m+1)] <- pmle.result1$penloglik
+      aic[(m+1)]  <- pmle.result1$aic
+      bic[(m+1)]  <- pmle.result1$bic
+    }
+
+    
   }
 
   for (m in 1:maxm)
