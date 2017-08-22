@@ -129,9 +129,10 @@ regmixCrit <- function(y, x, parlist, z = NULL, values = NULL, parallel = 1,
 
   LR <- matrix(0, nrow=nrep, ncol=m)
 
-  if ( (parallel) && (is.null(cl)) ) {
-    ncpus <- parallel::detectCores()
-    cl <- parallel::makePSOCKcluster(rep("localhost", ncpus))
+  num.cores <- max(1, floor(detectCores()*parallel))
+  if ( num.cores > 1 ) {
+    if (is.null(cl))
+      cl <- makeCluster(num.cores)
   }
 
   for (j in 1:m) {
@@ -158,7 +159,7 @@ regmixCrit <- function(y, x, parlist, z = NULL, values = NULL, parallel = 1,
     LR_1 <- rowSums((Z_1_2 %*% solve(V_1_2))*Z_1_2) + (1/inv_V_22[1,1])*(Z_22^2)*(Z_22<0)
 
     # Lambda_2
-    if (parallel) {
+    if (num.cores > 1) {
       parallel::clusterSetRNGStream(cl, 123456)
       LR_2 <- parallel::parRapply(cl, Z_j, LR_2.comp, I_j, q, ninits.crit)
     } else {
@@ -167,7 +168,7 @@ regmixCrit <- function(y, x, parlist, z = NULL, values = NULL, parallel = 1,
     LR[,j]  <- apply(cbind(LR_1,LR_2), 1, max)
     }
 
-  if (parallel) { parallel::stopCluster(cl) }
+  if (num.cores > 1) { parallel::stopCluster(cl) }
 
   max_EM <- apply(LR, 1, max)
   max_EM_sort <- sort(max_EM)
