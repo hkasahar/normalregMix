@@ -234,11 +234,11 @@ regmixCritBoot <- function (y, x, parlist, z = NULL, values = NULL, ninits = 100
     registerDoParallel(cl)
     out <- foreach (j.btsp = 1:nbtsp) %dopar% {
       regmixMEMtest (ybset[,j.btsp], x = x, m = m,
-                     z = z, ninits = ninits, crit.method = "none") }
+                     z = z, parallel = 0, ninits = ninits, crit.method = "none") }
     on.exit(cl)
   }
   else
-    out <- apply(ybset, 2, regmixMEMtest, x = x, m = m, z = z,
+    out <- apply(ybset, 2, regmixMEMtest, x = x, m = m, z = z, parallel = 0,
                  ninits = ninits, crit.method = "none")
 
   emstat.b <- sapply(out, "[[", "emstat")  # 3 by nbstp matrix
