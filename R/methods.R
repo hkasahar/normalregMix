@@ -309,7 +309,7 @@ anFormula <- function(parlist, m, n, q = 0, LRT.penalized = FALSE)
 anFormulaNotPenalized <- function(parlist, m, n, q = 0, ..)
 {
   if (q != 0) # an when the dimension of X is not zero.
-    return (switch(as.character(q), "1" = 4.2, "2" = 9.6, "3" = 9.5, "4" = 9, 9))
+    return (switch(as.character(q), "1" = 4.2, "2" = 6.7, "3" = 12.1, "4" = 13, 13))
   
   if (m == 1) {
     an <- 0.50
