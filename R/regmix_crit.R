@@ -230,17 +230,23 @@ regmixCritBoot <- function (y, x, parlist, z = NULL, values = NULL, ninits = 100
 
   num.cores <- max(1,floor(detectCores()*parallel))
   if (num.cores > 1) {
-    if (is.null(cl))
+    if (is.null(cl)) {
       cl <- makeCluster(num.cores)
+      newcluster <- TRUE
+    }
     registerDoParallel(cl)
     out <- foreach (j.btsp = 1:nbtsp) %dopar% {
       regmixMEMtest (ybset[,j.btsp], x = x, m = m,
                      z = z, parallel = 0, ninits = ninits, crit.method = "none") }
-    on.exit(cl)
+    if (newcluster) {
+      on.exit(stopCluster(cl))
+    } else {
+      on.exit(cl)
+    }
   }
   else
-    out <- apply(ybset, 2, regmixMEMtest, x = x, m = m, z = z, parallel = 0,
-                 ninits = ninits, crit.method = "none")
+    out <- apply(ybset, 2, regmixMEMtest, x = x, m = m, z = z, 
+                 ninits = ninits, crit.method = "none", parallel = 0)
 
   emstat.b <- sapply(out, "[[", "emstat")  # 3 by nbstp matrix
 

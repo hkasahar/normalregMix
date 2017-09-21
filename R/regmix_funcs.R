@@ -55,7 +55,10 @@ regmixMaxPhi <- function (y, x, parlist, z = NULL, an, tauset = c(0.1,0.3,0.5),
   
   if (num.cores > 1) {
     if (is.null(cl))
-      cl <- makeCluster(num.cores)
+    {
+      cl <- makeCluster(detectCores())
+      newcluster <- TRUE
+    }
     registerDoParallel(cl)
     results <- foreach (t = 1:length(tauset),
                         .export = 'regmixPhiStep', .combine = c)  %:%
@@ -66,7 +69,11 @@ regmixMaxPhi <- function (y, x, parlist, z = NULL, an, tauset = c(0.1,0.3,0.5),
                        epsilon.short, epsilon,
                        maxit.short, maxit,
                        verb) }
-    on.exit(cl)
+    if (newcluster) {
+      on.exit(stopCluster(cl))
+    } else {
+      on.exit(cl)
+    }
     loglik.all <- t(sapply(results, "[[", "loglik"))
     penloglik.all <- t(sapply(results, "[[", "penloglik"))
     coefficient.all <- t(sapply(results, "[[", "coefficient"))

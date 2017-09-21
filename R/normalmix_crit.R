@@ -156,16 +156,23 @@ normalmixCritBoot <- function (y, parlist, z = NULL, values = NULL, ninits = 10,
   
   num.cores <- max(1,floor(detectCores()*parallel))
   if (num.cores > 1) {
-    if (is.null(cl))
+    if (is.null(cl)) {
       cl <- makeCluster(num.cores)
+      newcluster <- TRUE
+    }
     registerDoParallel(cl)
     out <- foreach (i.btsp = 1:nbtsp) %dopar% {
-      normalmixMEMtest (ybset[,i.btsp], m = m,
+      normalmixMEMtest (ybset[,i.btsp], m = m, parallel = 0, 
                         z = z, an = an, ninits = ninits, crit.method = "none") }
-    on.exit(cl)
+    if (newcluster) {
+      on.exit(stopCluster(cl))
+    } else {
+      on.exit(cl)
+    }
   }
   else
-    out <- apply(ybset, 2, normalmixMEMtest, m = m, z = z, an = an, ninits = ninits)
+    out <- apply(ybset, 2, normalmixMEMtest, m = m, z = z, an = an, ninits = ninits,
+                  crit.method = "none", parallel = 0)
 
   emstat.b <- sapply(out, "[[", "emstat")  # 3 by nbstp matrix
 
