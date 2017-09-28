@@ -221,7 +221,7 @@ regmixCritBoot <- function (y, x, parlist, z = NULL, values = NULL, ninits = 100
   pvals <- NULL
 
   # Generate bootstrap observations
-  ybset <- replicate(nbtsp, rnormregmix(n = n, x = x, alpha = alpha, mubeta = mubeta, sigma = sigma))
+  ybset <- replicate(nbtsp, rnormregmix(n = n, alpha = alpha, mubeta = mubeta, sigma = sigma,  x = x))
 
   if (!is.null(z)) {
     zgam <- as.matrix(z) %*% gam

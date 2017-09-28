@@ -720,19 +720,19 @@ normalmixPMLEinit <- function (y, z = NULL, ninits = 1, m = 2)
 #' @title rnormregmix
 #' @name rnormregmix
 #' @param n The number of observations
-#' @param x n by k-1 matrix that does NOT include a constant
 #' @param alpha m by 1 vector that represents proportions of components
 #' @param mubeta k by m matrix that represents (mu times k regression coefficients) on x for m components
 #' @param sigma m by 1 vector that represents sd of components
+#' @param x n by k-1 matrix that does NOT include a constant
 #' @return n by 1 vector that is formed by regressor x
-rnormregmix <- function (n, x = NULL, alpha, mubeta, sigma) {
+rnormregmix <- function (n, alpha, mubeta, sigma, x = NULL) {
   # Generates mixed normal random variables with regressor x
   # Input
   #  n : number of observations
-  #   x : (n by k-1) matrix NOT including a constant
-  #   alpha  : m-vector
+  #  alpha  : m-vector
   #  mubeta  : k by m matrix
   #  sigma  : m-vector
+  #  x : (n by k-1) matrix NOT including a constant
   # Output
   #  y : n by 1 vector
   if (normalregMix.test.on) # initial values controlled by normalregMix.test.on
