@@ -221,8 +221,16 @@ regmixCritBoot <- function (y, x, parlist, z = NULL, values = NULL, ninits = 100
   pvals <- NULL
 
   # Generate bootstrap observations
-  ybset <- replicate(nbtsp, rnormregmix(n = n, alpha = alpha, mubeta = mubeta, sigma = sigma,  x = x))
-
+  if (normalregMix.test.on) {
+    testMode(FALSE)
+    ybset <- replicate(nbtsp, rnormregmix(n = n, alpha = alpha, mubeta = mubeta, sigma = sigma,  x = x))
+    testMode(TRUE)
+  } else {
+    ybset <- replicate(nbtsp, rnormregmix(n = n, alpha = alpha, mubeta = mubeta, sigma = sigma,  x = x))
+  }
+  # When normalregMix::normalregMix.test.on=TRUE, all the columns of ybset 
+  # will be identical because the random number seed of rnormregmix is also
+  # controlled by normalregMix::normalregMix.test.on.
   if (!is.null(z)) {
     zgam <- as.matrix(z) %*% gam
     ybset <- ybset + replicate(nbtsp, as.vector(zgam))
