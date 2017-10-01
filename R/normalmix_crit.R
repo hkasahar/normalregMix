@@ -160,10 +160,8 @@ normalmixCritBoot <- function (y, parlist, z = NULL, values = NULL, ninits = 10,
       cl <- makeCluster(num.cores)
       newcluster <- TRUE
     }
-    registerDoParallel(cl)
-    out <- foreach (i.btsp = 1:nbtsp) %dopar% {
-      normalmixMEMtest (ybset[,i.btsp], m = m, parallel = 0, 
-                        z = z, an = an, ninits = ninits, crit.method = "none") }
+    out <- parCapply(cl, ybset, normalmixMEMtest, m = m, parallel = 0, 
+                        z = z, an = an, ninits = ninits, crit.method = "none")
     if (newcluster) {
       on.exit(stopCluster(cl))
     } else {
