@@ -691,9 +691,6 @@ rnormregmix <- function (n, alpha, mubeta, sigma, x = NULL) {
   #  x : (n by k-1) matrix NOT including a constant
   # Output
   #  y : n by 1 vector
-  if (normalregMix.test.on) # initial values controlled by normalregMix.test.on
-    set.seed(normalregMix.test.seed)
-
   m     <- length(alpha)
   mubeta   <- matrix(mubeta, ncol=m)
 
