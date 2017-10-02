@@ -224,7 +224,7 @@ normalmixVcov <- function(y, coefficients, z = NULL, vcov.method = c("Hessian", 
 #' @param y n by 1 vector of data
 #' @param x n by q matrix of data for x (if exists)
 #' @param m The number of components in the mixture
-#' @param z n by p matrix of regressor associated with \eqn{\gamma}
+#' @param z n by p matrix of regressor associated with gamma
 #' @param vcov.method Method used to compute the variance-covariance matrix, one of \code{"Hessian"} and \code{"OPG"}.
 #' The default option is \code{"Hessian"}. When \code{method = "Hessian"}, the variance-covarince matrix is
 #' estimated by the Hessian using the formula given in Boldea and Magnus (2009).
@@ -236,7 +236,7 @@ normalmixVcov <- function(y, coefficients, z = NULL, vcov.method = c("Hessian", 
 #' @param maxit.short The maximum number of iterations in short EM.
 #' @param binit The initial value of parameter vector that is included as a candidate parameter vector
 #' @return  A list of class \code{normalMix} with items:
-#' \item{coefficients}{A vector of parameter estimates. Ordered as \eqn{\alpha_1,\ldots,\alpha_m,\mu_1,\ldots,\mu_m,\sigma_1,\ldots,\sigma_m,\gamma}.}
+#' \item{coefficients}{A vector of parameter estimates. Ordered as \eqn{\alpha_1,\ldots,\alpha_m,\mu_1,\ldots,\mu_m,\sigma_1,\ldots,\sigma_m,\gam}.}
 #' \item{parlist}{The parameter estimates as a list containing alpha, mu, and sigma (and gam if z is included in the model).}
 #' \item{vcov}{The estimated variance-covariance matrix.}
 #' \item{loglik}{The maximized value of the log-likelihood.}
