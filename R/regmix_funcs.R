@@ -48,52 +48,14 @@ regmixMaxPhi <- function (y, x, parlist, z = NULL, an, tauset = c(0.1,0.3,0.5),
 
   ninits.short <- ninits*10*(q1+p)*m
 
-  loglik.all <- matrix(0,nrow=m*length(tauset),ncol=3)
-  penloglik.all <- matrix(0,nrow=m*length(tauset),ncol=3)
-  coefficient.all <- matrix(0,nrow=m*length(tauset),ncol=((q1+2)*(m+1)+p))
-  num.cores <- max(1,floor(detectCores()*parallel))
-  
-  if (num.cores > 1) {
-    if (is.null(cl))
-    {
-      cl <- makeCluster(detectCores())
-      newcluster <- TRUE
-    }
-    registerDoParallel(cl)
-    results <- foreach (t = 1:length(tauset),
-                        .export = 'regmixPhiStep', .combine = c)  %:%
-      foreach (h = 1:m) %dopar% {
-        regmixPhiStep (c(h, tauset[t]), y, x, parlist, z, p,
-                       an,
-                       ninits, ninits.short,
-                       epsilon.short, epsilon,
-                       maxit.short, maxit,
-                       verb) }
-    if (newcluster) {
-      on.exit(stopCluster(cl))
-    } else {
-      on.exit(cl)
-    }
-    loglik.all <- t(sapply(results, "[[", "loglik"))
-    penloglik.all <- t(sapply(results, "[[", "penloglik"))
-    coefficient.all <- t(sapply(results, "[[", "coefficient"))
-  }
-  else
-    for (h in 1:m)
-      for (t in 1:length(tauset)) {
-        rowindex <- (t-1)*m + h
-        tau <- tauset[t]
-        result <- regmixPhiStep(c(h, tau), y, x, parlist, z, p,
-                                an,
-                                ninits, ninits.short,
-                                epsilon.short, epsilon,
-                                maxit.short, maxit,
-                                verb)
-        loglik.all[rowindex,] <- result$loglik
-        penloglik.all[rowindex,] <- result$penloglik
-        coefficient.all[rowindex,] <- result$coefficient
-      }
-	  
+  htau <- t(as.matrix(expand.grid(c(1:m), tauset)))
+  results <- apply(htau,2,regmixPhiStep, y, x, parlist, z, p, an,
+                    ninits, ninits.short, epsilon.short, epsilon,
+                    maxit.short, maxit, verb)
+  loglik.all <- t(sapply(results, "[[", "loglik"))
+  penloglik.all <- t(sapply(results, "[[", "penloglik"))
+  coefficient.all <- t(sapply(results, "[[", "coefficient"))
+    
   loglik <- apply(loglik.all, 2, max)  # 3 by 1 vector
   penloglik <- apply(penloglik.all, 2, max)  # 3 by 1 vector
   index <- which.max(loglik.all[ ,3]) # a par (h,m) that gives the highest likelihood at k=3
