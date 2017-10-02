@@ -802,6 +802,8 @@ omega.ji <- function(phi_i, phi_j) {
       pnorm(-sqrt(da)-b/a, mean = mu_i, sd = sigma_i) -
       pnorm(sqrt(da)-b/a, mean = mu_i, sd = sigma_i)
   }
+
+  omega_ji <- unname(omega_ji)
   return (omega_ji)
 }
 
