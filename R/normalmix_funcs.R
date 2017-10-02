@@ -897,30 +897,3 @@ omega.1234 <- function(parlist)
 
 }  # end function omega.1234
 
-coef.to.list <- function(coefficients, z = NULL) {
-  # 　Convert coefficients to list
-  len     <- length(coefficients)
-  p       <- 0
-  gam   <- NULL
-
-  if (!is.null(z)) {
-    z <- as.matrix(z)
-    p <- ncol(z)
-    gam <- coefficients[(len-p+1):len]
-  }
-
-  m <- (len-p)/3
-  if (round(m) != m) {
-    stop("The dimension of the coefficients is incompatible with z. Please check the data.")
-  }
-
-  param   <- matrix(coefficients[1:(len-p)], nrow=m, ncol=3)
-  alpha   <- param[, 1]
-  mu      <- param[, 2]
-  sigma   <- param[, 3]
-
-  a = list(alpha = alpha, mu = mu, sigma = sigma, gam = gam)
-
-  a
-
-}
