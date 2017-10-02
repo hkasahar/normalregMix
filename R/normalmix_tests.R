@@ -109,7 +109,7 @@ normalmixMEMtestSeq <- function (y, x = NULL, z = NULL,  maxm = 3, ninits = 10, 
 
       an    <- anFormula(parlist = parlist, m = m, n = n, LRT.penalized = LRT.penalized)
       par1  <- normalmixMaxPhi(y = y, parlist = parlist, z = z, an = an,
-                               ninits = ninits, maxit = maxit, parallel = parallel)
+                               ninits = ninits, maxit = maxit)
       emstat.m  <- 2*(par1$loglik - loglik0)
       if (LRT.penalized) # use the penalized log-likelihood.
         emstat.m  <- 2*(par1$penloglik - loglik0)
@@ -226,8 +226,7 @@ normalmixMEMtest <- function (y, x = NULL, m = 2, z = NULL, an = NULL, tauset = 
                                     LRT.penalized = LRT.penalized) }
 
   par1  <- normalmixMaxPhi(y=y, parlist=pmle.result$parlist, z=z,
-                           an=an, tauset = tauset, ninits=ninits,
-                           parallel = parallel, cl = cl)
+                           an=an, tauset = tauset, ninits=ninits)
 
   emstat  <- 2*(par1$loglik - loglik0)
   if (LRT.penalized) # use the penalized log-likelihood.

@@ -413,18 +413,13 @@ normalmixPMLE <- function (y, x = NULL, m = 2, z = NULL, vcov.method = c("Hessia
 #' @param maxit.short The maximum number of iterations in short EM.
 #' @param maxit The maximum number of iterations.
 #' @param verb Determines whether to print a message if an error occurs.
-#' @param parallel Determines what percentage of available cores are used, represented by a double in [0,1]. 0.75 is default.
-#' @param cl Cluster used for parallelization; if it is \code{NULL}, the system will automatically
-#' create a new one for computation accordingly.
 #' @return A list with items:
 #' \item{loglik}{Log-likelihood resulting from MEM algorithm at k=1,2,3.}
 #' \item{penloglik}{Penalized log-likelihood resulting from MEM algorithm at k=1,2,3.}
 normalmixMaxPhi <- function (y, parlist, z = NULL, an, tauset = c(0.1,0.3,0.5),
                              ninits = 10, epsilon.short = 1e-02, epsilon = 1e-08,
                              maxit.short = 500, maxit = 2000,
-                             verb = FALSE,
-                             parallel = 0.75,
-                             cl = NULL) {
+                             verb = FALSE) {
   # Given a parameter estimate of an m component model and tuning paramter an,
   # maximize the objective function for computing the modified EM test statistic
   # for testing H_0 of m components against H_1 of m+1 for a univariate normal finite mixture
@@ -441,54 +436,15 @@ normalmixMaxPhi <- function (y, parlist, z = NULL, an, tauset = c(0.1,0.3,0.5),
 
   ninits.short <- ninits*10*(1+p)*m
 
-  loglik.all <- matrix(0,nrow=m*length(tauset),ncol=3)
-  penloglik.all <- matrix(0,nrow=m*length(tauset),ncol=3)
-  coefficient.all <- matrix(0,nrow=m*length(tauset),ncol=(3*(m+1)+p))
-
-  num.cores <- max(1,floor(detectCores()*parallel))
-  if (num.cores > 1) {
-    if (is.null(cl)){
-      cl <- makeCluster(detectCores())
-      newcluster <- TRUE
-    }
-      
-    registerDoParallel(cl)
-    results <- foreach (t = 1:length(tauset),
-                        .export = 'normalmixMaxPhiStep', .combine = c)  %:%
-      foreach (h = 1:m) %dopar% {
-        normalmixMaxPhiStep (c(h, tauset[t]), y, parlist, z, p,
-                             an,
-                             ninits, ninits.short,
-                             epsilon.short, epsilon,
-                             maxit.short, maxit,
-                             verb) }
-    if (newcluster) {
-      on.exit(stopCluster(cl))
-    } else {
-      on.exit(cl)
-    }
-    
-    loglik.all <- t(sapply(results, "[[", "loglik"))
-    penloglik.all <- t(sapply(results, "[[", "penloglik"))
-    coefficient.all <- t(sapply(results, "[[", "coefficient"))
-  }
-  else
-    for (h in 1:m)
-      for (t in 1:length(tauset)) {
-        rowindex <- (t-1)*m + h
-        tau <- tauset[t]
-        result <- normalmixMaxPhiStep(c(h, tau), y, parlist, z, p,
-                                      an,
-                                      ninits, ninits.short,
-                                      epsilon.short, epsilon,
-                                      maxit.short, maxit,
-                                      verb)
-        loglik.all[rowindex,] <- result$loglik
-        penloglik.all[rowindex,] <- result$penloglik
-        coefficient.all[rowindex,] <- result$coefficient
-      }
-	  
-  loglik <- apply(loglik.all, 2, max)  # 3 by 1 vector
+  htau <- t(as.matrix(expand.grid(c(1:m), tauset)))
+  results <- apply(htau,2,normalmixMaxPhiStep, y, parlist, z, p, an,
+                   ninits, ninits.short, epsilon.short, epsilon,
+                   maxit.short, maxit, verb)
+  loglik.all <- t(sapply(results, "[[", "loglik"))
+  penloglik.all <- t(sapply(results, "[[", "penloglik"))
+  coefficient.all <- t(sapply(results, "[[", "coefficient"))
+  
+	loglik <- apply(loglik.all, 2, max)  # 3 by 1 vector
   penloglik <- apply(penloglik.all, 2, max)  # 3 by 1 vector
   index <- which.max(loglik.all[ ,3]) # a par (h,m) that gives the highest likelihood at k=3
   coefficient <- as.vector(coefficient.all[index,])
