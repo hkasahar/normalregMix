@@ -118,7 +118,7 @@ regmixMEMtestSeq <- function (y, x, z = NULL, maxm = 3, ninits = 10, maxit = 200
 
       an    <- anFormula(parlist = parlist, m = m, n = n, LRT.penalized = LRT.penalized)
       par1  <- regmixMaxPhi(y = y, x = x, parlist = parlist, z = z, an = an,
-                            ninits = ninits, maxit = maxit, parallel = parallel)
+                            ninits = ninits, maxit = maxit)
       emstat.m <- 2*(par1$loglik-loglik0)
       if (LRT.penalized) # use the penalized log-likelihood.
         emstat.m  <- 2*(par1$penloglik-loglik0)
@@ -247,8 +247,7 @@ regmixMEMtest <- function (y, x, m = 2, z = NULL, tauset = c(0.1,0.3,0.5),
                     LRT.penalized = LRT.penalized)
 
   par1    <- regmixMaxPhi(y=y, x=x, parlist=regmix.pmle.result$parlist, z=z,
-                          an=an, tauset = tauset, ninits=ninits,
-                          parallel = parallel, cl = cl)
+                          an=an, tauset = tauset, ninits=ninits)
   
   
   emstat <- 2*(par1$loglik-loglik0)

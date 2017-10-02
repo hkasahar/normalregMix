@@ -17,9 +17,6 @@
 #' @param maxit.short The maximum number of iterations in short EM.
 #' @param maxit The maximum number of iterations.
 #' @param verb Determines whether to print a message if an error occurs.
-#' @param parallel Determines what percentage of available cores are used, represented by a double in [0,1]. 0.75 is default.
-#' @param cl Cluster used for parallelization; if it is \code{NULL}, the system will automatically
-#' create a new one for computation accordingly.
 #' @return A list with items:
 #' \item{loglik}{Log-likelihood resulting from MEM algorithm at k=1,2,3.}
 #' \item{penloglik}{Penalized log-likelihood resulting from MEM algorithm at k=1,2,3.}
@@ -27,9 +24,7 @@ regmixMaxPhi <- function (y, x, parlist, z = NULL, an, tauset = c(0.1,0.3,0.5),
                           ninits = 10,
                           epsilon.short = 1e-02, epsilon = 1e-08,
                           maxit.short = 500, maxit = 2000,
-                          verb = FALSE,
-                          parallel = 0.75,
-                          cl = NULL) {
+                          verb = FALSE) {
   # Given a parameter estiamte of an m component model and tuning paramter an,
   # maximize the objective function for computing the modified EM test statistic
   # for testing H_0 of m components against H_1 of m+1 for a univariate finite mixture of normals
