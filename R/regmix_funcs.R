@@ -763,7 +763,15 @@ regmixVcov <- function(y, x, coefficients, z = NULL, vcov.method = c("Hessian", 
 }  # end function regmixVcov
 
 
-# Computes objective function used in computing LR_2
+#' @description Computes residuals used in function LR_2.comp.
+#' @export
+#' @title obj_zIz
+#' @name obj_zIz
+#' @param b n by m matrix of normalized data.
+#' @param Z nrep by dim(\eqn{q_\lambda}) matrix of random vectors.
+#' @param I dim(\eqn{q_\lambda}) by dim(\eqn{q_\lambda}) matrix of the the inverse of the covariance matrix of Z.
+#' @return nrep by dim(\eqn{q_\lambda}) matrix of residuals.
+#' @keywords{intenal}
 obj_zIz <- function(b,Z,I) {
   q       <- length(b)-2
   lam_mu  <- b[1]
@@ -789,7 +797,15 @@ obj_zIz <- function(b,Z,I) {
 
 } # end function obj_zIz
 
-# Computes Jacobian of the objective function used in computing LR_2
+#' @description Computes Jacobian of the residuals used function LR_2.comp.
+#' @export
+#' @title obj_zIz.jac
+#' @name obj_zIz.jac
+#' @param b dim(\eqn{\lambda}) by 1 vector of \eqn{\lambda}.
+#' @param Z nrep by dim(\eqn{q_\lambda}) matrix of random vectors.
+#' @param I dim(\eqn{q_\lambda}) by dim(\eqn{q_\lambda}) matrix of the the inverse of the covariance matrix of Z.
+#' @return dim(\eqn{q_\lambda}) by dim(\eqn{q_\lambda}) matrix of Jacobian.
+#' @keywords{intenal}
 obj_zIz.jac <- function(b,Z,I) {
 
   q     <- length(b)-2
@@ -835,7 +851,16 @@ obj_zIz.jac <- function(b,Z,I) {
 
 } # end function obj_zIz.jac
 
-# Computes LR_2 for given Z and I, where q is dim(x)
+#' @description Computes LR_2 in computing the critcal values of regmixMEMtest.
+#' @export
+#' @title LR_2.comp
+#' @name LR_2.comp
+#' @param Z nrep by dim(\eqn{\lambda}) matrix of random vectors.
+#' @param I dim(\eqn{\lambda}) by dim(\eqn{\lambda}) matrix of the the inverse of the covariance matrix of Z.
+#' @param q Number of elements in x.
+#' @param ninits Number of initial values used in maximizing the objective function
+#' @return nrep by 1 vector of the values of the test statisic.
+#' @keywords{intenal}
 LR_2.comp <- function(Z, I, q, ninits = 25) {
   if (normalregMix.test.on) # initial values controlled by normalregMix.test.on
     set.seed(normalregMix.test.seed)

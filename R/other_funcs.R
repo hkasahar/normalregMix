@@ -1,3 +1,12 @@
+#' @description Computes the normalized Hermite polynomial for computing
+#' the critical values and p-values of the modified EM test.
+#' @export
+#' @title hermite
+#' @name hermite
+#' @param Z n by m matrix of normalized data.
+#' @param sigma m by 1 vector of parameters.
+#' @return n by m by 4 array of normalized Hermite polynomials.
+#' @keywords{intenal}
 hermite <- function(Z, sigma)
 # Computes the normalized Hermite polynomial for computing
 # the critical values and p-values of the modified EM test
@@ -18,7 +27,15 @@ H[,,4] <- t(t(Z^4-6*Z^2+3)/24/sigma^4)
 return(H)
 }  # end function hermite
 
-
+#' @description Computes the transpose of the Khatri-Rao product of \eqn{a'} and \eqn{b'}.
+#' @export
+#' @title tKR
+#' @name tKR
+#' @param a n by k matrix.
+#' @param b n by k matrix.
+#' @return n by k*k matrix of the transpose of the Khatri-Rao product 
+#' of \eqn{a'} and \eqn{b'}.
+#' @keywords{intenal}
 tKR <- function (a,b) {
   # Computes the transpose of the Khatri-Rao product of t(a) and t(b)
   n <- nrow(a)
