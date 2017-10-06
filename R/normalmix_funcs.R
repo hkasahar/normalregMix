@@ -2,11 +2,11 @@
 #' m-component normal mixture.
 #' @title normalmixVcov
 #' @name normalmixVcov
-#' @param y n by 1 vector of data
-#' @param coefficients (alpha_1, ..., alpha_m, mu_1, ..., mu_m, sigma_1, ..., sigma_m, gam)
-#' @param z n by p matrix of regressor associated with gamma
+#' @param y n by 1 vector of data.
+#' @param coefficients Parameter vector ordered as (alpha_1, ..., alpha_m, mu_1, ..., mu_m, sigma_1, ..., sigma_m, gam).
+#' @param z n by p matrix of regressor associated with gam.
 #' @param vcov.method Method used to compute the variance-covariance matrix,
-#' one of \code{"Hessian"} and \code{"OPG"}. #' The default option is \code{"Hessian"}.
+#' one of \code{"Hessian"} and \code{"OPG"}. The default option is \code{"Hessian"}.
 #' When \code{method = "Hessian"}, the variance-covarince matrix is
 #' estimated by the Hessian using the formula given in Boldea and Magnus (2009).
 #' When \code{method = "OPG"}, the outer product of gradients is used.
@@ -217,14 +217,14 @@ normalmixVcov <- function(y, coefficients, z = NULL, vcov.method = c("Hessian", 
 
 
 #' @description Estimates parameters of a finite mixture of univariate normals by 
-#' penalized maximum log-likelhood functions.
+#' the penalized maximum likelhood estimator.
 #' @export
 #' @title normalmixPMLE
 #' @name normalmixPMLE
-#' @param y n by 1 vector of data
-#' @param x n by q matrix of data for x (if exists)
-#' @param m The number of components in the mixture
-#' @param z n by p matrix of regressor associated with gamma
+#' @param y n by 1 vector of data.
+#' @param x n by q matrix of data for x (if exists).
+#' @param m The number of components in the mixture.
+#' @param z n by p matrix of regressor associated with gamma.
 #' @param vcov.method Method used to compute the variance-covariance matrix, one of \code{"Hessian"} and \code{"OPG"}.
 #' The default option is \code{"Hessian"}. When \code{method = "Hessian"}, the variance-covarince matrix is
 #' estimated by the Hessian using the formula given in Boldea and Magnus (2009).
@@ -234,7 +234,7 @@ normalmixVcov <- function(y, coefficients, z = NULL, vcov.method = c("Hessian", 
 #' @param maxit The maximum number of iterations.
 #' @param epsilon.short The convergence criterion in short EM. Convergence is declared when the penalized log-likelihood increases by less than \code{epsilon.short}.
 #' @param maxit.short The maximum number of iterations in short EM.
-#' @param binit The initial value of parameter vector that is included as a candidate parameter vector
+#' @param binit The initial value of parameter vector that is included as a candidate parameter vector.
 #' @return  A list of class \code{normalMix} with items:
 #' \item{coefficients}{A vector of parameter estimates. Ordered as \eqn{\alpha_1,\ldots,\alpha_m,\mu_1,\ldots,\mu_m,\sigma_1,\ldots,\sigma_m,gam}.}
 #' \item{parlist}{The parameter estimates as a list containing alpha, mu, and sigma (and gam if z is included in the model).}
@@ -243,12 +243,13 @@ normalmixVcov <- function(y, coefficients, z = NULL, vcov.method = c("Hessian", 
 #' \item{penloglik}{The maximized value of the penalized log-likelihood.}
 #' \item{aic}{Akaike Information Criterion of the fitted model.}
 #' \item{bic}{Bayesian Information Criterion of the fitted model.}
-#' \item{postprobs}{n by m matrix of posterior probabilities for observations}
+#' \item{postprobs}{n by m matrix of posterior probabilities for observations.}
 #' \item{components}{n by 1 vector of integers that indicates the indices of components
-#' each observation belongs to based on computed posterior probabilities}
+#' each observation belongs to based on computed posterior probabilities.}
 #' \item{call}{The matched call.}
 #' \item{m}{The number of components in the mixture.}
 #' @note \code{normalmixPMLE} maximizes the penalized log-likelihood function
+#' (Chen et al., 2008) 
 #' using the EM algorithm with combining short and long runs of EM steps as in Biernacki et al. (2003).
 #' \code{normalmixPMLE} first runs the EM algorithm from \code{ninits}\eqn{* 4m(1 + p)} initial values
 #' with the convertence criterion \code{epsilon.short} and \code{maxit.short}.
@@ -268,7 +269,7 @@ normalmixVcov <- function(y, coefficients, z = NULL, vcov.method = c("Hessian", 
 #' Inference for Normal Mixtures in Mean and Variance,
 #' \emph{Statistica Sinica}, \bold{18}, 443--465.
 #'
-#' McLachlan, G. J. and Peel, D. (2000) \emph{Finite Mixture Models}, John Wiley \& Sons, Inc.
+# McLachlan, G. J. and Peel, D. (2000) \emph{Finite Mixture Models}, John Wiley \& Sons, Inc.
 #' @examples
 #' data(faithful)
 #' attach(faithful)
@@ -760,14 +761,14 @@ omega.ji <- function(phi_i, phi_j) {
   return (omega_ji)
 }
 
-#' @description Computes omega_{12} defined in Maitra and Melnykov (2010)
+#' @description Computes \eqn{\omega_{12}}, the average misclassification rate between two normal mixtures defined in Maitra and Melnykov (2010).
 #' @export
 #' @title omega.12
 #' @name omega.12
-#' @param parlist The parameter estimates as a list containing alpha, mu, sigma, and gam
+#' @param parlist Parameter estimates as a list containing alpha, mu, sigma, and gam
 #' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m),
-#' sigma = (sigma_1, ..., sigma_m), gam = (gam_1, ..., gam_m))
-#' @return The misclassification rate omega_ij
+#' sigma = (sigma_1, ..., sigma_m), gam = (gam_1, ..., gam_m)).
+#' @return The misclassification rate \eqn{\omega_{12}}.
 #' @references Maitra, R., and Melnykov, V. (2010)
 #' Simulating Data to Study Performance of Finite Mixture Modeling and Model-Based Clustering Algorithms,
 #' \emph{Journal of Computational and Graphical Statistica},
@@ -787,14 +788,14 @@ omega.12 <- function(parlist)
 }  # end function omega.12
 
 
-#' Computes omega_{12} and omega_{23} defined in Maitra and Melnykov (2010)
+#' Computes \eqn{\omega_{12}} and \eqn{\omega_{23}} defined in Maitra and Melnykov (2010).
 #' @export
 #' @title omega.123
 #' @name omega.123
-#' @param parlist The parameter estimates as a list containing alpha, mu, sigma, and gamma
+#' @param parlist Parameter estimates as a list containing alpha, mu, sigma, and gamma
 #' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m),
-#' sigma = (sigma_1, ..., sigma_m), gam = (gamma_1, ..., gamma_m))
-#' @return A 2 by 1 vector whose first element is omega_12 and second element is omega_23
+#' sigma = (sigma_1, ..., sigma_m), gam = (gamma_1, ..., gamma_m)).
+#' @return A 2 by 1 vector whose first element is \eqn{\omega_{12}} and second element is \eqn{\omega_{23}}.
 #' @references Maitra, R., and Melnykov, V. (2010)
 #' Simulating Data to Study Performance of Finite Mixture Modeling and Model-Based Clustering Algorithms,
 #' \emph{Journal of Computational and Graphical Statistica},
@@ -817,14 +818,14 @@ omega.123 <- function(parlist)
 
 }  # end function omega.123
 
-#' @description Computes omega_{12}, omega_{23}, and omega_{34} defined in Maitra and Melnykov (2010)
+#' @description Computes \eqn{\omega_{12}}, \eqn{\omega_{23}}, and \eqn{\omega_{34}} defined in Maitra and Melnykov (2010).
 #' @export
 #' @title omega.1234
 #' @name omega.1234
-#' @param parlist The parameter estimates as a list containing alpha, mu, sigma, and gamma
+#' @param parlist Parameter estimates as a list containing alpha, mu, sigma, and gamma
 #' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m),
-#' sigma = (sigma_1, ..., sigma_m), gam = (gamma_1, ..., gamma_m))
-#' @return A 3 by 1 vector consisting of omega_12, omega_23, and omega_34
+#' sigma = (sigma_1, ..., sigma_m), gam = (gamma_1, ..., gamma_m)).
+#' @return A 3 by 1 vector consisting of \eqn{\omega_{12}}, \eqn{\omega_{23}}, and \eqn{\omega_{34}}.
 #' @references Maitra, R., and Melnykov, V. (2010)
 #' Simulating Data to Study Performance of Finite Mixture Modeling and Model-Based Clustering Algorithms,
 #' \emph{Journal of Computational and Graphical Statistica},
