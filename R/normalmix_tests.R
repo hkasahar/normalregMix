@@ -236,7 +236,7 @@ normalmixMEMtest <- function (y, x = NULL, m = 2, z = NULL, an = NULL, tauset = 
   } else if (crit.method == "boot") {
     result  <- normalmixCritBoot(y=y, parlist= pmle.result$parlist, z=z, values=emstat,
                                  ninits=ninits, nbtsp=nbtsp, parallel=parallel, cl=cl,
-                                 LRT.penalized = LRT.penalized)
+                                 LRT.penalized = LRT.penalized, an = an)
   } else {
     result <- list()
     result$crit <- result$pvals <- rep(NA,3)
