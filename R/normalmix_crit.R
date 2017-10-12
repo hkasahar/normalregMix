@@ -140,7 +140,8 @@ normalmixCritBoot <- function (y, parlist, z = NULL, values = NULL, ninits = 10,
   sigma <- parlist$sigma
   gam <- parlist$gam
   m     <- length(alpha)
-  an    <- anFormula(parlist = parlist, m = m, n = n, LRT.penalized = LRT.penalized)
+  if (is.null(an)){an <- anFormula(parlist = parlist,
+                                   m = m, n = n, LRT.penalized = LRT.penalized)}
 
   pvals <- NULL
 
@@ -161,7 +162,8 @@ normalmixCritBoot <- function (y, parlist, z = NULL, values = NULL, ninits = 10,
       newcluster <- TRUE
     }
     out <- parCapply(cl, ybset, normalmixMEMtest, m = m, parallel = 0, 
-                        z = z, an = an, ninits = ninits, crit.method = "none")
+                        z = z, an = an, ninits = ninits, crit.method = "none",
+                     LRT.penalized = LRT.penalized)
     if (newcluster) {
       on.exit(stopCluster(cl))
     } else {
@@ -170,7 +172,7 @@ normalmixCritBoot <- function (y, parlist, z = NULL, values = NULL, ninits = 10,
   }
   else
     out <- apply(ybset, 2, normalmixMEMtest, m = m, z = z, an = an, ninits = ninits,
-                  crit.method = "none", parallel = 0)
+                  crit.method = "none", parallel = 0, LRT.penalized = LRT.penalized)
 
   emstat.b <- sapply(out, "[[", "emstat")  # 3 by nbstp matrix
 
