@@ -1,31 +1,33 @@
-normalregMix.test.on <- TRUE
-normalregMix.test.seed <- 8888577
+normalregMixtest.env <- new.env(parent = emptyenv())
+normalregMixtest.env$normalregMix.test.on <- FALSE
+normalregMixtest.env$normalregMix.test.seed <- 8888577
 
 #' @description Turns on/off the test mode.
 #' @export
-#' @title testMode
-#' @name testMode
-#' @description When the modified EM-algorithm is run, initial values are randomly created
-#' based on the data given. If the test mode is turned on, these initial values
-#' are going to be created with the random seed provided. This method would be suitable
+#' @title normalregMixTestMode
+#' @name normalregMixTestMode
+#' @description normalregMix uses random numbers
+#' (i) to draw the intial values of the penalized MLE and the
+#' modified EM test, and (ii) to draw bootstrapped samples in bootstrapped tests.
+#' When the test mode is turned on, these random numbers are drawn 
+#' with the random seed provided. This method would be suitable
 #' for users who would like to replicate experiments. By default, the test mode is turned off.
 #' @param on Option to turn on the test mode
 #' @param seed The random seed to be used for initialization
 #' @param hide.message Determines whether to print the current seed and status
-testMode <- function(on = FALSE, seed = 8888577, hide.message = TRUE)
+#' @examples
+#' normalregMixTestMode(TRUE)
+#' normalregMixTestMode(FALSE)
+normalregMixTestMode <- function(on = FALSE, seed = 8888577, hide.message = FALSE)
 {
-  unlockBinding("normalregMix.test.on", getNamespace("normalregMix"))
-  unlockBinding("normalregMix.test.seed", getNamespace("normalregMix"))
-  assign("normalregMix.test.on", on, getNamespace("normalregMix"))
-  assign("normalregMix.test.seed", seed, getNamespace("normalregMix"))
-  lockBinding("normalregMix.test.on", getNamespace("normalregMix"))
-  lockBinding("normalregMix.test.seed", getNamespace("normalregMix"))
-
+  normalregMixtest.env$normalregMix.test.on <- on
+  normalregMixtest.env$normalregMix.test.seed <- seed
+  
   if (!hide.message)
     print(paste("The test mode is currently",
-                switch(as.character(normalregMix.test.on), "TRUE" = "ON", "FALSE" = "OFF"),
-                "with seed",
-                as.character(normalregMix.test.seed)))
+                switch(as.character(normalregMixtest.env$normalregMix.test.on), "TRUE" = "ON", "FALSE" = "OFF"),
+                "with normalregMixtest.env$normalregMix.test.seed",
+                as.character(normalregMixtest.env$normalregMix.test.seed)))
 }
 
 #' @description Prints the multiple plots for diagnosis. 

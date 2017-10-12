@@ -202,8 +202,8 @@ regmixPhiStep <- function (htaupair, y, x, parlist, z = NULL, p,
 #' \item{gam}{m+1 by ninits matrix for gam}
 regmixPhiInit <- function (y, x, z = NULL, parlist, h, tau, ninits = 1)
 {
-  if (normalregMix.test.on) # initial values controlled by normalregMix.test.on
-    set.seed(normalregMix.test.seed)
+  if (normalregMixtest.env$normalregMix.test.on) # initial values controlled by normalregMix.test.on
+    set.seed(normalregMixtest.env$normalregMix.test.seed)
 
   y  <- as.vector(y)
   n   <- length(y)
@@ -470,8 +470,8 @@ regmixPMLE <- function (y, x, m = 2, z = NULL, vcov.method = c("Hessian", "OPG",
 #' \item{gam}{m by ninits matrix for gam}
 regmixPMLEinit <- function (y, x, z = NULL, ninits = 1, m = 2)
 {
-  if (normalregMix.test.on) # initial values controlled by normalregMix.test.on
-    set.seed(normalregMix.test.seed)
+  if (normalregMixtest.env$normalregMix.test.on) # initial values controlled by normalregMix.test.on
+    set.seed(normalregMixtest.env$normalregMix.test.seed)
 
   n  <- length(y)
   q1  <- ncol(x)+1
@@ -857,8 +857,8 @@ obj_zIz.jac <- function(b,Z,I) {
 #' @return nrep by 1 vector of the values of the test statisic.
 #' @keywords{intenal}
 LR_2.comp <- function(Z, I, q, ninits = 25) {
-  if (normalregMix.test.on) # initial values controlled by normalregMix.test.on
-    set.seed(normalregMix.test.seed)
+  if (normalregMixtest.env$normalregMix.test.on) # initial values controlled by normalregMix.test.on
+    set.seed(normalregMixtest.env$normalregMix.test.seed)
 
   con.nls = minpack.lm::nls.lm.control(maxit = 400)
 

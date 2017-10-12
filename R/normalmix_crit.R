@@ -14,8 +14,8 @@
 #' \item{pvals}{A vector of p-values at k = 1, 2, 3}
 normalmixCrit <- function(y, parlist, z = NULL, values = NULL, nrep = 10000)
 {
-  if (normalregMix.test.on) # initial values controlled by normalregMix.test.on
-    set.seed(normalregMix.test.seed)
+  if (normalregMixtest.env$normalregMix.test.on) # initial values controlled by normalregMix.test.on
+    set.seed(normalregMixtest.env$normalregMix.test.seed)
 
   y <- as.vector(y)
   n <- length(y)
@@ -128,9 +128,9 @@ normalmixCrit <- function(y, parlist, z = NULL, values = NULL, nrep = 10000)
 #' \item{pvals}{A vector of p-values at k = 1, 2, 3}
 normalmixCritBoot <- function (y, parlist, z = NULL, values = NULL, ninits = 10,
                                nbtsp = 199, parallel = 0.75, cl = NULL,
-                               LRT.penalized = FALSE) {
-  if (normalregMix.test.on) # initial values controlled by normalregMix.test.on
-    set.seed(normalregMix.test.seed)
+                               LRT.penalized = LRT.penalized, an = NULL) {
+  if (normalregMixtest.env$normalregMix.test.on) # initial values controlled by normalregMix.test.on
+    set.seed(normalregMixtest.env$normalregMix.test.seed)
 
   y   <- as.vector(y)
   n   <- length(y)

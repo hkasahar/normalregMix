@@ -593,9 +593,9 @@ normalmixMaxPhiStep <- function (htaupair, y, parlist, z = NULL, p,
 #' \item{gam}{m+1 by ninits matrix for gamma}
 normalmixPhiInit <- function (y, parlist, z = NULL, h, tau, ninits = 1)
 {
-  if (normalregMix.test.on) # initial values controlled by normalregMix.test.on
-    set.seed(normalregMix.test.seed)
-
+  if (normalregMixtest.env$normalregMix.test.on) # initial values controlled by normalregMix.test.on
+  set.seed(normalregMixtest.env$normalregMix.test.seed)
+  
   n     <- length(y)
   p     <- ncol(z)
 
@@ -651,9 +651,9 @@ normalmixPhiInit <- function (y, parlist, z = NULL, h, tau, ninits = 1)
 #' \item{gam}{m by ninits matrix for gam}
 normalmixPMLEinit <- function (y, z = NULL, ninits = 1, m = 2)
 {
-  if (normalregMix.test.on) # initial values controlled by normalregMix.test.on
-    set.seed(normalregMix.test.seed)
-
+  if (normalregMixtest.env$normalregMix.test.on) # initial values controlled by normalregMix.test.on
+    set.seed(normalregMixtest.env$normalregMix.test.seed)
+  
   n <- length(y)
   p <- ncol(z)
   gam <- NULL

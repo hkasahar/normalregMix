@@ -29,8 +29,8 @@ regmixCrit <- function(y, x, parlist, z = NULL, values = NULL, parallel = 1,
   # Output
   #   list(crit,pvals)
   #   crit = (10%, 5%, 1% critical values), pvals = p-values
-  if (normalregMix.test.on) # initial values controlled by normalregMix.test.on
-    set.seed(normalregMix.test.seed)
+  if (normalregMixtest.env$normalregMix.test.on) # initial values controlled by normalregMix.test.on
+    set.seed(normalregMixtest.env$normalregMix.test.seed)
 
   y  <- as.vector(y)
   n  <- length(y)
@@ -205,8 +205,8 @@ regmixCrit <- function(y, x, parlist, z = NULL, values = NULL, parallel = 1,
 #' \item{pvals}{A vector of p-values at k = 1, 2, 3}
 regmixCritBoot <- function (y, x, parlist, z = NULL, values = NULL, ninits = 100,
                             nbtsp = 199, parallel = 0.75, cl = NULL) {
-  if (normalregMix.test.on) # initial values controlled by normalregMix.test.on
-    set.seed(normalregMix.test.seed)
+  if (normalregMixtest.env$normalregMix.test.on) # initial values controlled by normalregMix.test.on
+    set.seed(normalregMixtest.env$normalregMix.test.seed)
 
   y  <- as.vector(y)
   n  <- length(y)
@@ -221,16 +221,8 @@ regmixCritBoot <- function (y, x, parlist, z = NULL, values = NULL, ninits = 100
   pvals <- NULL
 
   # Generate bootstrap observations
-  if (normalregMix.test.on) {
-    testMode(FALSE)
-    ybset <- replicate(nbtsp, rnormregmix(n = n, alpha = alpha, mubeta = mubeta, sigma = sigma,  x = x))
-    testMode(TRUE)
-  } else {
-    ybset <- replicate(nbtsp, rnormregmix(n = n, alpha = alpha, mubeta = mubeta, sigma = sigma,  x = x))
-  }
-  # When normalregMix::normalregMix.test.on=TRUE, all the columns of ybset 
-  # will be identical because the random number seed of rnormregmix is also
-  # controlled by normalregMix::normalregMix.test.on.
+  ybset <- replicate(nbtsp, rnormregmix(n = n, alpha = alpha, mubeta = mubeta, sigma = sigma,  x = x))
+  
   if (!is.null(z)) {
     zgam <- as.matrix(z) %*% gam
     ybset <- ybset + replicate(nbtsp, as.vector(zgam))
