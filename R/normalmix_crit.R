@@ -127,8 +127,7 @@ normalmixCrit <- function(y, parlist, z = NULL, values = NULL, nrep = 10000)
 #' \item{crit}{3 by 3 matrix of (0.1, 0.05, 0.01 critical values), jth row corresponding to k=j}
 #' \item{pvals}{A vector of p-values at k = 1, 2, 3}
 normalmixCritBoot <- function (y, parlist, z = NULL, values = NULL, ninits = 10,
-                               nbtsp = 199, parallel = 0.75, cl = NULL,
-                               LRT.penalized = LRT.penalized, an = NULL) {
+                               nbtsp = 199, parallel = 0.75, cl = NULL, an = NULL) {
   if (normalregMixtest.env$normalregMix.test.on) # initial values controlled by normalregMix.test.on
     set.seed(normalregMixtest.env$normalregMix.test.seed)
 
@@ -140,8 +139,7 @@ normalmixCritBoot <- function (y, parlist, z = NULL, values = NULL, ninits = 10,
   sigma <- parlist$sigma
   gam <- parlist$gam
   m     <- length(alpha)
-  if (is.null(an)){an <- anFormula(parlist = parlist,
-                                   m = m, n = n, LRT.penalized = LRT.penalized)}
+  if (is.null(an)){an <- anFormula(parlist = parlist, m = m, n = n)}
 
   pvals <- NULL
 
@@ -162,8 +160,7 @@ normalmixCritBoot <- function (y, parlist, z = NULL, values = NULL, ninits = 10,
       newcluster <- TRUE
     }
     out <- parCapply(cl, ybset, normalmixMEMtest, m = m, parallel = 0, 
-                        z = z, an = an, ninits = ninits, crit.method = "none",
-                     LRT.penalized = LRT.penalized)
+                        z = z, an = an, ninits = ninits, crit.method = "none")
     if (newcluster) {
       on.exit(stopCluster(cl))
     } else {
@@ -172,7 +169,7 @@ normalmixCritBoot <- function (y, parlist, z = NULL, values = NULL, ninits = 10,
   }
   else
     out <- apply(ybset, 2, normalmixMEMtest, m = m, z = z, an = an, ninits = ninits,
-                  crit.method = "none", parallel = 0, LRT.penalized = LRT.penalized)
+                  crit.method = "none", parallel = 0)
 
   emstat.b <- sapply(out, "[[", "emstat")  # 3 by nbstp matrix
 

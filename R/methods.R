@@ -219,36 +219,30 @@ if (x$label == "MEMtest") {
 }
 
 
-#' @description Computes a_n based on empirical results found in Kasahara and Shimotsu (2015)
+#' @description Computes the tuning parameter \eqn{a_n} based on empirical formulas obtained by a similar method to Kasahara and Shimotsu (2015).
 #' @export
 #' @title anFormula
 #' @name anFormula
 #' @param parlist The parameter estimates as a list containing alpha, mu, sigma, and gamma
 #' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m),
-#' sigma = (sigma_1, ..., sigma_m), gam = (gamma_1, ..., gamma_m))
-#' @param m The number of components in the mixture
-#' @param n The number of observations
-#' @param q The dimension of x (by default, 0)
-#' @param LRT.penalized Determines whether penalized likelihood is used in calculation of LRT
-#' statistic for likelihood in an alternative hypothesis.
-#' @return a_n used to initialize values
+#' sigma = (sigma_1, ..., sigma_m), gam = (gamma_1, ..., gamma_m)).
+#' @param m The number of components in the mixture.
+#' @param n The number of observations.
+#' @param q The dimension of x (by default, 0).
+#' @return The tuning parameter \eqn{a_n}.
 #' @references Kasahara, H., and Shimotsu, K. (2015)
 #' Testing the Number of Components in Normal Mixture Regression Models,
 #' \emph{Journal of the American Statistical Association},
 #' \bold{110}, 1632--1645.
-anFormula <- function(parlist, m, n, q = 0, LRT.penalized = FALSE)
+anFormula <- function(parlist, m, n, q = 0)
   # Computes a_n for testing H_0 of m components
   # against H_1 of m+1 components
 {
-  if (!LRT.penalized)
-    return (anFormulaNotPenalized(parlist = parlist, m = m, n = n, q = q))
   if (q != 0) # an when the dimension of X is not zero.
-    return (switch(as.character(q), "1" = 0.5, "2" = 2.0, "3" = 2.4, "4" = 2.4, 0.5))
+    return (switch(as.character(q), "1" = 0.3, "2" = 2.0, "3" = 2.4, "4" = 2.4, 0.3))
   
   if (m == 1) {
-    #   an <- 1.0
-    an <- 0.50
-    #   an <- 0.25
+    an <- 0.30
   }
   else if (m == 2) {
     omega <- omega.12(parlist)
@@ -292,67 +286,3 @@ anFormula <- function(parlist, m, n, q = 0, LRT.penalized = FALSE)
   
   return (an)
 }  # end function anFormula
-
-#' @description Computes a_n based on empirical results found in Kasahara and Shimotsu (2015)
-#' for the case where penalty term is not included in computation of LRT statistic.
-#' @title anFormulaNotPenalized
-#' @name anFormulaNotPenalized
-#' @param parlist The parameter estimates as a list containing alpha, mu, sigma, and gamma
-#' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m),
-#' sigma = (sigma_1, ..., sigma_m), gam = (gamma_1, ..., gamma_m))
-#' @param m The number of components in the mixture
-#' @param n The number of observations
-#' @param q The dimension of x (by default, 0)
-#' @return a_n used to initialize values
-#' @references Kasahara, H., and Shimotsu, K. (2015)
-#' Testing the Number of Components in Normal Mixture Regression Models,
-#' \emph{Journal of the American Statistical Association},
-#' \bold{110}, 1632--1645.
-anFormulaNotPenalized <- function(parlist, m, n, q = 0, ..)
-{
-  if (q != 0) # an when the dimension of X is not zero.
-    return (switch(as.character(q), "1" = 4.2, "2" = 6.7, "3" = 12.1, "4" = 13, 13))
-  
-  if (m == 1) {
-    an <- 0.50
-  }
-  else if (m == 2) {
-    omega <- omega.12(parlist)
-    omega <- pmin(pmax(omega, 1e-16), 1-1e-16)  # an becomes NaN if omega[j]=0 or 1
-    omega.term <- log(omega /(1-omega)) 
-    b <- c(-3.111849, -1.056635, -373.097585, -0.27019) # coefficients of -(intercept, misclterm, nterm, -atermcoeff^2)/atermcoeff
-    x <- exp(b[1] + b[2] * omega.term + b[3] / n - log(2) / b[4])  # maxa=1
-    an <- 1.5 * x / (1 + x)
-    #   x <- exp(-1.642 - 0.434 * log(omega / (1 - omega)) - 101.80/n)  # maxa=2
-    #   an <- 1.8 * x / (1 + x)
-  }
-  else if (m == 3) {
-    omega <- omega.123(parlist)
-    omega <- pmin(pmax(omega, 1e-16), 1-1e-16)  # an becomes NaN if omega[j]=0 or 1
-    omega.12 <- omega[1]
-    omega.23 <- omega[2]
-    omega.term <- log(omega.12 * omega.23 / ((1-omega.12)*(1-omega.23)))
-    
-    b <- c(-2.2357167, -0.3651241, -376.0923132, -0.3397) # coefficients of -(intercept, misclterm, nterm, -atermcoeff^2)/atermcoeff
-    x <- exp(b[1] + b[2] * omega.term + b[3] / n - log(2) / b[4])  # maxa=1
-    an <- 1.5 * x / (1 + x)
-    # an <- 0.80 * x / (1 + x)
-    #   x <- exp(-1.678 - 0.232 * log(t_omega) - 175.50/n)
-    #   an <- 1.5 * x / (1 + x)
-  } else if (m == 4) {
-    omega <- omega.1234(parlist)
-    omega <- pmin(pmax(omega, 1e-16), 1-1e-16)  # an becomes NaN if omega[j]=0 or 1
-    omega.12 <- omega[1]
-    omega.23 <- omega[2]
-    omega.34 <- omega[3]
-    omega.term <- log(omega.12 * omega.23 * omega.34 / 
-                        ((1-omega.12)*(1-omega.23)*(1-omega.34)))
-    b <- c(-3.8800864, -0.2414154, -543.5967096, -0.4297) # coefficients of -(intercept, misclterm, nterm, -atermcoeff^2)/atermcoeff
-    x <- exp(b[1] + b[2] * omega.term + b[3] / n - log(2) / b[4])  # maxa=1
-    an <- 1.5 * x / (1 + x)
-  }
-  else 
-    an <- 1.0
-  
-  return (an)
-}  

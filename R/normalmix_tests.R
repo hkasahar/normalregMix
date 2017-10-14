@@ -17,8 +17,6 @@
 #' @param crit.bootstrap.from The minimum m in null hypothesis to have critical values 
 #' calculated from bootstrap for the test statistics.
 #' @param significance.level Significance level used for rejecting a null hypothesis.
-#' @param LRT.penalized Determines whether penalized likelihood is used in calculation of LRT
-#' statistic for likelihood in an alternative hypothesis.
 #' @return A list of with the following items:
 #' \item{alpha}{A \code{maxm} by \code{maxm} matrix, whose i-th column is a vector of alphas estimated under the null hypothesis \eqn{m_0 = i}.}
 #' \item{mu}{A \code{maxm} by maxm \code{maxm}, whose i-th column is a vector of mus estimated under the null hypothesis \eqn{m_0 = i}.}
@@ -38,8 +36,7 @@
 #' normalmixMEMtestSeq(y = eruptions, parallel = 0)
 normalmixMEMtestSeq <- function (y, x = NULL, z = NULL,  maxm = 3, ninits = 10, maxit = 2000,
                                  nbtsp = 199, parallel = 1, cl = NULL,
-                                 crit.bootstrap.from = 3, significance.level = 0.05,
-                                 LRT.penalized = FALSE) {
+                                 crit.bootstrap.from = 3, significance.level = 0.05) {
   # Compute the modified EM test statistic for testing H_0 of m components
   # against H_1 of m+1 components for a univariate finite mixture of normals
 
@@ -107,12 +104,10 @@ normalmixMEMtestSeq <- function (y, x = NULL, z = NULL,  maxm = 3, ninits = 10, 
 
       cat(sprintf("Testing the null hypothesis of %d components\n", m))
 
-      an    <- anFormula(parlist = parlist, m = m, n = n, LRT.penalized = LRT.penalized)
+      an    <- anFormula(parlist = parlist, m = m, n = n)
       par1  <- normalmixMaxPhi(y = y, parlist = parlist, z = z, an = an,
                                ninits = ninits, maxit = maxit)
-      emstat.m  <- 2*(par1$loglik - loglik0)
-      if (LRT.penalized) # use the penalized log-likelihood.
-        emstat.m  <- 2*(par1$penloglik - loglik0)
+      emstat.m  <- 2*(par1$penloglik - loglik0)
 
       # use the estimate of b as one of the initial values
       binit <- par1$coefficient
@@ -123,8 +118,7 @@ normalmixMEMtestSeq <- function (y, x = NULL, z = NULL,  maxm = 3, ninits = 10, 
         cat(c("asymptotic p-value       ", sprintf('%.3f',em.out$pvals)),"\n \n")
       } else {
         em.out <- normalmixCritBoot(y=y, parlist=parlist, z=z, values = emstat.m,
-                                    ninits = ninits, nbtsp = nbtsp, parallel = parallel, cl = cl,
-                                    LRT.penalized = LRT.penalized)
+                                    ninits = ninits, nbtsp = nbtsp, parallel = parallel, cl = cl)
         cat(c("bootstrap p-value        ", sprintf('%.3f',em.out$pvals)),"\n \n")
       }
       pvals[m,]     <- em.out$pvals
@@ -182,8 +176,6 @@ normalmixMEMtestSeq <- function (y, x = NULL, z = NULL,  maxm = 3, ninits = 10, 
 #' create a new one for computation accordingly.
 #' @param parallel Determines what percentage of available cores are used, 
 #' represented by a double in [0,1]. Default value is 1.
-#' @param LRT.penalized Determines whether penalized likelihood is used in calculation of LRT
-#' statistic for likelihood in an alternative hypothesis.
 #' @return A list of class \code{normalMix} with items:
 #' \item{coefficients}{A vector of parameter estimates. Ordered as \eqn{\alpha_1,\ldots,\alpha_m,\mu_1,\ldots,\mu_m,\sigma_1,\ldots,\sigma_m,gam}, where gam is the coefficient of z.}
 #' \item{parlist}{The parameter estimates as a list containing alpha, mu, and sigma (and gam if z is included in the model).}
@@ -205,8 +197,7 @@ normalmixMEMtest <- function (y, x = NULL, m = 2, z = NULL, an = NULL, tauset = 
                               ninits = 10,
                               crit.method = c("asy", "boot", "none"), nbtsp = 199,
                               cl = NULL,
-                              parallel = 1,
-                              LRT.penalized = FALSE) {
+                              parallel = 1) {
   # Compute the modified EM test statistic for testing H_0 of m components
   # against H_1 of m+1 components for a univariate finite mixture of normals
   if (!is.null(x))
@@ -221,22 +212,19 @@ normalmixMEMtest <- function (y, x = NULL, m = 2, z = NULL, an = NULL, tauset = 
   pmle.result    <- normalmixPMLE(y=y, m=m, z=z, vcov.method = "none", ninits=ninits)
   loglik0 <- pmle.result$loglik
 
-  if (is.null(an)){ an <- anFormula(parlist = pmle.result$parlist, m = m, n = n, 
-                                    LRT.penalized = LRT.penalized) }
+  if (is.null(an)){ an <- anFormula(parlist = pmle.result$parlist, m = m, n = n) }
 
   par1  <- normalmixMaxPhi(y=y, parlist=pmle.result$parlist, z=z,
                            an=an, tauset = tauset, ninits=ninits)
 
-  emstat  <- 2*(par1$loglik - loglik0)
-  if (LRT.penalized) # use the penalized log-likelihood.
-    emstat  <- 2*(par1$penloglik - loglik0)
+  emstat  <- 2*(par1$penloglik - loglik0)
 
   if (crit.method == "asy"){
     result  <- normalmixCrit(y=y, parlist=pmle.result$parlist, z=z, values=emstat)
   } else if (crit.method == "boot") {
     result  <- normalmixCritBoot(y=y, parlist= pmle.result$parlist, z=z, values=emstat,
                                  ninits=ninits, nbtsp=nbtsp, parallel=parallel, cl=cl,
-                                 LRT.penalized = LRT.penalized, an = an)
+                                 an = an)
   } else {
     result <- list()
     result$crit <- result$pvals <- rep(NA,3)
