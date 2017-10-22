@@ -1,18 +1,19 @@
 #' @description Computes the variance-covariance matrix of the MLE of 
 #' m-component normal mixture.
+#' @export
 #' @title normalmixVcov
 #' @name normalmixVcov
 #' @param y n by 1 vector of data.
 #' @param coefficients Parameter vector ordered as (alpha_1, ..., alpha_m, mu_1, ..., mu_m, sigma_1, ..., sigma_m, gam).
 #' @param z n by p matrix of regressor associated with gam.
-#' @param vcov.method Method used to compute the variance-covariance matrix,
-#' one of \code{"Hessian"} and \code{"OPG"}. The default option is \code{"Hessian"}.
+#' @param vcov.method method used to compute the variance-covariance matrix,
+#' one of \code{"Hessian"} and \code{"OPG"}. Default is \code{"Hessian"}.
 #' When \code{method = "Hessian"}, the variance-covarince matrix is
 #' estimated by the Hessian using the formula given in Boldea and Magnus (2009).
 #' When \code{method = "OPG"}, the outer product of gradients is used.
-#' @return The variance-covariance matrix of the MLE of
+#' @return variance-covariance matrix of the MLE of
 #' m-component normal mixture given the data and coefficients.
-#' @references   Boldea, O. and Magnus, J. R. (2009)
+#' @references  Boldea, O. and Magnus, J. R. (2009)
 #' Maximum Likelihood Estimation of the Multivariate Normal Mixture Model,
 #' \emph{Journal of the American Statistical Association},
 #' \bold{104}, 1539--1549.
@@ -223,31 +224,31 @@ normalmixVcov <- function(y, coefficients, z = NULL, vcov.method = c("Hessian", 
 #' @name normalmixPMLE
 #' @param y n by 1 vector of data.
 #' @param x n by q matrix of data for x (if exists).
-#' @param m The number of components in the mixture.
+#' @param m number of components in the mixture.
 #' @param z n by p matrix of regressor associated with gamma.
-#' @param vcov.method Method used to compute the variance-covariance matrix, one of \code{"Hessian"} and \code{"OPG"}.
-#' The default option is \code{"Hessian"}. When \code{method = "Hessian"}, the variance-covarince matrix is
+#' @param vcov.method method used to compute the variance-covariance matrix, one of \code{"Hessian"} and \code{"OPG"}.
+#' Default is \code{"Hessian"}. When \code{method = "Hessian"}, the variance-covarince matrix is
 #' estimated by the Hessian using the formula given in Boldea and Magnus (2009).
 #' When \code{method = "OPG"}, the outer product of gradients is used.
-#' @param ninits The number of randomly drawn initial values.
-#' @param epsilon The convergence criterion. Convergence is declared when the penalized log-likelihood increases by less than \code{epsilon}.
-#' @param maxit The maximum number of iterations.
-#' @param epsilon.short The convergence criterion in short EM. Convergence is declared when the penalized log-likelihood increases by less than \code{epsilon.short}.
-#' @param maxit.short The maximum number of iterations in short EM.
-#' @param binit The initial value of parameter vector that is included as a candidate parameter vector.
+#' @param ninits number of randomly drawn initial values.
+#' @param epsilon convergence criterion. Convergence is declared when the penalized log-likelihood increases by less than \code{epsilon}.
+#' @param maxit maximum number of iterations.
+#' @param epsilon.short convergence criterion in short EM. Convergence is declared when the penalized log-likelihood increases by less than \code{epsilon.short}.
+#' @param maxit.short maximum number of iterations in short EM.
+#' @param binit initial value of parameter vector that is included as a candidate parameter vector.
 #' @return  A list of class \code{normalMix} with items:
-#' \item{coefficients}{A vector of parameter estimates. Ordered as \eqn{\alpha_1,\ldots,\alpha_m,\mu_1,\ldots,\mu_m,\sigma_1,\ldots,\sigma_m,gam}.}
-#' \item{parlist}{The parameter estimates as a list containing alpha, mu, and sigma (and gam if z is included in the model).}
-#' \item{vcov}{The estimated variance-covariance matrix.}
-#' \item{loglik}{The maximized value of the log-likelihood.}
-#' \item{penloglik}{The maximized value of the penalized log-likelihood.}
+#' \item{coefficients}{vector of parameter estimates. Ordered as \eqn{\alpha_1,\ldots,\alpha_m,\mu_1,\ldots,\mu_m,\sigma_1,\ldots,\sigma_m,gam}.}
+#' \item{parlist}{parameter estimates as a list containing alpha, mu, and sigma (and gam if z is included in the model).}
+#' \item{vcov}{estimated variance-covariance matrix.}
+#' \item{loglik}{maximized value of the log-likelihood.}
+#' \item{penloglik}{maximized value of the penalized log-likelihood.}
 #' \item{aic}{Akaike Information Criterion of the fitted model.}
 #' \item{bic}{Bayesian Information Criterion of the fitted model.}
 #' \item{postprobs}{n by m matrix of posterior probabilities for observations.}
 #' \item{components}{n by 1 vector of integers that indicates the indices of components
 #' each observation belongs to based on computed posterior probabilities.}
 #' \item{call}{The matched call.}
-#' \item{m}{The number of components in the mixture.}
+#' \item{m}{number of components in the mixture.}
 #' @note \code{normalmixPMLE} maximizes the penalized log-likelihood function
 #' (Chen et al., 2008) 
 #' using the EM algorithm with combining short and long runs of EM steps as in Biernacki et al. (2003).
@@ -401,18 +402,18 @@ normalmixPMLE <- function (y, x = NULL, m = 2, z = NULL, vcov.method = c("Hessia
 #' MEM algorithm at k=1,2,3.
 #' @title normalmixMaxPhi
 #' @name normalmixMaxPhi
-#' @param y n by 1 vector of data
-#' @param parlist The parameter estimates as a list containing alpha, mu, sigma, and gamma
+#' @param y n by 1 vector of data.
+#' @param parlist parameter estimates as a list containing alpha, mu, sigma, and gamma
 #' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m),
-#' sigma = (sigma_1, ..., sigma_m), gam = (gamma_1, ..., gamma_m))
-#' @param z n by p matrix of regressor associated with gamma
-#' @param an a term used for penalty function
-#' @param tauset A set of initial tau value candidates
-#' @param ninits The number of randomly drawn initial values.
-#' @param epsilon.short The convergence criterion in short EM. Convergence is declared when the penalized log-likelihood increases by less than \code{epsilon.short}.
-#' @param epsilon The convergence criterion. Convergence is declared when the penalized log-likelihood increases by less than \code{epsilon}.
-#' @param maxit.short The maximum number of iterations in short EM.
-#' @param maxit The maximum number of iterations.
+#' sigma = (sigma_1, ..., sigma_m), gam = (gamma_1, ..., gamma_m)).
+#' @param z n by p matrix of regressor associated with gamma.
+#' @param an tuning parameter used in the penalty function.
+#' @param tauset set of initial tau value candidates.
+#' @param ninits number of randomly drawn initial values.
+#' @param epsilon.short convergence criterion in short EM. Convergence is declared when the penalized log-likelihood increases by less than \code{epsilon.short}.
+#' @param epsilon convergence criterion. Convergence is declared when the penalized log-likelihood increases by less than \code{epsilon}.
+#' @param maxit.short maximum number of iterations in short EM.
+#' @param maxit maximum number of iterations.
 #' @param verb Determines whether to print a message if an error occurs.
 #' @return A list with items:
 #' \item{loglik}{Log-likelihood resulting from MEM algorithm at k=1,2,3.}
@@ -461,20 +462,20 @@ normalmixMaxPhi <- function (y, parlist, z = NULL, an, tauset = c(0.1,0.3,0.5),
 #' tailored for parallelization.
 #' @title normalmixMaxPhiStep
 #' @name normalmixMaxPhiStep
-#' @param htaupair A set of h and tau
-#' @param y n by 1 vector of data
-#' @param parlist The parameter estimates as a list containing alpha, mu, sigma, and gamma
+#' @param htaupair set of h and tau.
+#' @param y n by 1 vector of data.
+#' @param parlist parameter estimates as a list containing alpha, mu, sigma, and gamma
 #' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m),
-#' sigma = (sigma_1, ..., sigma_m), gam = (gamma_1, ..., gamma_m))
-#' @param z n by p matrix of regressor associated with gamma
-#' @param p Dimension of z
-#' @param an a term used for penalty function
-#' @param ninits The number of randomly drawn initial values.
-#' @param ninits.short The number of candidates used to generate an initial phi, in short MEM
-#' @param epsilon.short The convergence criterion in short EM. Convergence is declared when the penalized log-likelihood increases by less than \code{epsilon.short}.
-#' @param epsilon The convergence criterion. Convergence is declared when the penalized log-likelihood increases by less than \code{epsilon}.
-#' @param maxit.short The maximum number of iterations in short EM.
-#' @param maxit The maximum number of iterations.
+#' sigma = (sigma_1, ..., sigma_m), gam = (gamma_1, ..., gamma_m)).
+#' @param z n by p matrix of regressor associated with gamma.
+#' @param p dimension of z.
+#' @param an tuning parameter used in the penalty function.
+#' @param ninits number of randomly drawn initial values.
+#' @param ninits.short number of candidates used to generate an initial phi, in short EM.
+#' @param epsilon.short convergence criterion in short EM. Convergence is declared when the penalized log-likelihood increases by less than \code{epsilon.short}.
+#' @param epsilon convergence criterion. Convergence is declared when the penalized log-likelihood increases by less than \code{epsilon}.
+#' @param maxit.short maximum number of iterations in short EM.
+#' @param maxit maximum number of iterations.
 #' @param verb Determines whether to print a message if an error occurs.
 #' @return A list of phi, log-likelihood, and penalized log-likelihood resulting from MEM algorithm.
 normalmixMaxPhiStep <- function (htaupair, y, parlist, z = NULL, p,
@@ -574,23 +575,23 @@ normalmixMaxPhiStep <- function (htaupair, y, parlist, z = NULL, p,
 }
 
 #' @description Generates lists of parameters for initial candidates used by
-#' the modified EM test for mixture of normals.
+#' \code{normalmixMaxPhi}.
 #' @title normalmixPhiInit
 #' @name normalmixPhiInit
-#' @param y n by 1 vector of data
-#' @param parlist The parameter estimates as a list containing alpha, mu, sigma,
+#' @param y n by 1 vector of data.
+#' @param parlist parameter estimates as a list containing alpha, mu, sigma,
 #' and gamma in the form of (alpha = (alpha_1, ..., alpha_m),
 #' mu = (mu_1, ..., mu_m), sigma = (sigma_1, ..., sigma_m),
-#' gam = (gamma_1, ..., gamma_m))
-#' @param z n by p matrix of regressor associated with gamma
-#' @param h h used as index for pivoting
-#' @param tau Tau used to split the h-th component
-#' @param ninits number of initial values to be generated
+#' gam = (gamma_1, ..., gamma_m)).
+#' @param z n by p matrix of regressor associated with gamma.
+#' @param h h used as index for pivoting.
+#' @param tau tau used to split the h-th component.
+#' @param ninits number of initial values to be generated.
 #' @return A list with the following items:
-#' \item{alpha}{m+1 by ninits matrix for alpha}
-#' \item{mu}{m+1 by ninits matrix for mu}
-#' \item{sigma}{m+1 by ninits matrix for sigma}
-#' \item{gam}{m+1 by ninits matrix for gamma}
+#' \item{alpha}{m+1 by ninits matrix for alpha.}
+#' \item{mu}{m+1 by ninits matrix for mu.}
+#' \item{sigma}{m+1 by ninits matrix for sigma.}
+#' \item{gam}{m+1 by ninits matrix for gamma.}
 normalmixPhiInit <- function (y, parlist, z = NULL, h, tau, ninits = 1)
 {
   if (normalregMixtest.env$normalregMix.test.on) # initial values controlled by normalregMix.test.on
@@ -637,18 +638,18 @@ normalmixPhiInit <- function (y, parlist, z = NULL, h, tau, ninits = 1)
 }  # end function normalmixPhiInit
 
 
-#' @description Generate initial values used by the PMLE of mixture of normals
+#' @description Generate initial values used by \code{normalmixPMLE}.
 #' @title normalmixPMLEinit
 #' @name normalmixPMLEinit
-#' @param y n by 1 vector of data
-#' @param z n by p matrix of regressor associated with gamma
-#' @param ninits number of initial values to be generated
-#' @param m The number of components in the mixture
+#' @param y n by 1 vector of data.
+#' @param z n by p matrix of regressor associated with gamma.
+#' @param ninits number of initial values to be generated.
+#' @param m number of components in the mixture.
 #' @return A list with the following items:
-#' \item{alpha}{m by ninits matrix for alpha}
-#' \item{mu}{m by ninits matrix for mu}
-#' \item{sigma}{m by ninits matrix for sigma}
-#' \item{gam}{m by ninits matrix for gam}
+#' \item{alpha}{m by ninits matrix for alpha.}
+#' \item{mu}{m by ninits matrix for mu.}
+#' \item{sigma}{m by ninits matrix for sigma.}
+#' \item{gam}{m by ninits matrix for gam.}
 normalmixPMLEinit <- function (y, z = NULL, ninits = 1, m = 2)
 {
   if (normalregMixtest.env$normalregMix.test.on) # initial values controlled by normalregMix.test.on
@@ -673,15 +674,17 @@ normalmixPMLEinit <- function (y, z = NULL, ninits = 1, m = 2)
 
 }  # end function normalmixPMLEinit
 
-#' @description Generates mixed normal random variables with regressor x
+#' @description Generates mixed normal random variables with regressor x.
+#' @export
 #' @title rnormregmix
 #' @name rnormregmix
-#' @param n The number of observations
-#' @param alpha m by 1 vector that represents proportions of components
-#' @param mubeta k by m matrix that represents (mu times k regression coefficients) on x for m components
-#' @param sigma m by 1 vector that represents sd of components
-#' @param x n by k-1 matrix that does NOT include a constant
-#' @return n by 1 vector that is formed by regressor x
+#' @param n number of observations.
+#' @param alpha m by 1 vector that represents proportions of components.
+#' @param mubeta k by m matrix that represents (mu times k regression
+#'  coefficients) on x for m components.
+#' @param sigma m by 1 vector that represents sd of components.
+#' @param x n by k-1 matrix that does NOT include a constant.
+#' @return n by 1 vector that is formed by regressor x.
 rnormregmix <- function (n, alpha, mubeta, sigma, x = NULL) {
   # Generates mixed normal random variables with regressor x
   # Input
@@ -712,7 +715,7 @@ rnormregmix <- function (n, alpha, mubeta, sigma, x = NULL) {
 
 
 
-#' @description Computes omega_{j|i} defined in (2.1) of Maitra and Melnykov (2010)
+#' @description Computes omega_{j|i} defined in (2.1) of Maitra and Melnykov (2010).
 #' @export
 #' @title omega.ji
 #' @name omega.ji
@@ -765,10 +768,10 @@ omega.ji <- function(phi_i, phi_j) {
 #' @export
 #' @title omega.12
 #' @name omega.12
-#' @param parlist Parameter estimates as a list containing alpha, mu, sigma, and gam
+#' @param parlist parameter estimates as a list containing alpha, mu, sigma, and gam
 #' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m),
 #' sigma = (sigma_1, ..., sigma_m), gam = (gam_1, ..., gam_m)).
-#' @return The misclassification rate \eqn{\omega_{12}}.
+#' @return misclassification rate \eqn{\omega_{12}}.
 #' @references Maitra, R., and Melnykov, V. (2010)
 #' Simulating Data to Study Performance of Finite Mixture Modeling and Model-Based Clustering Algorithms,
 #' \emph{Journal of Computational and Graphical Statistica},
@@ -792,10 +795,10 @@ omega.12 <- function(parlist)
 #' @export
 #' @title omega.123
 #' @name omega.123
-#' @param parlist Parameter estimates as a list containing alpha, mu, sigma, and gamma
+#' @param parlist parameter estimates as a list containing alpha, mu, sigma, and gamma
 #' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m),
 #' sigma = (sigma_1, ..., sigma_m), gam = (gamma_1, ..., gamma_m)).
-#' @return A 2 by 1 vector whose first element is \eqn{\omega_{12}} and second element is \eqn{\omega_{23}}.
+#' @return 2 by 1 vector whose first element is \eqn{\omega_{12}} and second element is \eqn{\omega_{23}}.
 #' @references Maitra, R., and Melnykov, V. (2010)
 #' Simulating Data to Study Performance of Finite Mixture Modeling and Model-Based Clustering Algorithms,
 #' \emph{Journal of Computational and Graphical Statistica},
@@ -822,10 +825,10 @@ omega.123 <- function(parlist)
 #' @export
 #' @title omega.1234
 #' @name omega.1234
-#' @param parlist Parameter estimates as a list containing alpha, mu, sigma, and gamma
+#' @param parlist parameter estimates as a list containing alpha, mu, sigma, and gamma
 #' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m),
 #' sigma = (sigma_1, ..., sigma_m), gam = (gamma_1, ..., gamma_m)).
-#' @return A 3 by 1 vector consisting of \eqn{\omega_{12}}, \eqn{\omega_{23}}, and \eqn{\omega_{34}}.
+#' @return 3 by 1 vector consisting of \eqn{\omega_{12}}, \eqn{\omega_{23}}, and \eqn{\omega_{34}}.
 #' @references Maitra, R., and Melnykov, V. (2010)
 #' Simulating Data to Study Performance of Finite Mixture Modeling and Model-Based Clustering Algorithms,
 #' \emph{Journal of Computational and Graphical Statistica},
