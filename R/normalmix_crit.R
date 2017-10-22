@@ -2,16 +2,16 @@
 #' @export
 #' @title normalmixCrit
 #' @name normalmixCrit
-#' @param y n by 1 vector of data
-#' @param parlist The parameter estimates as a list containing alpha, mu, sigma, and gamma
+#' @param y n by 1 vector of data.
+#' @param parlist parameter estimates as a list containing alpha, mu, sigma, and gamma
 #' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m),
-#' sigma = (sigma_1, ..., sigma_m), gam = (gamma_1, ..., gamma_m))
-#' @param z n by p matrix of regressor associated with gamma
-#' @param values 3 by 1 Vector of length 3 (k = 1, 2, 3) at which the p-values are computed
-#' @param nrep The number of replications used to compute p-values
+#' sigma = (sigma_1, ..., sigma_m), gam = (gamma_1, ..., gamma_m)).
+#' @param z n by p matrix of regressor associated with gamma.
+#' @param values vector of the values of the modified EM statistic at which the p-values are computed.
+#' @param nrep number of replications used to compute p-values.
 #' @return A list with the following items:
-#' \item{crit}{3 by 3 matrix of (0.1, 0.05, 0.01 critical values), jth row corresponding to k=j}
-#' \item{pvals}{A vector of p-values at k = 1, 2, 3}
+#' \item{crit}{vector of critical values at the (0.1, 0.05, 0.01) level.}
+#' \item{pvals}{vector of p-values corresponding to \code{values}.}
 normalmixCrit <- function(y, parlist, z = NULL, values = NULL, nrep = 10000)
 {
   if (normalregMixtest.env$normalregMix.test.on) # initial values controlled by normalregMix.test.on
@@ -113,21 +113,22 @@ normalmixCrit <- function(y, parlist, z = NULL, values = NULL, nrep = 10000)
 #' @export
 #' @title normalmixCritBoot
 #' @name normalmixCritBoot
-#' @param y n by 1 vector of data
-#' @param parlist The parameter estimates as a list containing alpha, mu, sigma, and gamma
+#' @param y n by 1 vector of data.
+#' @param parlist parameter estimates as a list containing alpha, mu, sigma, and gamma
 #' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m),
-#' sigma = (sigma_1, ..., sigma_m), gam = (gamma_1, ..., gamma_m))
-#' @param z n by p matrix of regressor associated with gamma
-#' @param values 3 by 1 Vector of length 3 (k = 1, 2, 3) at which the p-values are computed
-#' @param ninits The number of initial candidates to be generated
-#' @param nbtsp The number of bootstrap observations; by default, it is set to be 199.
-#' @param parallel Determines what percentage of available cores are used, represented by a double in [0,1]. 0.75 is default.
-#' @param cl Cluster used for parallelization (optional)
+#' sigma = (sigma_1, ..., sigma_m), gam = (gamma_1, ..., gamma_m)).
+#' @param z n by p matrix of regressor associated with gamma.
+#' @param values vector of length 3 (k = 1, 2, 3) at which the p-values are computed.
+#' @param ninits number of initial candidates to be generated.
+#' @param nbtsp number of bootstrap observations; by default, it is set to be 199.
+#' @param parallel Determines what percentage of available cores are used, represented by a double in [0,1]. Default is 1.
+#' @param cl cluster used for parallelization (optional).
+#' @param an tuning parameter used in the penalty function.
 #' @return A list with the following items:
-#' \item{crit}{3 by 3 matrix of (0.1, 0.05, 0.01 critical values), jth row corresponding to k=j}
-#' \item{pvals}{A vector of p-values at k = 1, 2, 3}
+#' \item{crit}{3 by 3 matrix of critival values at the (0.1, 0.05, 0.01) level, jth row corresponding to k=j.}
+#' \item{pvals}{vector of p-values at k = 1, 2, 3 corresponding to \code{values}.}
 normalmixCritBoot <- function (y, parlist, z = NULL, values = NULL, ninits = 10,
-                               nbtsp = 199, parallel = 0.75, cl = NULL, an = NULL) {
+                               nbtsp = 199, parallel = 1, cl = NULL, an = NULL) {
   if (normalregMixtest.env$normalregMix.test.on) # initial values controlled by normalregMix.test.on
     set.seed(normalregMixtest.env$normalregMix.test.seed)
 
