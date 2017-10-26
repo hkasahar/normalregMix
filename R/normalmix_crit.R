@@ -119,8 +119,8 @@ normalmixCrit <- function(y, parlist, z = NULL, values = NULL, nrep = 10000)
 #' sigma = (sigma_1, ..., sigma_m), gam = (gamma_1, ..., gamma_m)).
 #' @param z n by p matrix of regressor associated with gamma.
 #' @param values vector of length 3 (k = 1, 2, 3) at which the p-values are computed.
-#' @param ninits number of initial candidates to be generated.
-#' @param nbtsp number of bootstrap observations; by default, it is set to be 199.
+#' @param ninits number of candidates of the initial value of the EM algorithm.
+#' @param nbtsp number of bootstrap replicates. Default is 199.
 #' @param parallel Determines what percentage of available cores are used, represented by a double in [0,1]. Default is 1.
 #' @param cl cluster used for parallelization (optional).
 #' @param an tuning parameter used in the penalty function.

@@ -4,7 +4,7 @@
 #' @title normalmixVcov
 #' @name normalmixVcov
 #' @param y n by 1 vector of data.
-#' @param coefficients Parameter vector ordered as (alpha_1, ..., alpha_m, mu_1, ..., mu_m, sigma_1, ..., sigma_m, gam).
+#' @param coefficients parameter vector ordered as (alpha_1, ..., alpha_m, mu_1, ..., mu_m, sigma_1, ..., sigma_m, gam).
 #' @param z n by p matrix of regressor associated with gam.
 #' @param vcov.method method used to compute the variance-covariance matrix,
 #' one of \code{"Hessian"} and \code{"OPG"}. Default is \code{"Hessian"}.
@@ -399,7 +399,7 @@ normalmixPMLE <- function (y, x = NULL, m = 2, z = NULL, vcov.method = c("Hessia
 }  # end function normalmixPMLE
 
 #' @description Compute ordinary & penalized log-likelihood ratio resulting from 
-#' MEM algorithm at k=1,2,3.
+#' the MEM algorithm at k=1,2,3.
 #' @title normalmixMaxPhi
 #' @name normalmixMaxPhi
 #' @param y n by 1 vector of data.

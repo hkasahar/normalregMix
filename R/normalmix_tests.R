@@ -6,30 +6,29 @@
 #' @param y n by 1 vector of data for y.
 #' @param x n by q matrix of data for x (if exists).
 #' @param z n by p matrix of regressor associated with gamma.
-#' @param maxm The maximum number of components in the mixture set as the null hypothesis.
-#' @param ninits The number of randomly drawn initial values.
-#' @param maxit The maximum number of iterations.
-#' @param nbtsp The number of bootstrap observations. Defalt value is 199.
-#' @param parallel Determines what percentage of available cores are used, 
-#' represented by a double in [0,1]. Default value is 1.
-#' @param cl Cluster used for parallelization; if it is \code{NULL}, the system will automatically
+#' @param maxm maximum number of components in the mixture set as the null hypothesis.
+#' @param ninits number of randomly drawn initial values.
+#' @param maxit maximum number of iterations.
+#' @param nbtsp number of bootstrap replicates. Defalt is 199.
+#' @param parallel Determines what percentage of available cores are used, represented by a double in [0,1]. Default is 1.
+#' @param cl cluster used for parallelization; if it is \code{NULL}, the system will automatically
 #' create a new one for computation accordingly.
-#' @param crit.bootstrap.from The minimum m in null hypothesis to have critical values 
+#' @param crit.bootstrap.from minimum m in null hypothesis to have critical values 
 #' calculated from bootstrap for the test statistics.
-#' @param significance.level Significance level used for rejecting a null hypothesis.
-#' @return A list of with the following items:
-#' \item{alpha}{A \code{maxm} by \code{maxm} matrix, whose i-th column is a vector of alphas estimated under the null hypothesis \eqn{m_0 = i}.}
-#' \item{mu}{A \code{maxm} by maxm \code{maxm}, whose i-th column is a vector of mus estimated under the null hypothesis \eqn{m_0 = i}.}
-#' \item{sigma}{A \code{maxm} by \code{maxm} matrix, whose i-th column is a vector of sigmas estimated under the null hypothesis \eqn{m_0 = i}.}
+#' @param significance.level significance level used for rejecting a null hypothesis.
+#' @return A list with the following items:
+#' \item{alpha}{\code{maxm} by \code{maxm} matrix, whose i-th column is a vector of alphas estimated under the null hypothesis \eqn{m_0 = i}.}
+#' \item{mu}{\code{maxm} by maxm \code{maxm}, whose i-th column is a vector of mus estimated under the null hypothesis \eqn{m_0 = i}.}
+#' \item{sigma}{\code{maxm} by \code{maxm} matrix, whose i-th column is a vector of sigmas estimated under the null hypothesis \eqn{m_0 = i}.}
 #' \item{beta}{A list of length \code{maxm}, whose i-th element is a q times i matrix of betas estimated under the null hypothesis \eqn{m_0 = i}.}
-#' \item{gam}{A p by \code{maxm} matrix, whose i-th column is gamma estimated under the null hypothesis \eqn{m_0 = i}.}
-#' \item{emstat}{A \code{maxm} by 3 matrix whose i-th row is the value of the modified EM statistic for testing the null hypothesis \eqn{m_0 = i} at k = 1, 2, 3.}
-#' \item{pvals}{A \code{maxm} by 3 matrix whose i-th row indicates a vector of p-values at k = 1, 2, 3.}
-#' \item{aic}{The vector of the values of Akaike Information Criterion of the fitted model at \eqn{m_0 = 1, 2, ..., maxm}.}
-#' \item{bic}{The vector of the values of Bayesian Information Criterion of the fitted model at \eqn{m_0 = 1, 2, ..., maxm}.}
-#' \item{loglik}{The vector of log-likelihood values of the fitted model at \eqn{m_0 = 1, 2, ..., maxm}.}
-#' \item{penloglik}{The vector of penalized log-likelihood values of the fitted model at \eqn{m_0 = 1, 2, ..., maxm}.}
-#' \item{pmle.result}{A list of output from normalmixPMLE under the number of components selected by sequantial hypothesis testing.}
+#' \item{gam}{p by \code{maxm} matrix, whose i-th column is gamma estimated under the null hypothesis \eqn{m_0 = i}.}
+#' \item{emstat}{\code{maxm} by 3 matrix whose i-th row is the value of the modified EM statistic for testing the null hypothesis \eqn{m_0 = i} at k = 1, 2, 3.}
+#' \item{pvals}{\code{maxm} by 3 matrix whose i-th row indicates a vector of p-values at k = 1, 2, 3.}
+#' \item{aic}{vector of the values of Akaike Information Criterion of the fitted model at \eqn{m_0 = 1, 2, ..., maxm}.}
+#' \item{bic}{vector of the values of Bayesian Information Criterion of the fitted model at \eqn{m_0 = 1, 2, ..., maxm}.}
+#' \item{loglik}{vector of log-likelihood values of the fitted model at \eqn{m_0 = 1, 2, ..., maxm}.}
+#' \item{penloglik}{vector of penalized log-likelihood values of the fitted model at \eqn{m_0 = 1, 2, ..., maxm}.}
+#' \item{pmle.result}{list of output from normalmixPMLE under the number of components selected by sequantial hypothesis testing.}
 #' @examples
 #' data(faithful)
 #' attach(faithful)
@@ -162,32 +161,28 @@ normalmixMEMtestSeq <- function (y, x = NULL, z = NULL,  maxm = 3, ninits = 10, 
 #' @name normalmixMEMtest
 #' @param y n by 1 vector of data.
 #' @param x n by q matrix of data for x (if exists).
-#' @param m The number of components in the mixture defined by the null hypothesis, \eqn{m_0}.
+#' @param m number of components in the mixture defined by the null hypothesis, \eqn{m_0}.
 #' @param z n by p matrix of regressor associated with gamma.
-#' @param tauset A set of initial tau value candidates.
-#' @param an a term used for penalty function.
-#' @param ninits The number of randomly drawn initial values.
-#' @param crit.method Method used to compute the variance-covariance matrix, one of \code{"none"},
+#' @param tauset set of initial tau value candidates.
+#' @param an tuning parameter used in the penalty function.
+#' @param ninits number of randomly drawn initial values.
+#' @param crit.method method used to compute the variance-covariance matrix, one of \code{"none"},
 #' \code{"asy"}, and \code{"boot"}. The default option is \code{"asy"}. When \code{method = "asy"},
-#' the p-values are computed based on an asymptotic method. When \code{method = "boot"},
-#' the p-values are generated by bootstrapping.
-#' @param nbtsp The number of bootstrap observations. Default value is 199.
-#' @param cl Cluster used for parallelization; if it is \code{NULL}, the system will automatically
+#' the p-values are computed using the asymptotic critical values When \code{method = "boot"},
+#' the p-values are computed by bootstrap.
+#' @param nbtsp number of bootstrap observations. Default value is 199.
+#' @param cl cluster used for parallelization; if \code{NULL}, the system will automatically
 #' create a new one for computation accordingly.
-#' @param parallel Determines what percentage of available cores are used, 
-#' represented by a double in [0,1]. Default value is 1.
+#' @param parallel Determines the percentage of available cores used, represented by a double in [0,1]. Default is 1.
 #' @return A list of class \code{normalMix} with items:
-#' \item{coefficients}{A vector of parameter estimates. Ordered as \eqn{\alpha_1,\ldots,\alpha_m,\mu_1,\ldots,\mu_m,\sigma_1,\ldots,\sigma_m,gam}, where gam is the coefficient of z.}
-#' \item{parlist}{The parameter estimates as a list containing alpha, mu, and sigma (and gam if z is included in the model).}
-#' \item{loglik}{The maximized value of the log-likelihood.}
-#' \item{penloglik}{The maximized value of the penalized log-likelihood.}
-#' \item{aic}{Akaike Information Criterion of the fitted model.}
-#' \item{bic}{Bayesian Information Criterion of the fitted model.}
-#' \item{postprobs}{n by m matrix of posterior probabilities for observations.}
-#' \item{components}{n by 1 vector of integers that indicates the indices of components
-#' each observation belongs to based on computed posterior probabilities.}
+#' \item{emstat}{vector of the value of the modified EM test statistic at k=1, 2, 3.}
+#' \item{pvals}{vector of p-values at k = 1, 2, 3.}
+#' \item{crit}{When \code{crit.method = "asy"}, \code{crit} is vector of critical values at the 0.1, 0.05, 0.01 level.
+#'  When \code{crit.method = "boot"}, \code{crit} is 3 by 3 matrix of critival values at the (0.1, 0.05, 0.01) level, jth row corresponding to k=j.}
+#' \item{crit.method}{method used to compute the variance-covariance matrix.}
+#' \item{parlist}{parameter estimates as a list containing alpha, mu, and sigma (and gam if z is included in the model).}
 #' \item{call}{The matched call.}
-#' \item{m}{The number of components in the mixture defined by the null hypothesis, \eqn{m_0}.}
+#' \item{m}{number of components in the mixture defined by the null hypothesis, \eqn{m_0}.}
 #' @examples
 #' data(faithful)
 #' attach(faithful)

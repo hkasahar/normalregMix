@@ -26,14 +26,14 @@ normalregMixTestMode <- function(on = FALSE, seed = 8888577, hide.message = FALS
                 as.character(normalregMixtest.env$normalregMix.test.seed)))
 }
 
-#' @description Prints the multiple plots for diagnosis. 
+#' @description Prints multiple plots for diagnosis. 
 #' @export
 #' @title plotDiag
 #' @name plotDiag
-#' @param components n vector of the indices of components for each observation
-#' @param y n vector of data that represents dependent variables
-#' @param x n by q matrix of data that represent(s) covariates where q >= 1
-#' @param m The number of components
+#' @param components n by 1 vector of the indices of components for each observation.
+#' @param y n by 1 vector of data that represents dependent variables.
+#' @param x n by q matrix of data that represent(s) covariates where q >= 1.
+#' @param m number of components.
 plotDiag <- function(components, y = y, x = x, m = 2)
 {
   dimx <- dim(as.matrix(x))[2]
@@ -69,28 +69,28 @@ plotDiag <- function(components, y = y, x = x, m = 2)
 }
 
 #' @description Generates a vector that indicates which component each observation belongs to,
-#' based on its posterior probability
+#' based on its posterior probability.
 #' @export
 #' @title getComponentcomponents
 #' @name getComponentcomponents
 #' @param postprobs n by m matrix of posterior probabilities for
-#' m-component model on n observations
-#' @return n by 1 vector of components that indicate which component each observation belongs to
-#' based on its posterior probability
+#' m-component model on n observations.
+#' @return n by 1 vector of components that indicate which component each
+#'  observation belongs to based on its posterior probability.
 getComponentcomponents <- function(postprobs)
 {
   postprobs.mat <- as.matrix(postprobs)
   apply(postprobs.mat, 1, function(i) (which(i==max(i))))
 }
 
-#' @description Returns the summary of a normalregMix instance
+#' @description Returns the summary of a normalregMix instance.
 #' @export
 #' @title summary.normalregMix
 #' @name summary.normalregMix
-#' @param object normalregMix instance
-#' @param reorder Determines whether components are reordered in summary
-#' @param digits Digits used for reporting
-#' @param ... Other arguments that do not affect the function
+#' @param object normalregMix instance.
+#' @param reorder Determines whether components are reordered in summary.
+#' @param digits digits used for reporting.
+#' @param ... other arguments that do not affect the function.
 summary.normalregMix <- function(object, reorder = FALSE, digits = 3, ...) {
 
 if (object$label == "PMLE") {
@@ -138,12 +138,12 @@ if (object$label == "PMLE") {
 
 }  # end function summary.normalregMix
 
-#' @description Prints the summary of a normalregMix instance
+#' @description Prints the summary of a normalregMix instance.
 #' @export
 #' @title print.summary.normalregMix
 #' @name print.summary.normalregMix
-#' @param x normalregMix instance
-#' @param ... Other arguments that do not affect the function
+#' @param x normalregMix instance.
+#' @param ... Other arguments that do not affect the function.
 print.summary.normalregMix <- function(x, ...) {
 
 cat("\nCall:\n")
@@ -182,12 +182,12 @@ cat(sprintf("BIC: %.3f\n", x$bic))
 
 }
 
-#' @description Prints the description of a normalregMix instance
+#' @description Prints the description of a normalregMix instance.
 #' @export
 #' @title print.normalregMix
 #' @name print.normalregMix
-#' @param x normalregMix instance
-#' @param ... Other arguments that do not affect the function
+#' @param x normalregMix instance.
+#' @param ... other arguments that do not affect the function.
 print.normalregMix <- function(x, ...) {
 
 cat("\nCall:\n")
@@ -215,17 +215,18 @@ if (x$label == "MEMtest") {
 }
 
 
-#' @description Computes the tuning parameter \eqn{a_n} based on empirical formulas obtained by a similar method to Kasahara and Shimotsu (2015).
+#' @description Computes the tuning parameter \eqn{a_n} based on
+#' empirical formulas obtained by a similar method to Kasahara and Shimotsu (2015).
 #' @export
 #' @title anFormula
 #' @name anFormula
-#' @param parlist The parameter estimates as a list containing alpha, mu, sigma, and gamma
+#' @param parlist parameter estimates as a list containing alpha, mu, sigma, and gamma
 #' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m),
 #' sigma = (sigma_1, ..., sigma_m), gam = (gamma_1, ..., gamma_m)).
-#' @param m The number of components in the mixture.
-#' @param n The number of observations.
-#' @param q The dimension of x (by default, 0).
-#' @return The tuning parameter \eqn{a_n}.
+#' @param m number of components in the mixture.
+#' @param n number of observations.
+#' @param q dimension of x (default is 0).
+#' @return tuning parameter \eqn{a_n}.
 #' @references Kasahara, H., and Shimotsu, K. (2015)
 #' Testing the Number of Components in Normal Mixture Regression Models,
 #' \emph{Journal of the American Statistical Association},
