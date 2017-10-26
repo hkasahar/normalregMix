@@ -1,20 +1,16 @@
-normalregMixtest.env <- new.env(parent = emptyenv())
-normalregMixtest.env$normalregMix.test.on <- FALSE
-normalregMixtest.env$normalregMix.test.seed <- 8888577
-
 #' @description Turns on/off the test mode.
 #' @export
 #' @title normalregMixTestMode
 #' @name normalregMixTestMode
-#' @description normalregMix uses random numbers
+#' @description \code{normalregMix} uses random numbers
 #' (i) to draw the intial values of the penalized MLE and the
 #' modified EM test, and (ii) to draw bootstrapped samples in bootstrapped tests.
 #' When the test mode is turned on, these random numbers are drawn 
 #' with the random seed provided. This method would be suitable
 #' for users who would like to replicate experiments. By default, the test mode is turned off.
-#' @param on Option to turn on the test mode
-#' @param seed The random seed to be used for initialization
-#' @param hide.message Determines whether to print the current seed and status
+#' @param on option to turn on the test mode.
+#' @param seed random seed to be used for initialization.
+#' @param hide.message Determines whether to print the current seed and status.
 #' @examples
 #' normalregMixTestMode(TRUE)
 #' normalregMixTestMode(FALSE)
