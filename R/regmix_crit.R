@@ -234,10 +234,9 @@ regmixCritBoot <- function (y, x, parlist, z = NULL, values = NULL, ninits = 100
       cl <- makeCluster(num.cores)
       newcluster <- TRUE
     }
-    registerDoParallel(cl)
-    out <- foreach (j.btsp = 1:nbtsp) %dopar% {
-      regmixMEMtest (ybset[,j.btsp], x = x, m = m,
-                     z = z, parallel = 0, ninits = ninits, crit.method = "none") }
+    clusterSetRNGStream(cl, 8888577)
+    out <- parLapply(cl, 1:nbtsp, function(j) regmixMEMtest(y=ybset[,j], x = x,
+                  m = m, z = z, parallel = 0, ninits = ninits, crit.method = "none"))
     if (newcluster) {
       on.exit(stopCluster(cl))
     } else {
