@@ -26,47 +26,6 @@ normalregMixTestMode <- function(on = FALSE, seed = 8888577, hide.message = FALS
                 as.character(normalregMixtest.env$normalregMix.test.seed)))
 }
 
-#' @description Prints multiple plots for diagnosis. 
-#' @export
-#' @title plotDiag
-#' @name plotDiag
-#' @param components n by 1 vector of the indices of components for each observation.
-#' @param y n by 1 vector of data that represents dependent variables.
-#' @param x n by q matrix of data that represent(s) covariates where q >= 1.
-#' @param m number of components.
-plotDiag <- function(components, y = y, x = x, m = 2)
-{
-  dimx <- dim(as.matrix(x))[2]
-  if ((dimx <= 1) || (is.null(dimx)))
-    return (NULL)
-
-  pivot.names <- as.character(seq(1, dimx))
-  if (!is.null(colnames(x)))
-    pivot.names <- colnames(x)
-
-  ivs <- as.matrix(x)
-
-  for (j in 1:m)
-  {
-    ivs.component <- as.matrix(ivs[components == j,])
-    ys.component <- y[components == j]
-    for (pivot in 1:dimx)
-    {
-      pivot.name <- pivot.names[pivot]
-      ivs.pivot <- ivs.component[,pivot]
-      ivs.others <- ivs.component[,-pivot]
-      lm.y.other <- lm(ys.component ~ ivs.others)
-      lm.pivot.other <- lm(ivs.pivot ~ ivs.others)
-      plot.df <- data.frame(y.on.others = lm.y.other$residuals,
-                            pivot.on.others = lm.pivot.other$residuals)
-      plot <- ggplot(plot.df, aes(x=pivot.on.others, y=y.on.others))
-      plot <- plot + geom_point(shape=1) + geom_smooth(method=lm) +
-        xlab(paste("pivot.on.others (pivot on ", pivot.name, ", component ",
-                   as.character(j), ")", sep = ""))
-      print(plot)
-    }
-  }
-}
 
 #' @description Generates a vector that indicates which component each observation belongs to,
 #' based on its posterior probability.
