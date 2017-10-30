@@ -9,12 +9,12 @@
 #' sigma = (sigma_1, ..., sigma_m), gam = (gamma_1, ..., gamma_m))
 #' @param z n by p matrix of regressor associated with gamma
 #' @param values 3 by 1 Vector of length 3 (k = 1, 2, 3) at which the p-values are computed
-#' @param parallel Determines whether package \code{doParallel} is used for calculation
+#' @param parallel Determines what percentage of available cores are used, represented by a double in [0,1]. Default is 1.
 #' @param cl Cluster used for parallelization; if it is \code{NULL}, the system will automatically
-#' @param nrep The number of replications used to compute p-values
+#' @param nrep number of replications used to compute p-values
 #' @param ninits.crit The number of initial guesses to form critical values 
 #' @return A list with the following items:
-#' \item{crit}{3 by 3 matrix of (0.1, 0.05, 0.01 critical values), jth row corresponding to k=j}
+#' \item{crit}{vector of critical values at the 0.1, 0.05, 0.01 level}
 #' \item{pvals}{A vector of p-values at k = 1, 2, 3}
 regmixCrit <- function(y, x, parlist, z = NULL, values = NULL, parallel = 1,
                        cl = NULL, nrep = 1000, ninits.crit = 25)
@@ -196,13 +196,13 @@ regmixCrit <- function(y, x, parlist, z = NULL, values = NULL, parallel = 1,
 #' sigma = (sigma_1, ..., sigma_m), gam = (gamma_1, ..., gamma_m))
 #' @param z n by p matrix of regressor associated with gamma
 #' @param values 3 by 1 Vector of length 3 (k = 1, 2, 3) at which the p-values are computed
-#' @param ninits The number of initial candidates to be generated
-#' @param nbtsp The number of bootstrap observations; by default, it is set to be 199
+#' @param ninits number of initial candidates to be generated
+#' @param nbtsp number of bootstrap observations; by default, it is set to be 199
 #' @param parallel Determines what percentage of available cores are used, represented by a double in [0,1]. 0.75 is default.
 #' @param cl Cluster used for parallelization (optional)
 #' @return A list with the following items:
 #' \item{crit}{3 by 3 matrix of (0.1, 0.05, 0.01 critical values), jth row corresponding to k=j}
-#' \item{pvals}{A vector of p-values at k = 1, 2, 3}
+#' \item{pvals}{vector of p-values at k = 1, 2, 3}
 regmixCritBoot <- function (y, x, parlist, z = NULL, values = NULL, ninits = 100,
                             nbtsp = 199, parallel = 0.75, cl = NULL) {
   if (normalregMixtest.env$normalregMix.test.on) # initial values controlled by normalregMix.test.on

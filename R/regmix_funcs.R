@@ -276,7 +276,7 @@ regmixPhiInit <- function (y, x, z = NULL, parlist, h, tau, ninits = 1)
 #' @name regmixPMLE
 #' @param y n by 1 vector of data for y
 #' @param x n by q matrix of data for x
-#' @param m The number of components in the mixture
+#' @param m number of components in the mixture
 #' @param z n by p matrix of regressor associated with gam
 #' @param vcov.method Method used to compute the variance-covariance matrix, one of \code{"Hessian"} and \code{"OPG"}.
 #' The default option is \code{"Hessian"}. When \code{method = "Hessian"}, the variance-covarince matrix is

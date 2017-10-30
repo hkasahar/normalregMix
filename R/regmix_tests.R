@@ -1,26 +1,24 @@
-#' @description Sequentially performs MEM test given the data for y and x on 
+#' @description Sequentially performs the MEM test given the data for y and x on 
 #' the null hypothesis H_0: m = m_0 where m_0 is in {1, 2, ..., maxm};
 #' using this function is equivalent to calling normalmixMEMtestSeq with regressors 
 #' specified by x as a parameter.
 #' @export
 #' @title regmixMEMtestSeq
 #' @name regmixMEMtestSeq
-#' @param y n by 1 vector of data for y
-#' @param x n by q matrix of data for x
-#' @param z n by p matrix of regressor associated with gam
-#' @param maxm The maximum number of components set as null hypothesis in the mixture
-#' @param ninits The number of randomly drawn initial values.
-#' @param maxit The maximum number of iterations.
-#' @param nbtsp The number of bootstrap observations; by default, it is set to be 199
+#' @param y n by 1 vector of data for y.
+#' @param x n by q matrix of data for x.
+#' @param z n by p matrix of regressor associated with gam.
+#' @param maxm maximum number of components set as null hypothesis in the mixture.
+#' @param ninits number of randomly drawn initial values.
+#' @param maxit maximum number of iterations.
+#' @param nbtsp number of bootstrap observations; by default, it is set to be 199
 #' @param parallel Determines what percentage of available cores are used, 
 #' represented by a double in [0,1]. 0.75 is default.
-#' @param cl Cluster used for parallelization; if it is \code{NULL}, the system will automatically
+#' @param cl cluster used for parallelization; if it is \code{NULL}, the system will automatically
 #' create a new one for computation accordingly.
-#' @param crit.bootstrap.from The minimum m in null hypothesis to have critical values 
+#' @param crit.bootstrap.from minimum m in null hypothesis to have critical values 
 #' calculated from bootstrap for the test statistics
 #' @param significance.level Significance level used for rejecting a null hypothesis.
-#' @param LRT.penalized Determines whether penalized likelihood is used in calculation of LRT
-#' statistic for likelihood in an alternative hypothesis.
 #' @return A list of with the following items:
 #' \item{alpha}{maxm by maxm matrix, whose i-th column is a vector of alphas estimated given the null hypothesis m_0 = i}
 #' \item{mu}{maxm by maxm matrix, whose i-th column is a vector of mus estimated given the null hypothesis m_0 = i}
