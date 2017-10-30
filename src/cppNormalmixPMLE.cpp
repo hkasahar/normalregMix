@@ -5,6 +5,31 @@ using namespace Rcpp;
 
 const double SINGULAR_EPS = 10e-10; // criteria for matrix singularity
 
+//' @description Updates parameter estimates of a finite mixture of
+//' univariate normals by the EM algorithm.
+//' @export
+//' @title cppNormalmixPMLE
+//' @name cppNormalmixPMLE
+//' @param bs (m-1) + 2m + p by ninits matrix of initial values of (alpha,mu,sigma,gamma).
+//' @param ys n by 1 vector of data.
+//' @param zs n by p matrix of regressor associated with gamma.
+//' @param mu0s m-1 vector of the estimate of mu from an m-1 component model.
+//' @param sigma0s m-1 vector of the estimate of sigma from an m-1 component model.
+//' @param m number of components in the mixture.
+//' @param p dimension of the regressor associated with gamma.
+//' @param an tuning parameter.
+//' @param maxit maximum number of iterations.
+//' @param ninits number of initial values.
+//' @param tol Convergence is declared when the penalized log-likelihood increases by less than \code{tol}.
+//' @param tau tau used to split the h-th component.
+//' @param h h used as index for pivoting.
+//' @param k number of EM steps taken in computing the modified EM statisic.
+//' @return  A list with items:
+//' \item{penloglikset}{vector of the maximized value of the penalized log-likelihood.}
+//' \item{loglikset}{vector of the maximized value of the log-likelihood.}
+//' \item{notcg}{vector that records whether EM steps converged or not for each initial value.}
+//' \item{post}{n*m by ininits matrix of posterior probabilities for observations.}
+//'
 // [[Rcpp::export]]
 List cppNormalmixPMLE(NumericMatrix bs,
                       NumericVector ys,
@@ -43,6 +68,7 @@ List cppNormalmixPMLE(NumericMatrix bs,
   double oldpenloglik, s0j, diff, minr, w_j, sum_l_j, ssr_j, alphah, tauhat;
   double ll = 0; // force initilization
   double penloglik = 0; // force initialization
+  notcg.zeros();  // initialization
  
   /* Lower and upper bound for mu */
   if (k==1) {  // If k==1, compute upper and lower bounds
