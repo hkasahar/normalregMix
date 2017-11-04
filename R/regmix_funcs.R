@@ -427,7 +427,8 @@ regmixPMLE <- function (y, x, m = 2, z = NULL, vcov.method = c("Hessian", "OPG",
     } else {
       for (i in 1:(q1-1)) {
         for (j in 1:m) {
-          mubeta.name[i+1,j] <- paste("beta", j, i, sep = "")
+          # mubeta.name[i+1,j] <- paste("beta", j, i, sep = "")
+          mubeta.name[i+1,j] <- paste("beta", i, ".", j, sep = "")
         }
       }
     }
