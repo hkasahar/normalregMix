@@ -236,7 +236,7 @@ normalmixVcov <- function(y, coefficients, z = NULL, vcov.method = c("Hessian", 
 #' @param epsilon.short convergence criterion in short EM. Convergence is declared when the penalized log-likelihood increases by less than \code{epsilon.short}.
 #' @param maxit.short maximum number of iterations in short EM.
 #' @param binit initial value of parameter vector that is included as a candidate parameter vector.
-#' @return  A list of class \code{normalMix} with items:
+#' @return  A list of class \code{normalregMix} with items:
 #' \item{coefficients}{vector of parameter estimates. Ordered as \eqn{\alpha_1,\ldots,\alpha_m,\mu_1,\ldots,\mu_m,\sigma_1,\ldots,\sigma_m,gam}.}
 #' \item{parlist}{parameter estimates as a list containing alpha, mu, and sigma (and gam if z is included in the model).}
 #' \item{vcov}{estimated variance-covariance matrix.}
@@ -405,7 +405,7 @@ normalmixPMLE <- function (y, x = NULL, m = 2, z = NULL, vcov.method = c("Hessia
 #' @param y n by 1 vector of data.
 #' @param parlist parameter estimates as a list containing alpha, mu, sigma, and gamma
 #' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m),
-#' sigma = (sigma_1, ..., sigma_m), gam = (gamma_1, ..., gamma_m)).
+#' sigma = (sigma_1, ..., sigma_m), gam).
 #' @param z n by p matrix of regressor associated with gamma.
 #' @param an tuning parameter used in the penalty function.
 #' @param tauset set of initial tau value candidates.
@@ -466,7 +466,7 @@ normalmixMaxPhi <- function (y, parlist, z = NULL, an, tauset = c(0.1,0.3,0.5),
 #' @param y n by 1 vector of data.
 #' @param parlist parameter estimates as a list containing alpha, mu, sigma, and gamma
 #' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m),
-#' sigma = (sigma_1, ..., sigma_m), gam = (gamma_1, ..., gamma_m)).
+#' sigma = (sigma_1, ..., sigma_m), gam).
 #' @param z n by p matrix of regressor associated with gamma.
 #' @param p dimension of z.
 #' @param an tuning parameter used in the penalty function.
@@ -581,8 +581,7 @@ normalmixMaxPhiStep <- function (htaupair, y, parlist, z = NULL, p,
 #' @param y n by 1 vector of data.
 #' @param parlist parameter estimates as a list containing alpha, mu, sigma,
 #' and gamma in the form of (alpha = (alpha_1, ..., alpha_m),
-#' mu = (mu_1, ..., mu_m), sigma = (sigma_1, ..., sigma_m),
-#' gam = (gamma_1, ..., gamma_m)).
+#' mu = (mu_1, ..., mu_m), sigma = (sigma_1, ..., sigma_m), gam).
 #' @param z n by p matrix of regressor associated with gamma.
 #' @param h h used as index for pivoting.
 #' @param tau tau used to split the h-th component.
@@ -591,7 +590,7 @@ normalmixMaxPhiStep <- function (htaupair, y, parlist, z = NULL, p,
 #' \item{alpha}{m+1 by ninits matrix for alpha.}
 #' \item{mu}{m+1 by ninits matrix for mu.}
 #' \item{sigma}{m+1 by ninits matrix for sigma.}
-#' \item{gam}{m+1 by ninits matrix for gamma.}
+#' \item{gam}{p by ninits matrix for gamma.}
 normalmixPhiInit <- function (y, parlist, z = NULL, h, tau, ninits = 1)
 {
   if (normalregMixtest.env$normalregMix.test.on) # initial values controlled by normalregMix.test.on
@@ -649,7 +648,7 @@ normalmixPhiInit <- function (y, parlist, z = NULL, h, tau, ninits = 1)
 #' \item{alpha}{m by ninits matrix for alpha.}
 #' \item{mu}{m by ninits matrix for mu.}
 #' \item{sigma}{m by ninits matrix for sigma.}
-#' \item{gam}{m by ninits matrix for gam.}
+#' \item{gam}{p by ninits matrix for gam.}
 normalmixPMLEinit <- function (y, z = NULL, ninits = 1, m = 2)
 {
   if (normalregMixtest.env$normalregMix.test.on) # initial values controlled by normalregMix.test.on

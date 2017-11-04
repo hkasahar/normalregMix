@@ -2,20 +2,20 @@
 #' @export
 #' @title regmixCrit
 #' @name regmixCrit
-#' @param y n by 1 vector of data for y
-#' @param x n by q matrix of data for x
-#' @param parlist The parameter estimates as a list containing alpha, mu, sigma, and gamma
-#' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m),
-#' sigma = (sigma_1, ..., sigma_m), gam = (gamma_1, ..., gamma_m))
-#' @param z n by p matrix of regressor associated with gamma
-#' @param values 3 by 1 Vector of length 3 (k = 1, 2, 3) at which the p-values are computed
+#' @param y n by 1 vector of data for y.
+#' @param x n by q matrix of data for x.
+#' @param parlist parameter estimates as a list containing alpha, mubeta, sigma, and gamma
+#' in the form of (alpha = (alpha_1, ..., alpha_m), mubeta = (mubeta_1', ..., mubeta_m'),
+#' sigma = (sigma_1, ..., sigma_m), gam).
+#' @param z n by p matrix of regressor associated with gamma.
+#' @param values vector of the values of the MEM statistic at which the p-values are computed.
 #' @param parallel Determines what percentage of available cores are used, represented by a double in [0,1]. Default is 1.
-#' @param cl Cluster used for parallelization; if it is \code{NULL}, the system will automatically
-#' @param nrep number of replications used to compute p-values
-#' @param ninits.crit The number of initial guesses to form critical values 
+#' @param cl cluster used for parallelization; if it is \code{NULL}, the system will automatically generate a cluster.
+#' @param nrep number of replications used to compute p-values.
+#' @param ninits.crit number of initial guesses to form critical values.
 #' @return A list with the following items:
-#' \item{crit}{vector of critical values at the 0.1, 0.05, 0.01 level}
-#' \item{pvals}{A vector of p-values at k = 1, 2, 3}
+#' \item{crit}{vector of critical values at the 0.1, 0.05, 0.01 level.}
+#' \item{pvals}{vector of p-values corresponding to \code{values}.}
 regmixCrit <- function(y, x, parlist, z = NULL, values = NULL, parallel = 1,
                        cl = NULL, nrep = 1000, ninits.crit = 25)
 {
@@ -122,7 +122,12 @@ regmixCrit <- function(y, x, parlist, z = NULL, values = NULL, parallel = 1,
   # generate u ~ N(0,I_eta_lam)
   set.seed(123456)
   e <- eigen(I_eta_lam, symmetric=TRUE)  # eigenvalue decomposition is slower than chol but more stable
-  u <- t(e$vec %*% (t(e$vec) * sqrt(e$val)) %*% matrix(rnorm(nrep*n_lam*m), nrow=n_lam*m))
+  if (all(e$values>0)) {
+    u <- t(e$vec %*% (t(e$vec) * sqrt(e$val)) %*% matrix(rnorm(nrep*n_lam*m), nrow=n_lam*m))
+  } else {
+  stop("The critical value cannot be computed due to singularity of some matrices.
+         Please try a bootstrap version, regmixCritBoot and regmixMEMtestBoot.")
+  }
 
   q_1 <- 1+q
   q_2 <- 1+q+q*(q+1)/2
@@ -189,20 +194,20 @@ regmixCrit <- function(y, x, parlist, z = NULL, values = NULL, parallel = 1,
 #' @export
 #' @title regmixCritBoot
 #' @name regmixCritBoot
-#' @param y n by 1 vector of data for y
-#' @param x n by q vector of data for x
-#' @param parlist The parameter estimates as a list containing alpha, mu, sigma, and gamma
-#' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m),
-#' sigma = (sigma_1, ..., sigma_m), gam = (gamma_1, ..., gamma_m))
-#' @param z n by p matrix of regressor associated with gamma
-#' @param values 3 by 1 Vector of length 3 (k = 1, 2, 3) at which the p-values are computed
-#' @param ninits number of initial candidates to be generated
-#' @param nbtsp number of bootstrap observations; by default, it is set to be 199
-#' @param parallel Determines what percentage of available cores are used, represented by a double in [0,1]. 0.75 is default.
-#' @param cl Cluster used for parallelization (optional)
+#' @param y n by 1 vector of data for y.
+#' @param x n by q vector of data for x.
+#' @param parlist parameter estimates as a list containing alpha, mubeta, sigma, and gamma
+#' in the form of (alpha = (alpha_1, ..., alpha_m), mubeta = (mubeta_1', ..., mubeta_m'),
+#' sigma = (sigma_1, ..., sigma_m), gam).
+#' @param z n by p matrix of regressor associated with gamma.
+#' @param values vector of length 3 (k = 1, 2, 3) at which the p-values are computed.
+#' @param ninits number of candidates of the initial value of the EM algorithm.
+#' @param nbtsp number of bootstrap replicates. Default is 199.
+#' @param parallel Determines what percentage of available cores are used, represented by a double in [0,1]. Default is 1.
+#' @param cl cluster used for parallelization; if it is \code{NULL}, the system will automatically generate a cluster.
 #' @return A list with the following items:
-#' \item{crit}{3 by 3 matrix of (0.1, 0.05, 0.01 critical values), jth row corresponding to k=j}
-#' \item{pvals}{vector of p-values at k = 1, 2, 3}
+#' \item{crit}{3 by 3 matrix of (0.1, 0.05, 0.01 critical values). jth row corresponding to k=j.}
+#' \item{pvals}{vector of p-values at k = 1, 2, 3 corresponding to \code{values}.}
 regmixCritBoot <- function (y, x, parlist, z = NULL, values = NULL, ninits = 100,
                             nbtsp = 199, parallel = 0.75, cl = NULL) {
   if (normalregMixtest.env$normalregMix.test.on) # initial values controlled by normalregMix.test.on

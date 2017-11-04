@@ -166,11 +166,11 @@ normalmixMEMtestSeq <- function (y, x = NULL, z = NULL,  maxm = 3, ninits = 10, 
 #' @param tauset set of initial tau value candidates.
 #' @param an tuning parameter used in the penalty function.
 #' @param ninits number of randomly drawn initial values.
-#' @param crit.method method used to compute the variance-covariance matrix, one of \code{"none"},
+#' @param crit.method method used to compute the critical values, one of \code{"none"},
 #' \code{"asy"}, and \code{"boot"}. The default option is \code{"asy"}. When \code{method = "asy"},
-#' the p-values are computed using the asymptotic critical values When \code{method = "boot"},
+#' the p-values are computed using the asymptotic critical values. When \code{method = "boot"},
 #' the p-values are computed by bootstrap.
-#' @param nbtsp number of bootstrap observations. Default value is 199.
+#' @param nbtsp number of bootstrap replicates. Default value is 199.
 #' @param cl cluster used for parallelization; if \code{NULL}, the system will automatically
 #' create a new one for computation accordingly.
 #' @param parallel Determines the percentage of available cores used, represented by a double in [0,1]. Default is 1.

@@ -5,7 +5,7 @@
 #' @param y n by 1 vector of data.
 #' @param parlist parameter estimates as a list containing alpha, mu, sigma, and gamma
 #' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m),
-#' sigma = (sigma_1, ..., sigma_m), gam = (gamma_1, ..., gamma_m)).
+#' sigma = (sigma_1, ..., sigma_m), gam).
 #' @param z n by p matrix of regressor associated with gamma.
 #' @param values vector of the values of the modified EM statistic at which the p-values are computed.
 #' @param nrep number of replications used to compute p-values.
@@ -116,16 +116,16 @@ normalmixCrit <- function(y, parlist, z = NULL, values = NULL, nrep = 10000)
 #' @param y n by 1 vector of data.
 #' @param parlist parameter estimates as a list containing alpha, mu, sigma, and gamma
 #' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m),
-#' sigma = (sigma_1, ..., sigma_m), gam = (gamma_1, ..., gamma_m)).
+#' sigma = (sigma_1, ..., sigma_m), gam).
 #' @param z n by p matrix of regressor associated with gamma.
 #' @param values vector of length 3 (k = 1, 2, 3) at which the p-values are computed.
 #' @param ninits number of candidates of the initial value of the EM algorithm.
 #' @param nbtsp number of bootstrap replicates. Default is 199.
 #' @param parallel Determines what percentage of available cores are used, represented by a double in [0,1]. Default is 1.
-#' @param cl cluster used for parallelization (optional).
+#' @param cl cluster used for parallelization; if it is \code{NULL}, the system will automatically generate a cluster.
 #' @param an tuning parameter used in the penalty function.
 #' @return A list with the following items:
-#' \item{crit}{3 by 3 matrix of critival values at the (0.1, 0.05, 0.01) level, jth row corresponding to k=j.}
+#' \item{crit}{3 by 3 matrix of critival values at the (0.1, 0.05, 0.01) level. jth row corresponding to k=j.}
 #' \item{pvals}{vector of p-values at k = 1, 2, 3 corresponding to \code{values}.}
 normalmixCritBoot <- function (y, parlist, z = NULL, values = NULL, ninits = 10,
                                nbtsp = 199, parallel = 1, cl = NULL, an = NULL) {
