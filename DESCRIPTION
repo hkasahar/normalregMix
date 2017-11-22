@@ -7,13 +7,9 @@ Author: Hiroyuki Kasahara, Katsumi Shimotsu, and Chiyoung Ahn
 Maintainer: Hiroyuki Kasahara <hkasahar@mail.ubc.ca>
 Depends:
     R (>= 2.14.0),
-    minpack.lm,
-    foreach,
-    doParallel,
-    iterators,
-    ggplot2
+    minpack.lm
 Description: normalregMix provides tools for analyzing normal mixture models and Gaussian regression mixture models.
 License: GPL (>= 2)
 Imports: Rcpp (>= 0.11.1), RcppArmadillo (>= 0.4.200.0)
 LinkingTo: Rcpp, RcppArmadillo
-RoxygenNote: 5.0.1
+RoxygenNote: 6.0.1
