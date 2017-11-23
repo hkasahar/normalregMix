@@ -11,7 +11,7 @@ const double SINGULAR_EPS = 10e-10; // criteria for matrix singularity
 //' @export
 //' @title cppRegmixPMLE
 //' @name cppRegmixPMLE
-//' @param bs (m-1) + (q+1)m + p by ninits matrix of initial values of (alpha,mu,beta,sigma,gamma).
+//' @param bs (m-1) + (q+2)m + p by ninits matrix of initial values of (alpha,mu,beta,sigma,gamma).
 //' @param ys n by 1 vector of data for y.
 //' @param xs x n by q matrix of data for x.
 //' @param zs n by p matrix of regressor associated with gamma.
