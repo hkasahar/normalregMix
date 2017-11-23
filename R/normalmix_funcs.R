@@ -679,8 +679,9 @@ normalmixPMLEinit <- function (y, z = NULL, ninits = 1, m = 2)
 #' @name rnormregmix
 #' @param n number of observations.
 #' @param alpha m by 1 vector that represents proportions of components.
-#' @param mubeta k by m matrix that represents (mu times k regression
-#'  coefficients) on x for m components.
+#' @param mubeta k by m matrix. The first row represents the intercept (mu)
+#'  for m components, and the second to k-th rows represent the
+#'  coefficients on x for m components.
 #' @param sigma m by 1 vector that represents sd of components.
 #' @param x n by k-1 matrix that does NOT include a constant.
 #' @return n by 1 vector that is formed by regressor x.
