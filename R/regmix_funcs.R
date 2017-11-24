@@ -469,7 +469,7 @@ regmixPMLE <- function (y, x, m = 2, z = NULL, vcov.method = c("Hessian", "OPG",
 #' @param m number of components in the mixture.
 #' @return A list with the following items:
 #' \item{alpha}{m by ninits matrix for alpha.}
-#' \item{mubeta}{q+1 by m by ninits array for mu and beta.}
+#' \item{mubeta}{(q+1 times m) by ninits matrix for mu and beta.}
 #' \item{sigma}{m by ninits matrix for sigma.}
 #' \item{gam}{m by ninits matrix for gam.}
 regmixPMLEinit <- function (y, x, z = NULL, ninits = 1, m = 2)
