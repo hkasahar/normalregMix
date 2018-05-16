@@ -18,6 +18,7 @@ const double SINGULAR_EPS = 10e-10; // criteria for matrix singularity
 //' @param m number of components in the mixture.
 //' @param p dimension of the regressor associated with gamma.
 //' @param an tuning parameter.
+//' @param cn tuning parameter.
 //' @param maxit maximum number of iterations.
 //' @param ninits number of initial values.
 //' @param tol Convergence is declared when the penalized log-likelihood increases by less than \code{tol}.
@@ -39,6 +40,7 @@ List cppNormalmixPMLE(NumericMatrix bs,
                       int m,
                       int p,
                       double an,
+                      double cn,
                       int maxit = 2000,
                       int ninits = 10,
                       double tol = 1e-8,
@@ -69,7 +71,7 @@ List cppNormalmixPMLE(NumericMatrix bs,
   double ll = 0; // force initilization
   double penloglik = 0; // force initialization
   notcg.zeros();  // initialization
- 
+
   /* Lower and upper bound for mu */
   if (k==1) {  // If k==1, compute upper and lower bounds
     mu0(0) = R_NegInf;
@@ -129,7 +131,7 @@ List cppNormalmixPMLE(NumericMatrix bs,
       } /* end for (i=0; i<n; i++) loop */
 
       /* Compute the penalized loglik. Note that penalized loglik uses old (not updated) sigma */
-      penloglik = ll + log(2.0) + fmin(log(tau),log(1-tau));
+      penloglik = ll + cn*log(2.0) + cn*fmin(log(tau),log(1-tau));
       for (int j=0; j<m; j++) {
         s0j = sigma0(j)/sigma(j);
         penloglik += -an*(s0j*s0j - 2.0*log(s0j) -1.0);
@@ -168,9 +170,9 @@ List cppNormalmixPMLE(NumericMatrix bs,
         alphah = (alpha(h-1)+alpha(h));
         tauhat = alpha(h-1)/(alpha(h-1)+alpha(h));
         if(tauhat <= 0.5) {
-            tau = fmin((alpha(h-1)*n + 1.0)/(alpha(h-1)*n + alpha(h)*n + 1.0), 0.5);
+            tau = fmin((alpha(h-1)*n + cn)/(alpha(h-1)*n + alpha(h)*n + cn), 0.5);
         } else {
-            tau = fmax(alpha(h-1)*n /(alpha(h-1)*n + alpha(h)*n + 1.0), 0.5);
+            tau = fmax(alpha(h-1)*n /(alpha(h-1)*n + alpha(h)*n + cn), 0.5);
         }
         alpha(h-1) = alphah*tau;
         alpha(h) = alphah*(1-tau);
