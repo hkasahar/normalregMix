@@ -235,7 +235,7 @@ List cppNormalmixPMLE(NumericMatrix bs,
   return Rcpp::List::create(Named("penloglikset") = wrap(penloglikset),
                             Named("loglikset") = wrap(loglikset),
                             Named("notcg") = wrap(notcg),
-                              Named("post") = wrap(post)
+                            Named("post") = wrap(post)
   );
 }
 
