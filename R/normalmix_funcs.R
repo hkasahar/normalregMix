@@ -253,9 +253,9 @@ normalmixVcov <- function(y, coefficients, z = NULL, vcov.method = c("Hessian", 
 #' (Chen et al., 2008) 
 #' using the EM algorithm with combining short and long runs of EM steps as in Biernacki et al. (2003).
 #' \code{normalmixPMLE} first runs the EM algorithm from \code{ninits}\eqn{* 4m(1 + p)} initial values
-#' with the convertence criterion \code{epsilon.short} and \code{maxit.short}.
+#' with the convergence criterion \code{epsilon.short} and \code{maxit.short}.
 #' Then, \code{normalmixPMLE} uses \code{ninits} best initial values to run the EM algorithm
-#' with the convertence criterion \code{epsilon} and \code{maxit}.
+#' with the convergence criterion \code{epsilon} and \code{maxit}.
 #' @references     Biernacki, C., Celeux, G. and Govaert, G. (2003)
 #' Choosing Starting Values for the EM Algorithm for Getting the
 #' Highest Likelihood in Multivariate Gaussian Mixture Models,
