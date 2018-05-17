@@ -1,10 +1,9 @@
-#' @description  Sequentially performs the modified EM test given the data for y and x 
+#' @description  Sequentially performs the modified EM test given the data for y 
 #' on the null hypothesis \eqn{H_0: m = m_0} where \eqn{m_0} is in (1, 2, ..., maxm)
 #' @export
 #' @title normalmixMEMtestSeq
 #' @name normalmixMEMtestSeq
 #' @param y n by 1 vector of data for y.
-#' @param x n by q matrix of data for x (if exists).
 #' @param z n by p matrix of regressor associated with gamma.
 #' @param maxm maximum number of components in the mixture set as the null hypothesis.
 #' @param ninits number of randomly drawn initial values.
@@ -33,7 +32,7 @@
 #' data(faithful)
 #' attach(faithful)
 #' normalmixMEMtestSeq(y = eruptions, parallel = 0)
-normalmixMEMtestSeq <- function (y, x = NULL, z = NULL,  maxm = 3, ninits = 10, maxit = 2000,
+normalmixMEMtestSeq <- function (y, z = NULL, maxm = 3, ninits = 10, maxit = 2000,
                                  nbtsp = 199, parallel = 1, cl = NULL,
                                  crit.bootstrap.from = 3, significance.level = 0.05) {
   # Compute the modified EM test statistic for testing H_0 of m components
@@ -41,10 +40,6 @@ normalmixMEMtestSeq <- function (y, x = NULL, z = NULL,  maxm = 3, ninits = 10, 
 
   if (significance.level >= 1 || significance.level < 0)
     stop ("significance level is not valid.")
-  if (!is.null(x))
-    return (regmixMEMtestSeq(y = y, x = x, z = z, maxm = maxm, ninits = ninits, maxit = maxit,
-                             nbtsp = nbtsp, parallel = parallel, cl = cl,
-                             crit.bootstrap.from = crit.bootstrap.from))
   
   y   <- as.vector(y)
   n   <- length(y)
@@ -133,7 +128,6 @@ normalmixMEMtestSeq <- function (y, x = NULL, z = NULL,  maxm = 3, ninits = 10, 
       bic[(m+1)]  <- pmle.result1$bic
     }
 
-    
   }
 
   for (m in 1:maxm)
@@ -155,12 +149,11 @@ normalmixMEMtestSeq <- function (y, x = NULL, z = NULL,  maxm = 3, ninits = 10, 
   a
 }  # end normalmixMEMtestSeq
 
-#' Performs the modified EM test given the data for y and x on the null hypothesis \eqn{H_0: m = m_0}.
+#' Performs the modified EM test given the data for y on the null hypothesis \eqn{H_0: m = m_0}.
 #' @export
 #' @title normalmixMEMtest
 #' @name normalmixMEMtest
 #' @param y n by 1 vector of data.
-#' @param x n by q matrix of data for x (if exists).
 #' @param m number of components in the mixture defined by the null hypothesis, \eqn{m_0}.
 #' @param z n by p matrix of regressor associated with gamma.
 #' @param tauset set of initial tau value candidates.
@@ -188,17 +181,11 @@ normalmixMEMtestSeq <- function (y, x = NULL, z = NULL,  maxm = 3, ninits = 10, 
 #' attach(faithful)
 #' normalmixMEMtest(y = eruptions, m = 1, crit.method = "asy", parallel = 0)
 #' normalmixMEMtest(y = eruptions, m = 2, crit.method = "asy", parallel = 0)
-normalmixMEMtest <- function (y, x = NULL, m = 2, z = NULL, an = NULL, tauset = c(0.1,0.3,0.5),
-                              ninits = 10,
+normalmixMEMtest <- function (y, m = 2, z = NULL, an = NULL, ninits = 10,
                               crit.method = c("asy", "boot", "none"), nbtsp = 199,
-                              cl = NULL,
-                              parallel = 1) {
+                              cl = NULL, parallel = 1) {
   # Compute the modified EM test statistic for testing H_0 of m components
   # against H_1 of m+1 components for a univariate finite mixture of normals
-  if (!is.null(x))
-    return (regmixMEMtest(y = y, x = x, m = m, z = z, tauset = tauset, an = an,
-                          ninits = ninits, crit.method = crit.method, nbtsp = nbtsp,
-                          cl = cl, parallel = parallel))
   y     <- as.vector(y)
   n     <- length(y)
   if (!is.null(z)) {z <- as.matrix(z)}
