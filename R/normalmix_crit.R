@@ -8,7 +8,7 @@
 #' sigma = (sigma_1, ..., sigma_m), gam).
 #' @param z n by p matrix of regressor associated with gamma.
 #' @param values vector of the values of the modified EM statistic at which the p-values are computed.
-#' @param nrep number of replications used to compute p-values.
+#' @param nrep number of replications used to compute critical values.
 #' @return A list with the following items:
 #' \item{crit}{vector of critical values at the (0.1, 0.05, 0.01) level.}
 #' \item{pvals}{vector of p-values corresponding to \code{values}.}
@@ -128,7 +128,7 @@ normalmixCrit <- function(y, parlist, z = NULL, values = NULL, nrep = 10000)
 #' \item{crit}{3 by 3 matrix of critival values at the (0.1, 0.05, 0.01) level. jth row corresponding to k=j.}
 #' \item{pvals}{vector of p-values at k = 1, 2, 3 corresponding to \code{values}.}
 normalmixCritBoot <- function (y, parlist, z = NULL, values = NULL, ninits = 10,
-                               nbtsp = 199, parallel = 1, cl = NULL, an = NULL) {
+                               nbtsp = 199, parallel = 1, cl = NULL, an = NULL, cn = cn) {
   if (normalregMixtest.env$normalregMix.test.on) # initial values controlled by normalregMix.test.on
     set.seed(normalregMixtest.env$normalregMix.test.seed)
 
@@ -161,7 +161,7 @@ normalmixCritBoot <- function (y, parlist, z = NULL, values = NULL, ninits = 10,
       newcluster <- TRUE
     }
     out <- parCapply(cl, ybset, normalmixMEMtest, m = m, parallel = 0, 
-                        z = z, an = an, ninits = ninits, crit.method = "none")
+                        z = z, an = an, cn = cn, ninits = ninits, crit.method = "none")
     if (newcluster) {
       on.exit(stopCluster(cl))
     } else {
@@ -169,7 +169,7 @@ normalmixCritBoot <- function (y, parlist, z = NULL, values = NULL, ninits = 10,
     }
   }
   else
-    out <- apply(ybset, 2, normalmixMEMtest, m = m, z = z, an = an, ninits = ninits,
+    out <- apply(ybset, 2, normalmixMEMtest, m = m, z = z, an = an, cn = cn, ninits = ninits,
                   crit.method = "none", parallel = 0)
 
   emstat.b <- sapply(out, "[[", "emstat")  # 3 by nbstp matrix
