@@ -99,7 +99,8 @@ normalmixMEMtestSeq <- function (y, z = NULL, maxm = 3, ninits = 10, maxit = 200
       cat(sprintf("Testing the null hypothesis of %d components\n", m))
 
       an    <- anFormula(parlist = parlist, m = m, n = n)
-      par1  <- normalmixMaxPhi(y = y, parlist = parlist, z = z, an = an,
+      cn <- min(m,4)
+      par1  <- normalmixMaxPhi(y = y, parlist = parlist, z = z, an = an, cn = cn,
                                ninits = ninits, maxit = maxit)
       emstat.m  <- 2*(par1$penloglik - loglik0)
 
@@ -156,13 +157,12 @@ normalmixMEMtestSeq <- function (y, z = NULL, maxm = 3, ninits = 10, maxit = 200
 #' @param y n by 1 vector of data.
 #' @param m number of components in the mixture defined by the null hypothesis, \eqn{m_0}.
 #' @param z n by p matrix of regressor associated with gamma.
-#' @param tauset set of initial tau value candidates.
-#' @param an tuning parameter used in the penalty function.
+#' @param an tuning parameter used in the penalty function on sigma.
 #' @param ninits number of randomly drawn initial values.
 #' @param crit.method method used to compute the critical values, one of \code{"none"},
-#' \code{"asy"}, and \code{"boot"}. The default option is \code{"asy"}. When \code{method = "asy"},
-#' the p-values are computed using the asymptotic critical values. When \code{method = "boot"},
-#' the p-values are computed by bootstrap.
+#' \code{"asy"}, and \code{"boot"}. The default option is \code{"asy"}. When \code{method = "asy"}
+#' and \eqn{m_0 \le 3}, the p-values are computed using the asymptotic critical values.
+#' When \code{method = "boot"} or \eqn{m_0 \ge 4}, the p-values are computed by bootstrap.
 #' @param nbtsp number of bootstrap replicates. Default value is 199.
 #' @param cl cluster used for parallelization; if \code{NULL}, the system will automatically
 #' create a new one for computation accordingly.
@@ -196,20 +196,23 @@ normalmixMEMtest <- function (y, m = 2, z = NULL, an = NULL, ninits = 10,
 
   if (is.null(an)){ an <- anFormula(parlist = pmle.result$parlist, m = m, n = n) }
 
+  cn <- min(m,4)
+  ninits.maxphi <- floor(ninits/2)
   par1  <- normalmixMaxPhi(y=y, parlist=pmle.result$parlist, z=z,
-                           an=an, tauset = tauset, ninits=ninits)
+                           an=an, cn=cn, ninits=ninits.maxphi)
 
   emstat  <- 2*(par1$penloglik - loglik0)
-
-  if (crit.method == "asy"){
-    result  <- normalmixCrit(y=y, parlist=pmle.result$parlist, z=z, values=emstat)
-  } else if (crit.method == "boot") {
+  
+  if (crit.method == "none") {
+    result <- list()
+    result$crit <- result$pvals <- rep(NA,3)
+  } else if ((crit.method == "asy") && (m <=3)) {
+      result  <- normalmixCrit(y=y, parlist=pmle.result$parlist, z=z, values=emstat)
+  } else {
+    crit.method <- "boot"
     result  <- normalmixCritBoot(y=y, parlist= pmle.result$parlist, z=z, values=emstat,
                                  ninits=ninits, nbtsp=nbtsp, parallel=parallel, cl=cl,
                                  an = an)
-  } else {
-    result <- list()
-    result$crit <- result$pvals <- rep(NA,3)
   }
 
   a <- list(emstat = emstat, pvals = result$pvals, crit = result$crit, crit.method = crit.method,
