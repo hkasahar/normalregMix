@@ -43,7 +43,8 @@ normalmixVcov <- function(y, coefficients, z = NULL, vcov.method = c("Hessian", 
 
   if (m == 1) {
     if (is.null(z)) {
-      I <- n*diag(c(1/sigma^2, 2/sigma^2))  # information matrix
+      I <- n*diag(c(1/sigma^2, 0.5/sigma^4))  # information matrix when
+      # the variance is parameterized as sigma^2
     } else {
       z1 <- cbind(1, z)
       I <- matrix(0, nrow=p+2, ncol=p+2)
@@ -54,7 +55,7 @@ normalmixVcov <- function(y, coefficients, z = NULL, vcov.method = c("Hessian", 
     }
     vcov  <- solve(I)
     # Because the variance is parameterized as sigma^2, we convert it to sigma
-    c.mat.vec <- c(1, (1/sigma^(1/2))/2, rep(1, p))
+    c.mat.vec <- c(1, 0.5/sigma, rep(1, p))
     vcov <- diag(c.mat.vec) %*% vcov %*% diag(c.mat.vec)
 
   } else { # end of if (m == 1)
@@ -64,6 +65,7 @@ normalmixVcov <- function(y, coefficients, z = NULL, vcov.method = c("Hessian", 
     sigma0  <- rep(1, m)  # dummy
     mu0     <- double(m)  # dummy
     an      <- 1/n  # penalty term for variance
+    cn      <- 0   # penalty term for tau
     h       <- 0
     tau     <- 0.5
     k       <- 0
@@ -73,9 +75,9 @@ normalmixVcov <- function(y, coefficients, z = NULL, vcov.method = c("Hessian", 
 
     b <- matrix( rep( coefficients, ninits), ncol = ninits)
     if (is.null(z)) {
-      out.p <- cppNormalmixPMLE(b, y, matrix(0),  mu0, sigma0, m, p, an, maxit, ninits, epsilon, tau, h, k)
+      out.p <- cppNormalmixPMLE(b, y, matrix(0), mu0, sigma0, m, p, an, cn, maxit, ninits, epsilon, tau, h, k)
     } else {
-      out.p <- cppNormalmixPMLE(b, y, z,  mu0, sigma0, m, p, an, maxit, ninits, epsilon, tau, h, k)
+      out.p <- cppNormalmixPMLE(b, y, z,mu0, sigma0, m, p, an, cn, maxit, ninits, epsilon, tau, h, k)
       # Adjust y
       y <- y - z %*% gam
     }
@@ -199,7 +201,7 @@ normalmixVcov <- function(y, coefficients, z = NULL, vcov.method = c("Hessian", 
 
     # Because the variance is parameterized as sigma^2, we convert is to sigma
 
-    c.mat.vec <- c(rep(1, m-1+m), (1/sigma^(1/2))/2, rep(1, p))
+    c.mat.vec <- c(rep(1, m-1+m), 0.5/sigma, rep(1, p))
     vcov <- diag(c.mat.vec) %*% vcov %*% diag(c.mat.vec)
 
     # Add the variance of alpha_m
@@ -223,7 +225,6 @@ normalmixVcov <- function(y, coefficients, z = NULL, vcov.method = c("Hessian", 
 #' @title normalmixPMLE
 #' @name normalmixPMLE
 #' @param y n by 1 vector of data.
-#' @param x n by q matrix of data for x (if exists).
 #' @param m number of components in the mixture.
 #' @param z n by p matrix of regressor associated with gamma.
 #' @param vcov.method method used to compute the variance-covariance matrix, one of \code{"Hessian"} and \code{"OPG"}.
@@ -280,15 +281,10 @@ normalmixVcov <- function(y, coefficients, z = NULL, vcov.method = c("Hessian", 
 #'
 #' out <- normalmixPMLE(y = eruptions, m = 2)
 #' summary(out)
-normalmixPMLE <- function (y, x = NULL, m = 2, z = NULL, vcov.method = c("Hessian", "OPG", "none"),
+normalmixPMLE <- function (y, m = 2, z = NULL, vcov.method = c("Hessian", "OPG", "none"),
                            ninits = 25, epsilon = 1e-08, maxit = 2000,
                            epsilon.short = 1e-02, maxit.short = 500, binit = NULL) {
   y <- as.vector(y)
-  if (!is.null(x))
-    return (regmixPMLE(y = y, x = x, m = m, z = z, vcov.method = vcov.method,
-                       ninits= ninits, epsilon = epsilon, maxit = maxit,
-                       epsilon.short = epsilon.short, maxit.short = maxit.short,
-                       binit = binit))
   n <- length(y)
   p <- 0
   gam <- NULL
@@ -335,6 +331,7 @@ normalmixPMLE <- function (y, x = NULL, m = 2, z = NULL, vcov.method = c("Hessia
     # k       <- 0  # k is set to 0 because this is PMLE
     # tau     <- 0.5  # tau is set to 0.5 because this is PMLE
     an      <- 1/n  # penalty term for variance
+    cn      <- 0   # penalty term for tau
     sigma0  <- rep(sd0, m)
     mu0     <- double(m+1) # dummy
 
@@ -348,12 +345,12 @@ normalmixPMLE <- function (y, x = NULL, m = 2, z = NULL, vcov.method = c("Hessia
     if (!is.null(binit)) {
       b0[ , 1] <- binit
     }
-    out.short <- cppNormalmixPMLE(b0, y, ztilde, mu0, sigma0, m, p, an, maxit.short,
+    out.short <- cppNormalmixPMLE(b0, y, ztilde, mu0, sigma0, m, p, an, cn, maxit.short,
                                 ninits.short, epsilon.short)
     # long EM
     components <- order(out.short$penloglikset, decreasing = TRUE)[1:ninits]
     b1 <- b0[ ,components] # b0 has been updated
-    out <- cppNormalmixPMLE(b1, y, ztilde, mu0, sigma0, m, p, an, maxit, ninits, epsilon)
+    out <- cppNormalmixPMLE(b1, y, ztilde, mu0, sigma0, m, p, an, cn, maxit, ninits, epsilon)
 
     index     <- which.max(out$penloglikset)
     alpha <- b1[1:m,index] # b0 has been updated
@@ -407,7 +404,8 @@ normalmixPMLE <- function (y, x = NULL, m = 2, z = NULL, vcov.method = c("Hessia
 #' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m),
 #' sigma = (sigma_1, ..., sigma_m), gam).
 #' @param z n by p matrix of regressor associated with gamma.
-#' @param an tuning parameter used in the penalty function.
+#' @param an tuning parameter used in the penalty function on sigma.
+#' @param cn tuning parameter used in the penalty function on tau.
 #' @param tauset set of initial tau value candidates.
 #' @param ninits number of randomly drawn initial values.
 #' @param epsilon.short convergence criterion in short EM. Convergence is declared when the penalized log-likelihood increases by less than \code{epsilon.short}.
@@ -418,7 +416,7 @@ normalmixPMLE <- function (y, x = NULL, m = 2, z = NULL, vcov.method = c("Hessia
 #' @return A list with items:
 #' \item{loglik}{Log-likelihood resulting from MEM algorithm at k=1,2,3.}
 #' \item{penloglik}{Penalized log-likelihood resulting from MEM algorithm at k=1,2,3.}
-normalmixMaxPhi <- function (y, parlist, z = NULL, an, tauset = c(0.1,0.3,0.5),
+normalmixMaxPhi <- function (y, parlist, z = NULL, an, cn, tauset = c(0.1,0.3,0.5),
                              ninits = 10, epsilon.short = 1e-02, epsilon = 1e-08,
                              maxit.short = 500, maxit = 2000,
                              verb = FALSE) {
@@ -439,7 +437,7 @@ normalmixMaxPhi <- function (y, parlist, z = NULL, an, tauset = c(0.1,0.3,0.5),
   ninits.short <- ninits*10*(1+p)*m
 
   htau <- t(as.matrix(expand.grid(c(1:m), tauset)))
-  results <- apply(htau,2,normalmixMaxPhiStep, y, parlist, z, p, an,
+  results <- apply(htau,2,normalmixMaxPhiStep, y, parlist, z, p, an, cn,
                    ninits, ninits.short, epsilon.short, epsilon,
                    maxit.short, maxit, verb)
   loglik.all <- t(sapply(results, "[[", "loglik"))
@@ -448,15 +446,15 @@ normalmixMaxPhi <- function (y, parlist, z = NULL, an, tauset = c(0.1,0.3,0.5),
   
 	loglik <- apply(loglik.all, 2, max)  # 3 by 1 vector
   penloglik <- apply(penloglik.all, 2, max)  # 3 by 1 vector
-  index <- which.max(loglik.all[ ,3]) # a par (h,m) that gives the highest likelihood at k=3
+  index <- which.max(loglik.all[ ,3]) # a pair (h,m) that gives the highest likelihood at k=3
   coefficient <- as.vector(coefficient.all[index,])
 
   out <- list(coefficient = coefficient, loglik = loglik, penloglik = penloglik)
 
   out
 
-
 }  # end normalmixMaxPhi
+
 #' @description Given a pair of h and tau and data, compute ordinary &
 #' penalized log-likelihood ratio resulting from MEM algorithm at k=1,2,3, 
 #' tailored for parallelization.
@@ -469,7 +467,8 @@ normalmixMaxPhi <- function (y, parlist, z = NULL, an, tauset = c(0.1,0.3,0.5),
 #' sigma = (sigma_1, ..., sigma_m), gam).
 #' @param z n by p matrix of regressor associated with gamma.
 #' @param p dimension of z.
-#' @param an tuning parameter used in the penalty function.
+#' @param an tuning parameter used in the penalty function on sigma.
+#' @param cn tuning parameter used in the penalty function on tau.
 #' @param ninits number of randomly drawn initial values.
 #' @param ninits.short number of candidates used to generate an initial phi, in short EM.
 #' @param epsilon.short convergence criterion in short EM. Convergence is declared when the penalized log-likelihood increases by less than \code{epsilon.short}.
@@ -478,12 +477,9 @@ normalmixMaxPhi <- function (y, parlist, z = NULL, an, tauset = c(0.1,0.3,0.5),
 #' @param maxit maximum number of iterations.
 #' @param verb Determines whether to print a message if an error occurs.
 #' @return A list of phi, log-likelihood, and penalized log-likelihood resulting from MEM algorithm.
-normalmixMaxPhiStep <- function (htaupair, y, parlist, z = NULL, p,
-                                 an,
-                                 ninits, ninits.short,
-                                 epsilon.short, epsilon,
-                                 maxit.short, maxit,
-                                 verb)
+normalmixMaxPhiStep <- function (htaupair, y, parlist, z = NULL, p, an, cn,
+                                 ninits, ninits.short, epsilon.short, epsilon,
+                                 maxit.short, maxit, verb)
 {
   alpha0 <- parlist$alpha
 
@@ -511,7 +507,7 @@ normalmixMaxPhiStep <- function (htaupair, y, parlist, z = NULL, p,
 
   # short EM
   b0 <- as.matrix(rbind(tmp$alpha, tmp$mu, tmp$sigma, tmp$gam))
-  out.short <- cppNormalmixPMLE(b0, y, ztilde, mu0h, sigma0h, m1, p, an, maxit.short, ninits.short,
+  out.short <- cppNormalmixPMLE(b0, y, ztilde, mu0h, sigma0h, m1, p, an, cn, maxit.short, ninits.short,
                               epsilon.short, tau, h, k)
   components <- order(out.short$penloglikset, decreasing = TRUE)[1:ninits]
   if (verb && any(out.short$notcg)) {
@@ -519,7 +515,7 @@ normalmixMaxPhiStep <- function (htaupair, y, parlist, z = NULL, p,
   }
   # long EM
   b1 <- as.matrix(b0[ ,components])
-  out <- cppNormalmixPMLE(b1, y, ztilde, mu0h, sigma0h, m1, p, an, maxit, ninits, epsilon, tau, h, k)
+  out <- cppNormalmixPMLE(b1, y, ztilde, mu0h, sigma0h, m1, p, an, cn, maxit, ninits, epsilon, tau, h, k)
 
   index     <- which.max(out$penloglikset)
   alpha <- b1[1:m1,index]
@@ -546,7 +542,7 @@ normalmixMaxPhiStep <- function (htaupair, y, parlist, z = NULL, p,
     ninits <- 1
     maxit <- 2
     # Two EM steps
-    out <- cppNormalmixPMLE(b, y, ztilde, mu0h, sigma0h, m1, p, an, maxit, ninits, epsilon, tau, h, k)
+    out <- cppNormalmixPMLE(b, y, ztilde, mu0h, sigma0h, m1, p, an, cn, maxit, ninits, epsilon, tau, h, k)
     alpha <- b[1:m1,1] # b has been updated
     mu <- b[(1+m1):(2*m1),1]
     sigma <- b[(1+2*m1):(3*m1),1]
