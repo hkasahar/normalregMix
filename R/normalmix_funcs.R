@@ -193,7 +193,7 @@ normalmixVcov <- function(y, coefficients, z = NULL, vcov.method = c("Hessian", 
     } # end if (vcov.method == "OPG")
 
     vcov <- try(solve(I))
-    if (class(vcov) == "try-error" || any(diag(vcov) <0) ) {
+    if (any(class(vcov) == "try-error") || any(diag(vcov) <0) ) {
       vcov <- matrix(NaN, nrow = 3*m-1+p, ncol = 3*m-1+p)
       warning("Fisher information matrix is singular and/or the
               variance is estimated to be negative. Consider using vcov.method=\"",other.method,"\".")
