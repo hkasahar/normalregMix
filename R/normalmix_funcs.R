@@ -665,6 +665,19 @@ normalmixPMLEinit <- function (y, z = NULL, ninits = 1, m = 2)
   mu    <- matrix(runif(m * ninits, min = min(y), max = max(y)), nrow=m)
   sigma <- matrix(runif(m * ninits, min = 0.01, max = 2)*sd(y), nrow=m)
 
+  a <- kmeans(y, m)
+  alpha1s <- a$size/n
+  mu1s <- a$centers
+  sigma1s <- sqrt(pmax(a$withinss/a$size, 0.01))
+  
+  mu1sorder <- order(mu1s)
+  alpha1s <- matrix(alpha1s[mu1sorder], nrow=m)
+  mu1s <- matrix(mu1s[mu1sorder], nrow=m)
+  sigma1s <- matrix(sigma1s[mu1sorder], nrow=m)
+  alpha[,1] <- alpha1s
+  mu[,1] <- mu1s
+  sigma[,1] <- sigma1s
+  
   list(alpha = alpha, mu = mu, sigma = sigma, gam = gam)
 
 }  # end function normalmixPMLEinit
