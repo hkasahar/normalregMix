@@ -10,7 +10,7 @@ const double SINGULAR_EPS = 10e-10; // criteria for matrix singularity
 //' @export
 //' @title cppNormalmixPMLE
 //' @name cppNormalmixPMLE
-//' @param bs (m-1) + 2m + p by ninits matrix of initial values of (alpha,mu,sigma,gamma).
+//' @param bs 3m + p by ninits matrix of initial values of (alpha,mu,sigma,gamma).
 //' @param ys n by 1 vector of data.
 //' @param zs n by p matrix of regressor associated with gamma.
 //' @param mu0s m-1 vector of the estimate of mu from an m-1 component model.
@@ -91,30 +91,26 @@ List cppNormalmixPMLE(NumericMatrix bs,
 
     /* initialize EM iteration */
     b_jn = b.col(jn);
-    for (int j=0; j < m; ++j){
-      alpha(j) = b_jn(j);
-      mu(j) = b_jn(m+j);
-      sigma(j) = b_jn(2*m+j);
-    }
+    alpha = b_jn.subvec(0,m-1);
+    mu = b_jn.subvec(m,2*m-1);
+    sigma = b_jn.subvec(2*m,3*m-1);
     if (p>0) {
-      for (int j=0; j < p; j++){
-        gamma(j) = b(3*m+j);
-      }
+      gamma = b_jn.subvec(3*m,3*m+p-1);
     }
     oldpenloglik = R_NegInf;
     diff = 1.0;
     sing = 0;
 
+    if (p==0) {
+      ytilde = y;
+    } else {
+      ytilde = y - z*gamma;
+    }
+    
     /* EM loop begins */
     for (int iter = 0; iter < maxit; iter++) {
       ll = - (double)n * M_LN_SQRT_2PI; /* n/2 times log(2pi) */
       alp_sig = alpha/sigma;
-
-      if (p==0) {
-        ytilde = y;
-      } else {
-        ytilde = y - z*gamma;
-      }
 
       for (int i = 0; i < n; i++) {
         /* standardized squared residual */
@@ -130,7 +126,8 @@ List cppNormalmixPMLE(NumericMatrix bs,
         ll +=  log(sum_l_j) - minr; /* subtract back minr */
       } /* end for (i=0; i<n; i++) loop */
 
-      /* Compute the penalized loglik. Note that penalized loglik uses old (not updated) sigma */
+      /* Compute the penalized loglik. */
+      /* Here, we compute penalized loglik with old (not updated) sigma. */
       penloglik = ll + cn*log(2.0) + cn*fmin(log(tau),log(1-tau));
       for (int j=0; j<m; j++) {
         s0j = sigma0(j)/sigma(j);
@@ -213,20 +210,38 @@ List cppNormalmixPMLE(NumericMatrix bs,
         break;
       }
 
-    }/* EM loop ends */
+    } /* EM loop ends */
+
+    /* Compute loglik and penalized loglik under the updated parameter value */
+    alp_sig = alpha/sigma;
+    ll = - (double)n * M_LN_SQRT_2PI; /* n/2 times log(2pi) */
+    for (int i = 0; i < n; i++) {
+      /* standardized squared residual */
+      r = (1.0/sigma) % (ytilde(i) - mu);
+      r = 0.5 * (r % r); /* This is faster than r = pow( r, 2.0 ) */
+      minr = min(r);
+      /* normalizing with minr avoids the problem of dividing by zero */
+      l_j =  alp_sig % exp( minr-r );
+      sum_l_j = sum( l_j );
+      /* loglikelihood*/
+      ll +=  log(sum_l_j) - minr; /* subtract back minr */
+    } /* end for (i=0; i<n; i++) loop */
+      
+    penloglik = ll + cn*log(2.0) + cn*fmin(log(tau),log(1-tau));
+    for (int j=0; j<m; j++) {
+      s0j = sigma0(j)/sigma(j);
+      penloglik += -an*(s0j*s0j - 2.0*log(s0j) -1.0);
+    }
 
     penloglikset(jn) = penloglik;
     loglikset(jn) = ll;
-    for (int j=0; j < m; j++){
-      b_jn(j) = alpha(j);
-      b_jn(m+j) = mu(j);
-      b_jn(2*m+j) = sigma(j);
-    }
+    b_jn.subvec(0,m-1) = alpha;
+    b_jn.subvec(m,2*m-1) = mu;
+    b_jn.subvec(2*m,3*m-1) = sigma;
     if (p>0) {
-      for (int j=0; j < p; j++){
-        b_jn(3*m+j) = gamma(j);
-      }
+      b_jn.subvec(3*m,3*m+p-1) = gamma;
     }
+    
     b.col(jn) = b_jn; /* b is updated */
     post.col(jn) = vectorise(trans(w));
 
