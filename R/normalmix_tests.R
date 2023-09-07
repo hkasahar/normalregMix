@@ -150,6 +150,7 @@ normalmixMEMtestSeq <- function (y, z = NULL, maxm = 3, ninits = 10, maxit = 200
   a
 }  # end normalmixMEMtestSeq
 
+
 #' Performs the modified EM test given the data for y on the null hypothesis \eqn{H_0: m = m_0}.
 #' @export
 #' @title normalmixMEMtest
@@ -188,38 +189,173 @@ normalmixMEMtest <- function (y, m = 2, z = NULL, an = NULL, ninits = 10,
   # against H_1 of m+1 components for a univariate finite mixture of normals
   y     <- as.vector(y)
   n     <- length(y)
-  if (!is.null(z)) {z <- as.matrix(z)}
+  if (!is.null(z)) {
+    z     <- as.matrix(z)
+    p     <- ncol(z)
+  } else {
+    p <- 0
+  }
+  
   crit.method <- match.arg(crit.method)
-
+  
   pmle.result    <- normalmixPMLE(y=y, m=m, z=z, vcov.method = "none", ninits=ninits)
   loglik0 <- pmle.result$loglik
-
+  
   if (is.null(an)){ an <- anFormula(parlist = pmle.result$parlist, m = m, n = n) }
-
+  
   cn <- min(m,4)
+  tauset <- c(0.1, 0.3, 0.5)
+  htau <- t(as.matrix(expand.grid(c(1:m), tauset)))
+  
   ninits.maxphi <- floor(ninits/2)
-  par1  <- normalmixMaxPhi(y=y, parlist=pmle.result$parlist, z=z,
-                           an=an, cn=cn, ninits=ninits.maxphi)
-
-  emstat  <- 2*(par1$penloglik - loglik0)
+  
+  results <- apply(htau, 2, normalmixMaxPhi, y, parlist=pmle.result$parlist,
+                   z, an, cn, ninits=ninits.maxphi)
+  loglik.all <- t(sapply(results, "[[", "loglik")) # each row = each htau, each col = each k
+  penloglik.all <- t(sapply(results, "[[", "penloglik")) # each row = each htau, each col = each k
+  coefficient.all <- t(sapply(results, "[[", "coefficient")) # each row = each htau, each col = each k
+  
+  loglik <- apply(loglik.all, 2, max)  # 3 by 1 vector corresponding to k=1,2,3
+  penloglik <- apply(penloglik.all, 2, max)  # 3 by 1 vector corresponding to k=1,2,3
+  index <- which.max(loglik.all[ ,3]) # a pair (h,m) that gives the highest likelihood at k=3
+  coefficient <- as.vector(coefficient.all[index,])
+  
+  emstat  <- 2*(penloglik - loglik0)
   
   if (crit.method == "none") {
     result <- list()
     result$crit <- result$pvals <- rep(NA,3)
   } else if ((crit.method == "asy") && (m <=3)) {
-      result  <- normalmixCrit(y=y, parlist=pmle.result$parlist, z=z, values=emstat)
+    result  <- normalmixCrit(y=y, parlist=pmle.result$parlist, z=z, values=emstat)
   } else {
     crit.method <- "boot"
     result  <- normalmixCritBoot(y=y, parlist= pmle.result$parlist, z=z, values=emstat,
                                  ninits=ninits, nbtsp=nbtsp, parallel=parallel, cl=cl,
                                  an = an)
   }
-
+  
   a <- list(emstat = emstat, pvals = result$pvals, crit = result$crit, crit.method = crit.method,
             parlist = pmle.result$parlist, call = match.call(), m = m, label = "MEMtest")
-
+  
   class(a) <- "normalregMix"
-
+  
   a
-
+  
 }  # end normalmixMEMtest
+
+#' @description Given a pair of h and tau and data, compute ordinary &
+#' penalized log-likelihood ratio resulting from MEM algorithm at k=1,2,3, 
+#' tailored for parallelization.
+#' @title normalmixMaxPhi
+#' @name normalmixMaxPhi
+#' @param htaupair set of h and tau.
+#' @param y n by 1 vector of data.
+#' @param parlist parameter estimates as a list containing alpha, mu, sigma, and gamma
+#' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m),
+#' sigma = (sigma_1, ..., sigma_m), gam).
+#' @param z n by p matrix of regressor associated with gamma.
+#' @param an tuning parameter used in the penalty function on sigma.
+#' @param cn tuning parameter used in the penalty function on tau.
+#' @param ninits number of randomly drawn initial values.
+#' @param epsilon.short convergence criterion in short EM. Convergence is declared when the penalized log-likelihood increases by less than \code{epsilon.short}.
+#' @param epsilon convergence criterion. Convergence is declared when the penalized log-likelihood increases by less than \code{epsilon}.
+#' @param maxit.short maximum number of iterations in short EM.
+#' @param maxit maximum number of iterations.
+#' @param verb Determines whether to print a message if an error occurs.
+#' @return A list of phi, log-likelihood, and penalized log-likelihood resulting from MEM algorithm.
+normalmixMaxPhi <- function (htaupair, y, parlist, z = NULL, an, cn,
+                             ninits, epsilon.short = 1e-02, epsilon = 1e-08,
+                             maxit.short = 500, maxit = 2000, verb = FALSE)
+{
+  alpha0 <- parlist$alpha
+  
+  m      <- length(alpha0)
+  m1     <- m+1
+  k      <- 1
+  n      <- length(y)
+  h      <- as.numeric(htaupair[1])
+  tau    <- as.numeric(htaupair[2])
+  
+  mu0    <- parlist$mu
+  mu0h   <- c(-1e+10,mu0,1e+10)        # m+2 by 1
+  sigma0 <- parlist$sigma
+  sigma0h<- c(sigma0[1:h],sigma0[h:m]) # m+1 by 1
+  gam0 <- parlist$gam
+  if (is.null(z)) {
+    ztilde <- matrix(0) # dummy
+    gam <- NULL
+    p <- 0
+  } else {
+    ztilde <- as.matrix(z)
+    p      <- ncol(z)
+  }
+  
+  ninits.short <- ninits*10*(1+p)*m
+  
+  # Generate initial values
+  tmp <- normalmixPhiInit(y = y, parlist = parlist, z = z, h=h, tau = tau, ninits = ninits.short)
+  
+  # short EM
+  b0 <- as.matrix(rbind(tmp$alpha, tmp$mu, tmp$sigma, tmp$gam))
+  out.short <- cppNormalmixPMLE(b0, y, ztilde, mu0h, sigma0h, m1, p, an, cn, maxit.short, ninits.short,
+                                epsilon.short, tau, h, k)
+  components <- order(out.short$penloglikset, decreasing = TRUE)[1:ninits]
+  if (verb && any(out.short$notcg)) {
+    cat(sprintf("non-convergence rate at short-EM = %.3f\n",mean(out.short$notcg)))
+  }
+  # long EM
+  b1 <- as.matrix(b0[ ,components])
+  out <- cppNormalmixPMLE(b1, y, ztilde, mu0h, sigma0h, m1, p, an, cn, maxit, ninits, epsilon, tau, h, k)
+  
+  index     <- which.max(out$penloglikset)
+  alpha <- b1[1:m1,index]
+  mu <- b1[(1+m1):(2*m1),index]
+  sigma <- b1[(1+2*m1):(3*m1),index]
+  if (!is.null(z)) {
+    gam     <- b1[(3*m1+1):(3*m1+p),index]
+  }
+  mu.order  <- order(mu)
+  alpha     <- alpha[mu.order]
+  mu        <- mu[mu.order]
+  sigma     <- sigma[mu.order]
+  sigma0h <- sigma0h[mu.order]
+  b <- as.matrix( c(alpha, mu, sigma, gam) )
+  
+  # initilization for taking two EM steps
+  loglik <-  vector("double", 3)
+  penloglik <-  vector("double", 3)
+  coefficient <- vector("double", length(b))
+  
+  penloglik[1] <- out$penloglikset[[index]]
+  loglik[1]    <- out$loglikset[[index]]
+  for (k in 2:3) {
+    ninits <- 1
+    maxit <- 1  # SHOULD BE 1
+    # Two EM steps
+    out <- cppNormalmixPMLE(b, y, ztilde, mu0h, sigma0h, m1, p, an, cn, maxit, ninits, epsilon, tau, h, k)
+    alpha <- b[1:m1,1] # b has been updated
+    mu <- b[(1+m1):(2*m1),1]
+    sigma <- b[(1+2*m1):(3*m1),1]
+    if (!is.null(z)) {
+      gam     <- b[(3*m1+1):(3*m1+p),1]
+    }
+    loglik[k]     <- out$loglikset[[1]]
+    penloglik[k]  <- out$penloglikset[[1]]
+    
+    # Check singularity: if singular, break from the loop
+    if ( any(sigma < 1e-06) || any(alpha < 1e-06) || is.na(sum(alpha)) ) {
+      loglik[k]    <- -Inf
+      penloglik[k] <- -Inf
+      break
+    }
+    
+    mu.order  <- order(mu)
+    alpha     <- alpha[mu.order]
+    mu        <- mu[mu.order]
+    sigma     <- sigma[mu.order]
+    sigma0h <- sigma0h[mu.order]
+  }
+  coefficient <- as.matrix( c(alpha, mu, sigma, gam) ) # at k=3
+  
+  return (list(coefficient = coefficient, loglik = loglik, penloglik = penloglik))
+}  # end function normalmixMaxPhi
