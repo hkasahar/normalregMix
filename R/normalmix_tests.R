@@ -179,8 +179,8 @@ normalmixMEMtestSeq <- function (y, z = NULL, maxm = 3, ninits = 10, maxit = 200
 #' @examples
 #' data(faithful)
 #' attach(faithful)
-#' normalmixMEMtest(y = eruptions, m = 1, crit.method = "asy", parallel = 0)
-#' normalmixMEMtest(y = eruptions, m = 2, crit.method = "asy", parallel = 0)
+#' normalmixMEMtest(y = waiting, m = 1, crit.method = "asy", parallel = 0)
+#' normalmixMEMtest(y = waiting, m = 2, crit.method = "asy", parallel = 0)
 normalmixMEMtest <- function (y, m = 2, z = NULL, an = NULL, ninits = 10,
                               crit.method = c("asy", "boot", "none"), nbtsp = 199,
                               cl = NULL, parallel = 1) {
