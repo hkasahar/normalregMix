@@ -82,7 +82,12 @@ if (object$label == "PMLE") {
 
   se    <- sqrt(diag(vcov))
   tval  <- coef / se
-  TAB   <- cbind(Estimate = coef, StdErr =se, t.value = tval, p.value = 2*pnorm(-abs(tval)))
+  if (!is.null(vcov)){
+    TAB   <- cbind(Estimate = coef, StdErr =se, t.value = tval, p.value = 2*pnorm(-abs(tval)))
+  } else{
+    dum <- rep(NA,length(coef))
+    TAB   <- cbind(Estimate = coef, StdErr = dum, t.value = dum, p.value = dum)
+  }
   res   <- list(coefficients = TAB, parlist = object$parlist, vcov = vcov,
               loglik = object$loglik, penloglik = object$penloglik,
               aic = object$aic, bic = object$bic, call = object$call,
@@ -123,11 +128,11 @@ if (reorder) {
     # rownames(coef.j) <- c("alpha","mu","sigma")
     printCoefmat(coef.j, P.values = TRUE, has.Pvalue = TRUE, signif.legend = FALSE, digits=x$digits)
   }
-  if (!is.null(x$parlist$gam)) {
-    p <- length(x$parlist$gam)
-    gam <- tab[(nrow(tab)-p+1):nrow(tab), , drop = FALSE]
-    cat("gam\n")
-    printCoefmat(gam, P.values = TRUE, has.Pvalue = TRUE, signif.legend = FALSE, digits=x$digits)
+  if (!is.null(x$parlist$gamma)) {
+    p <- length(x$parlist$gamma)
+    gamma <- tab[(nrow(tab)-p+1):nrow(tab), , drop = FALSE]
+    cat("gamma\n")
+    printCoefmat(gamma, P.values = TRUE, has.Pvalue = TRUE, signif.legend = FALSE, digits=x$digits)
   }
   cat("---\nSignif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1")
 } else {
