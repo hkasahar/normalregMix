@@ -4,8 +4,8 @@
 #' @title normalmixVcov
 #' @name normalmixVcov
 #' @param y n by 1 vector of data.
-#' @param coefficients parameter vector ordered as (alpha_1, ..., alpha_m, mu_1, ..., mu_m, sigma_1, ..., sigma_m, gam).
-#' @param z n by p matrix of regressor associated with gam.
+#' @param coefficients parameter vector ordered as (alpha_1, ..., alpha_m, mu_1, ..., mu_m, sigma_1, ..., sigma_m, gamma).
+#' @param z n by p matrix of regressor associated with gamma.
 #' @param vcov.method method used to compute the variance-covariance matrix,
 #' one of \code{"Hessian"} and \code{"OPG"}. Default is \code{"Hessian"}.
 #' When \code{method = "Hessian"}, the variance-covarince matrix is
@@ -23,13 +23,13 @@ normalmixVcov <- function(y, coefficients, z = NULL, vcov.method = c("Hessian", 
   n <- length(y)
   len <- length(coefficients)
   p <- 0
-  gam  <- NULL
+  gamma  <- NULL
   vcov.method <- match.arg(vcov.method)
 
   if (!is.null(z)) {
     z <- as.matrix(z)
     p <- ncol(z)
-    gam <- coefficients[(len-p+1):len]
+    gamma <- coefficients[(len-p+1):len]
   }
 
   m <- (len-p)/3
@@ -70,19 +70,30 @@ normalmixVcov <- function(y, coefficients, z = NULL, vcov.method = c("Hessian", 
     tau     <- 0.5
     k       <- 0
     epsilon <- 1e-08
-    maxit = 2
+    maxit = 1
     ninits = 1
 
-    b <- matrix( rep( coefficients, ninits), ncol = ninits)
-    if (is.null(z)) {
-      out.p <- cppNormalmixPMLE(b, y, matrix(0), mu0, sigma0, m, p, an, cn, maxit, ninits, epsilon, tau, h, k)
-    } else {
-      out.p <- cppNormalmixPMLE(b, y, z,mu0, sigma0, m, p, an, cn, maxit, ninits, epsilon, tau, h, k)
-      # Adjust y
-      y <- y - z %*% gam
+  # b <- matrix( rep( coefficients, ninits), ncol = ninits)
+  # if (is.null(z)) {
+  #   out.p <- cppNormalmixPMLE(b, y, mu0, sigma0, m, an, cn, maxit, ninits, epsilon, tau, h, k)
+  # } else {
+  # out.p <- cppNormalmixPMLE(b, y, z,mu0, sigma0, m, p, an, cn, maxit, ninits, epsilon, tau, h, k)
+  # # Adjust y
+  # y <- y - z %*% gamma
+  # }
+  # post <- matrix(out.p$post, nrow=n)
+  
+    if (!is.null(z)) {
+      y <- y - z %*% gamma  # Adjust y
     }
-    post <- matrix(out.p$post, nrow=n)
 
+    post <- matrix(0, nrow=n, ncol=m)
+    for (j in 1:m){
+      post[,j] <- alpha[j]*dnorm(y, mean = mu[j], sd = sigma[j])
+    }
+    f <- post %*% rep(1,m)
+    post <- post/(f %*% rep(1,m))
+    
     p1 <- seq(1, (2*m-1), by=2) # sequence of odd numbers, 1,3,...,2*m-1
     p2 <- seq(2, (2*m), by=2)    # sequence of even numbers, 2,4,...,2*m
 
@@ -157,22 +168,22 @@ normalmixVcov <- function(y, coefficients, z = NULL, vcov.method = c("Hessian", 
 
       if (!is.null(z)) {
         dbar  <-  z*rowSums(post*b) # n by p
-        Q.gam.theta <- matrix(0, nrow=p, ncol=2*m)  # p by 2*m matrix
+        Q.gamma.theta <- matrix(0, nrow=p, ncol=2*m)  # p by 2*m matrix
         for (i in 1:m) {
           C.i <- array(C0[, i, 1, ], dim=c(n, 2))  # n by 2
           Q.i.1 <- colSums(tKR(-C.i+b[, i]*c0[, i, ], z*post[, i]))
           Q.i.2 <- colSums(tKR(c0[, i, ]*post[, i], dbar))  # p*2 vector
-          Q.gam.theta[, (2*i-1):(2*i)] <- matrix(Q.i.1-Q.i.2, nrow=p, ncol=2)
+          Q.gamma.theta[, (2*i-1):(2*i)] <- matrix(Q.i.1-Q.i.2, nrow=p, ncol=2)
         }
 
-        Q.gam.theta <- Q.gam.theta[, c(p1, p2),  drop=FALSE]  # p by 2*m
+        Q.gamma.theta <- Q.gamma.theta[, c(p1, p2),  drop=FALSE]  # p by 2*m
         w1 <- (post*b)%*%t(a) - rowSums(post*b)*t(abar)  # n by m-1
-        Q.pi.gam.0 <- colSums(tKR(w1, z))  # (m-1)*p vector
-        Q.pi.gam  <- matrix(Q.pi.gam.0, nrow=m-1, ncol=p)
-        Q.gam     <- - t(z) %*% (z*rowSums(post*B)) -
+        Q.pi.gamma.0 <- colSums(tKR(w1, z))  # (m-1)*p vector
+        Q.pi.gamma  <- matrix(Q.pi.gamma.0, nrow=m-1, ncol=p)
+        Q.gamma     <- - t(z) %*% (z*rowSums(post*B)) -
           matrix(colSums(tKR(dbar, dbar)), nrow=p, ncol=p)
-        I <- cbind(I, -rbind(Q.pi.gam, t(Q.gam.theta)))
-        I <- rbind(I, -cbind(t(Q.pi.gam), Q.gam.theta, Q.gam))
+        I <- cbind(I, -rbind(Q.pi.gamma, t(Q.gamma.theta)))
+        I <- rbind(I, -cbind(t(Q.pi.gamma), Q.gamma.theta, Q.gamma))
       }  # end if (!is.null(z))
 
     } else  { # compute I with (vcov.method == "OPG")
@@ -238,7 +249,7 @@ normalmixVcov <- function(y, coefficients, z = NULL, vcov.method = c("Hessian", 
 #' @param maxit.short maximum number of iterations in short EM.
 #' @param binit initial value of parameter vector that is included as a candidate parameter vector.
 #' @return  A list of class \code{normalregMix} with items:
-#' \item{coefficients}{vector of parameter estimates. Ordered as \eqn{\alpha_1,\ldots,\alpha_m,\mu_1,\ldots,\mu_m,\sigma_1,\ldots,\sigma_m,gam}.}
+#' \item{coefficients}{vector of parameter estimates. Ordered as \eqn{\alpha_1,\ldots,\alpha_m,\mu_1,\ldots,\mu_m,\sigma_1,\ldots,\sigma_m,\gamma}.}
 #' \item{parlist}{parameter estimates as a list containing alpha, mu, and sigma (and gam if z is included in the model).}
 #' \item{vcov}{estimated variance-covariance matrix.}
 #' \item{loglik}{maximized value of the log-likelihood.}
@@ -276,10 +287,10 @@ normalmixVcov <- function(y, coefficients, z = NULL, vcov.method = c("Hessian", 
 #' data(faithful)
 #' attach(faithful)
 #'
-#' normalmixPMLE(y = eruptions, m = 1)
-#' normalmixPMLE(y = eruptions, m = 2)
+#' normalmixPMLE(y = waiting, m = 1)
+#' normalmixPMLE(y = waiting, m = 2)
 #'
-#' out <- normalmixPMLE(y = eruptions, m = 2)
+#' out <- normalmixPMLE(y = waiting, m = 2)
 #' summary(out)
 normalmixPMLE <- function (y, m = 2, z = NULL, vcov.method = c("Hessian", "OPG", "none"),
                            ninits = 25, epsilon = 1e-08, maxit = 2000,
@@ -317,52 +328,104 @@ normalmixPMLE <- function (y, m = 2, z = NULL, vcov.method = c("Hessian", "OPG",
     bic      <- -2*loglik + log(n)*(m-1+2*m+p)
     penloglik <- loglik
 
-    parlist <- list(alpha = 1, mu = mu, sigma = sigma, gam = gam)
-    coefficients <- c(alpha = 1, mu = mu, sigma = sigma, gam = gam)
+    parlist <- list(alpha = 1, mu = mu, sigma = sigma, gamma = gamma)
+    coefficients <- c(alpha = 1, mu = mu, sigma = sigma, gamma = gamma)
     postprobs <- rep(1, n)
 
   } else {  # m >= 2
 
-    # generate initial values
-    tmp <- normalmixPMLEinit(y = y, z = z, ninits = ninits.short, m = m)
-
-    # the following values for (h, k, tau, an) are given by default
-    # h       <- 0  # setting h=0 gives PMLE
-    # k       <- 0  # k is set to 0 because this is PMLE
-    # tau     <- 0.5  # tau is set to 0.5 because this is PMLE
-    an      <- 1/n  # penalty term for variance
-    cn      <- 0   # penalty term for tau
-    sigma0  <- rep(sd0, m)
-    mu0     <- double(m+1) # dummy
-
     if (is.null(z)) {
+      # generate initial values for short EM
+      tmp <- normalmixPMLEinit(y = y, z = z, ninits = ninits.short, m = m)
+
+      # the following values for (h, k, tau, an) are given by default
+      # h       <- 0  # setting h=0 gives PMLE
+      # k       <- 0  # k is set to 0 because this is PMLE
+      # tau     <- 0.5  # tau is set to 0.5 because this is PMLE
+      an      <- 1/n  # penalty term for variance
+      cn      <- 0   # penalty term for tau
+      sigma0  <- rep(sd0, m)
+      mu0     <- double(m+1) # dummy
+
       ztilde <- matrix(0) # dummy
-    } else {
-      ztilde <- z
-    }
-    # short EM
-    b0 <- as.matrix(rbind( tmp$alpha, tmp$mu, tmp$sigma, tmp$gam ))
-    if (!is.null(binit)) {
-      b0[ , 1] <- binit
-    }
-    out.short <- cppNormalmixPMLE(b0, y, ztilde, mu0, sigma0, m, p, an, cn, maxit.short,
+      # short EM
+      b0 <- as.matrix(rbind( tmp$alpha, tmp$mu, tmp$sigma))
+      if (!is.null(binit)) {
+        b0[ , 1] <- binit
+      }
+      out.short <- cppNormalmixPMLE(b0, y, mu0, sigma0, m, an, cn, maxit.short,
                                 ninits.short, epsilon.short)
-    # long EM
-    components <- order(out.short$penloglikset, decreasing = TRUE)[1:ninits]
-    b1 <- b0[ ,components] # b0 has been updated
-    out <- cppNormalmixPMLE(b1, y, ztilde, mu0, sigma0, m, p, an, cn, maxit, ninits, epsilon)
+      # long EM
+      components <- order(out.short$penloglikset, decreasing = TRUE)[1:ninits]
+      b1 <- b0[ ,components] # b0 has been updated
+      out <- cppNormalmixPMLE(b1, y, mu0, sigma0, m, an, cn, maxit, ninits, epsilon)
+    
+      index     <- which.max(out$penloglikset)
+      alpha <- b1[1:m,index] # b0 has been updated
+      mu <- b1[(1+m):(2*m),index]
+      sigma <- b1[(1+2*m):(3*m),index]
+      gamma <- NULL
+      penloglik <- out$penloglikset[index]
+      loglik    <- out$loglikset[index]
+      postprobs <- matrix(out$post[,index], nrow=n)
+    } else {
+      # generate initial values for nlopt/SLSQP
+      ninits.nlopt <- ninits*(1 + p)*m
+      tmp <- normalmixPMLEinit(y = y, z = z, ninits = ninits.nlopt, m = m)
+      an      <- 1/n  # penalty term for variance
+      cn      <- 0   # penalty term for tau
+      sigma0  <- rep(sd0, m)
+      mu0     <- double(m+1) # dummy
+      
+      b0 <- as.matrix(rbind( tmp$alpha, tmp$mu, tmp$sigma, tmp$gam))
+      if (!is.null(binit)) {
+        b0[ , 1] <- binit
+      }
+      out.list <- vector(mode='list', length=ninits)
+      opts <- list("algorithm"="NLOPT_LD_SLSQP", "xtol_rel"=1.0e-8, "maxeval"=1000)
+      lb <- c(rep(0,m), rep(-Inf,m), rep(0,m), rep(-Inf,p))
+      ub <- c(rep(1,m), rep(Inf,m), rep(Inf,m), rep(Inf,p))
+      
+      suppressWarnings({
+        for (jj in 1:ninits.nlopt){
+          if (is.finite(pllnormalmix_z_cpp(b0[,jj], y, z, m, p, an, sigma0)) &&
+              all(is.finite(pllnormalmix_z_grad_cpp(b0[,jj], y, z, m, p, an, sigma0))) ) {
+              # out.list[[jj]] <- nloptr(x0=b0[,jj], eval_f=pllnormalmix_z,
+              out.list[[jj]] <- nloptr(x0=b0[,jj], eval_f=pllnormalmix_z_cpp,
+                                        eval_grad_f=pllnormalmix_z_grad_cpp,
+                                        lb=lb, ub=ub, eval_g_eq = normalmix_heq_cpp,
+                                        eval_jac_g_eq = normalmix_heq_gr_cpp, 
+                                        opts=opts, y=y, z=z, m=m, p=p, an=an, sigma0=sigma0)
+          } else {
+            out.list[[jj]] <- list(objective = Inf)
+          } # enf of if (is.finite...)
+        } # end of for (jj in 1:ninits) loop
+      })
+      
+      penloglikset <- sapply(out.list,"[[", "objective")
+      index <- which.min(penloglikset)
+      out <- out.list[[index]]
+      penloglik <- -out$objective
+      
+      theta <- out$solution
+      alpha  <- theta[1:m]
+      mu     <- theta[(m+1):(2*m)]
+      sigma  <- theta[(2*m+1):(3*m)]
+      gamma  <- matrix(theta[(3*m+1):(3*m+p)], ncol=1)
+      ss <- (sigma0/sigma)^2
+      loglik <- penloglik + an*sum(ss + log(1/ss) -1)
 
-    index     <- which.max(out$penloglikset)
-    alpha <- b1[1:m,index] # b0 has been updated
-    mu <- b1[(1+m):(2*m),index]
-    sigma <- b1[(1+2*m):(3*m),index]
-    if (!is.null(z)) {
-      gam     <- b1[(3*m+1):(3*m+p),index]
+      ytilde <- y - z %*% gamma
+      
+      postprobs <- matrix(0, nrow=n, ncol=m)
+      for (j in 1:m){
+        postprobs[,j] <- alpha[j]*dnorm(ytilde, mean = mu[j], sd = sigma[j])
+      }
+      f <- postprobs %*% rep(1,m)
+      postprobs <- postprobs/(f %*% rep(1,m))
+    
     }
-    penloglik <- out$penloglikset[index]
-    loglik    <- out$loglikset[index]
-    postprobs <- matrix(out$post[,index], nrow=n)
-
+    
     aic     <- -2*loglik + 2*(m-1+2*m+p)
     bic     <- -2*loglik + log(n)*(m-1+2*m+p)
 
@@ -374,7 +437,7 @@ normalmixPMLE <- function (y, m = 2, z = NULL, vcov.method = c("Hessian", "OPG",
     postprobs <- postprobs[, mu.order]
     colnames(postprobs) <- c(paste("comp", ".", 1:m, sep = ""))
 
-    parlist <- list(alpha = alpha, mu = mu, sigma = sigma, gam = gam)
+    parlist <- list(alpha = alpha, mu = mu, sigma = sigma, gamma = gamma)
     coefficients <- unlist(parlist)
 
   } # end m >= 2
@@ -386,8 +449,8 @@ normalmixPMLE <- function (y, m = 2, z = NULL, vcov.method = c("Hessian", "OPG",
   }
 
   a <- list(coefficients = coefficients, parlist = parlist, vcov = vcov, loglik = loglik,
-            penloglik = penloglik, aic = aic, bic = bic, postprobs = postprobs,
-            components = getComponentcomponents(postprobs),
+            penloglik = penloglik, aic = aic, bic = bic, 
+            postprobs = postprobs, components = getComponentcomponents(postprobs),
             call = match.call(), m = m, label = "PMLE")
 
   class(a) <- "normalregMix"
@@ -411,7 +474,7 @@ normalmixPMLE <- function (y, m = 2, z = NULL, vcov.method = c("Hessian", "OPG",
 #' \item{alpha}{m+1 by ninits matrix for alpha.}
 #' \item{mu}{m+1 by ninits matrix for mu.}
 #' \item{sigma}{m+1 by ninits matrix for sigma.}
-#' \item{gam}{p by ninits matrix for gamma.}
+#' \item{gamma}{p by ninits matrix for gamma.}
 normalmixPhiInit <- function (y, parlist, z = NULL, h, tau, ninits = 1)
 {
   if (normalregMixtest.env$normalregMix.test.on) # initial values controlled by normalregMix.test.on
@@ -426,11 +489,11 @@ normalmixPhiInit <- function (y, parlist, z = NULL, h, tau, ninits = 1)
   m       <- length(alpha0)
 
   if (is.null(z))
-    gam <- NULL
+    gamma <- NULL
   else {
-    gam0  <- parlist$gam
-    y    <- y - z %*% gam0
-    gam <- matrix(runif(p*ninits,min=0.5,max=1.5),nrow=p)*gam0
+    gamma0  <- parlist$gamma
+    y    <- y - z %*% gamma0
+    gamma <- matrix(runif(p*ninits,min=0.5,max=1.5),nrow=p)*gamma0
   }
 
   if (m>=2){
@@ -453,7 +516,7 @@ normalmixPhiInit <- function (y, parlist, z = NULL, h, tau, ninits = 1)
   alpha.hyp[h:(h+1)] <- c(alpha.hyp[h]*tau,alpha.hyp[h+1]*(1-tau))
   alpha <- matrix(rep.int(alpha.hyp,ninits),nrow=m+1)
 
-  list(alpha = alpha, mu = mu, sigma = sigma, gam = gam)
+  list(alpha = alpha, mu = mu, sigma = sigma, gamma = gamma)
 
 }  # end function normalmixPhiInit
 
@@ -469,7 +532,7 @@ normalmixPhiInit <- function (y, parlist, z = NULL, h, tau, ninits = 1)
 #' \item{alpha}{m by ninits matrix for alpha.}
 #' \item{mu}{m by ninits matrix for mu.}
 #' \item{sigma}{m by ninits matrix for sigma.}
-#' \item{gam}{p by ninits matrix for gam.}
+#' \item{gamma}{p by ninits matrix for gamma.}
 normalmixPMLEinit <- function (y, z = NULL, ninits = 1, m = 2)
 {
   if (normalregMixtest.env$normalregMix.test.on) # initial values controlled by normalregMix.test.on
@@ -477,11 +540,11 @@ normalmixPMLEinit <- function (y, z = NULL, ninits = 1, m = 2)
   
   n <- length(y)
   p <- ncol(z)
-  gam <- NULL
+  gamma <- NULL
   if (!is.null(z)){
     out     <- lsfit(z,y)
-    gam0  <- out$coef[-1]
-    gam   <- matrix(runif(p*ninits, min=0.5, max=1.5), nrow=p) * gam0
+    gamma0  <- out$coef[-1]
+    gamma   <- matrix(runif(p*ninits, min=0.5, max=1.5), nrow=p) * gamma0
     y       <- out$residuals + out$coef[1]
   }
 
@@ -503,7 +566,7 @@ normalmixPMLEinit <- function (y, z = NULL, ninits = 1, m = 2)
   mu[,1] <- mu1s
   sigma[,1] <- sigma1s
   
-  list(alpha = alpha, mu = mu, sigma = sigma, gam = gam)
+  list(alpha = alpha, mu = mu, sigma = sigma, gamma = gamma)
 
 }  # end function normalmixPMLEinit
 
@@ -602,9 +665,9 @@ omega.ji <- function(phi_i, phi_j) {
 #' @export
 #' @title omega.12
 #' @name omega.12
-#' @param parlist parameter estimates as a list containing alpha, mu, sigma, and gam
+#' @param parlist parameter estimates as a list containing alpha, mu, sigma, and gamma
 #' in the form of (alpha = (alpha_1, ..., alpha_m), mu = (mu_1, ..., mu_m),
-#' sigma = (sigma_1, ..., sigma_m), gam = (gam_1, ..., gam_m)).
+#' sigma = (sigma_1, ..., sigma_m), gamma = (gamma_1, ..., gamma_m)).
 #' @return misclassification rate \eqn{\omega_{12}}.
 #' @references Maitra, R., and Melnykov, V. (2010)
 #' Simulating Data to Study Performance of Finite Mixture Modeling and Model-Based Clustering Algorithms,
