@@ -3,8 +3,6 @@
 // [[Rcpp::depends(RcppArmadillo)]]
 using namespace Rcpp;
 
-const double SINGULAR_EPS = 10e-10; // criteria for matrix singularity
-
 //' @description Updates parameter estimates of a finite mixture of
 //' univariate normals by the EM algorithm.
 //' @export
@@ -12,11 +10,9 @@ const double SINGULAR_EPS = 10e-10; // criteria for matrix singularity
 //' @name cppNormalmixPMLE
 //' @param bs 3m + p by ninits matrix of initial values of (alpha,mu,sigma,gamma).
 //' @param ys n by 1 vector of data.
-//' @param zs n by p matrix of regressor associated with gamma.
 //' @param mu0s m-1 vector of the estimate of mu from an m-1 component model.
 //' @param sigma0s m-1 vector of the estimate of sigma from an m-1 component model.
 //' @param m number of components in the mixture.
-//' @param p dimension of the regressor associated with gamma.
 //' @param an tuning parameter.
 //' @param cn tuning parameter.
 //' @param maxit maximum number of iterations.
@@ -34,11 +30,9 @@ const double SINGULAR_EPS = 10e-10; // criteria for matrix singularity
 // [[Rcpp::export]]
 List cppNormalmixPMLE(NumericMatrix bs,
                       NumericVector ys,
-                      NumericMatrix zs,
                       NumericVector mu0s,
                       NumericVector sigma0s,
                       int m,
-                      int p,
                       double an,
                       double cn,
                       int maxit = 2000,
@@ -50,7 +44,6 @@ List cppNormalmixPMLE(NumericMatrix bs,
   int n = ys.size();
   arma::mat b(bs.begin(), bs.nrow(), bs.ncol(), false);
   arma::vec y(ys.begin(), ys.size(), false);
-  arma::mat z(zs.begin(), zs.nrow(), zs.ncol(), false);
   arma::vec mu0(mu0s.begin(), mu0s.size(), false);
   arma::vec sigma0(sigma0s.begin(), sigma0s.size(), false);
   arma::vec b_jn(bs.nrow());
@@ -60,12 +53,7 @@ List cppNormalmixPMLE(NumericMatrix bs,
   arma::mat w(m,n);
   arma::mat post(m*n,ninits);
   arma::vec notcg(ninits), penloglikset(ninits), loglikset(ninits);
-  arma::vec gamma(p);
-  arma::vec ytilde(n);
   arma::vec wtilde(n);
-  arma::mat ztilde(n,p);
-  arma::mat zz(p,p);
-  arma::mat ze(p,1);
   int sing;
   double oldpenloglik, s0j, diff, minr, w_j, sum_l_j, ssr_j, alphah, tauhat;
   double ll = 0; // force initilization
@@ -94,19 +82,10 @@ List cppNormalmixPMLE(NumericMatrix bs,
     alpha = b_jn.subvec(0,m-1);
     mu = b_jn.subvec(m,2*m-1);
     sigma = b_jn.subvec(2*m,3*m-1);
-    if (p>0) {
-      gamma = b_jn.subvec(3*m,3*m+p-1);
-    }
     oldpenloglik = R_NegInf;
     diff = 1.0;
     sing = 0;
 
-    if (p==0) {
-      ytilde = y;
-    } else {
-      ytilde = y - z*gamma;
-    }
-    
     /* EM loop begins */
     for (int iter = 0; iter < maxit; iter++) {
       ll = - (double)n * M_LN_SQRT_2PI; /* n/2 times log(2pi) */
@@ -114,7 +93,7 @@ List cppNormalmixPMLE(NumericMatrix bs,
 
       for (int i = 0; i < n; i++) {
         /* standardized squared residual */
-        r = (1.0/sigma) % (ytilde(i) - mu);
+        r = (1.0/sigma) % (y(i) - mu);
         r = 0.5 * (r % r); /* This is faster than r = pow( r, 2.0 ) */
         minr = min(r);
         /* posterior for i */
@@ -145,8 +124,8 @@ List cppNormalmixPMLE(NumericMatrix bs,
       for (int j = 0; j < m; j++) {
         w_j = sum( w.row(j) ); /* w_j(j) = sum_i w(i,j) */
         alpha(j) = w_j / n;
-        mu(j) = sum( trans(w.row(j)) % ytilde ) / w_j;
-        ssr_j = sum( trans(w.row(j)) % pow( ytilde - mu(j), 2 ) );
+        mu(j) = sum( trans(w.row(j)) % y ) / w_j;
+        ssr_j = sum( trans(w.row(j)) % pow( y - mu(j), 2 ) );
         sigma(j) = sqrt( (ssr_j + 2.0*an*sigma0(j)*sigma0(j))  / (w_j + 2.0*an) );
         sigma(j) = fmax(sigma(j),0.01*sigma0(j));
         /* If k ==1, impose lower and upper bound */
@@ -175,28 +154,6 @@ List cppNormalmixPMLE(NumericMatrix bs,
         alpha(h) = alphah*(1-tau);
       }
 
-      if (p>0) { /* update gamma */
-        zz.zeros();
-        ze.zeros();
-        for (int j = 0; j < m; j++) {
-          wtilde = trans(w.row(j)) ;
-          for (int ii = 0; ii < p; ii++) {
-            ztilde.col(ii) = wtilde % z.col(ii);
-          }
-          zz = zz + ( trans(ztilde) * z ) / (sigma(j)*sigma(j));
-          ze = ze + ( trans(ztilde) * (y - mu(j)) ) / (sigma(j)*sigma(j));
-        }
-        // sanity check before solving an inverse matrix;
-        // if it is likely singular, leave it as is.
-        if (cond(zz) < SINGULAR_EPS)
-        {
-          sing = 1;
-          break;
-        }
-        else
-          gamma = solve(zz,ze);
-      }
-
       /* Check singularity */
       for (int j=0; j<m; j++) {
         if (alpha(j) < 1e-8 || std::isnan(alpha(j)) || sigma(j) < 1e-8){
@@ -214,10 +171,11 @@ List cppNormalmixPMLE(NumericMatrix bs,
 
     /* Compute loglik and penalized loglik under the updated parameter value */
     alp_sig = alpha/sigma;
+    
     ll = - (double)n * M_LN_SQRT_2PI; /* n/2 times log(2pi) */
     for (int i = 0; i < n; i++) {
       /* standardized squared residual */
-      r = (1.0/sigma) % (ytilde(i) - mu);
+      r = (1.0/sigma) % (y(i) - mu);
       r = 0.5 * (r % r); /* This is faster than r = pow( r, 2.0 ) */
       minr = min(r);
       /* normalizing with minr avoids the problem of dividing by zero */
@@ -233,14 +191,16 @@ List cppNormalmixPMLE(NumericMatrix bs,
       penloglik += -an*(s0j*s0j - 2.0*log(s0j) -1.0);
     }
 
+    if (sing) {
+      ll = R_NegInf;
+      penloglik = R_NegInf;
+    }
+    
     penloglikset(jn) = penloglik;
     loglikset(jn) = ll;
     b_jn.subvec(0,m-1) = alpha;
     b_jn.subvec(m,2*m-1) = mu;
     b_jn.subvec(2*m,3*m-1) = sigma;
-    if (p>0) {
-      b_jn.subvec(3*m,3*m+p-1) = gamma;
-    }
     
     b.col(jn) = b_jn; /* b is updated */
     post.col(jn) = vectorise(trans(w));
@@ -253,4 +213,3 @@ List cppNormalmixPMLE(NumericMatrix bs,
                             Named("post") = wrap(post)
   );
 }
-
