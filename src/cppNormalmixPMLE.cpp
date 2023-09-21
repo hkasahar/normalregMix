@@ -55,7 +55,7 @@ List cppNormalmixPMLE(NumericMatrix bs,
   arma::vec notcg(ninits), penloglikset(ninits), loglikset(ninits);
   arma::vec wtilde(n);
   int sing;
-  double oldpenloglik, s0j, diff, minr, w_j, sum_l_j, ssr_j, alphah, tauhat;
+  double oldpenloglik, s0j, diff, minr, w_j, sum_l_j, ssr_j, betah, tauhat;
   double ll = 0; // force initilization
   double penloglik = 0; // force initialization
   notcg.zeros();  // initialization
@@ -139,19 +139,19 @@ List cppNormalmixPMLE(NumericMatrix bs,
       /*   if k==1, we don't update tau       */
       /*   if k>1, we update tau              */
       if (k==1){
-        alphah = (alpha(h-1)+alpha(h));
-        alpha(h-1) = alphah*tau;
-        alpha(h) = alphah*(1-tau);
+        betah = alpha(h-1)+alpha(h);
+        alpha(h-1) = betah*tau;
+        alpha(h) = betah*(1-tau);
       } else if (k>1) {
-        alphah = (alpha(h-1)+alpha(h));
-        tauhat = alpha(h-1)/(alpha(h-1)+alpha(h));
+        betah = alpha(h-1)+alpha(h);
+        tauhat = alpha(h-1)/betah;
         if(tauhat <= 0.5) {
-            tau = fmin((alpha(h-1)*n + cn)/(alpha(h-1)*n + alpha(h)*n + cn), 0.5);
+            tau = fmin((alpha(h-1)*n + cn)/(betah*n + cn), 0.5);
         } else {
-            tau = fmax(alpha(h-1)*n /(alpha(h-1)*n + alpha(h)*n + cn), 0.5);
+            tau = fmax(alpha(h-1)*n /(betah*n + cn), 0.5);
         }
-        alpha(h-1) = alphah*tau;
-        alpha(h) = alphah*(1-tau);
+        alpha(h-1) = betah*tau;
+        alpha(h) = betah*(1-tau);
       }
 
       /* Check singularity */
