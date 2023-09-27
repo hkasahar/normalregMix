@@ -298,7 +298,7 @@ normalmixPMLE <- function (y, m = 2, z = NULL, vcov.method = c("Hessian", "OPG",
   y <- as.vector(y)
   n <- length(y)
   p <- 0
-  gam <- NULL
+  gamma <- NULL
   ninits.short <- ninits*10*(1 + p)*m
   vcov.method <- match.arg(vcov.method)
 
@@ -315,7 +315,7 @@ normalmixPMLE <- function (y, m = 2, z = NULL, vcov.method = c("Hessian", "OPG",
   if (m == 1) {
     if (!is.null(z)) {
       mu     <- unname(ls.out$coeff[1])
-      gam <- unname(ls.out$coeff[2:(1 + p)])
+      gamma <- unname(ls.out$coeff[2:(1 + p)])
       res    <- ls.out$residuals
       sigma <- sqrt(mean(res*res))
     } else {
@@ -370,14 +370,16 @@ normalmixPMLE <- function (y, m = 2, z = NULL, vcov.method = c("Hessian", "OPG",
       postprobs <- matrix(out$post[,index], nrow=n)
     } else {
       # generate initial values for nlopt/SLSQP
-      ninits.nlopt <- ninits*(1 + p)*m
+      ninits.nlopt <- ninits*(1 + p*p)*m
       tmp <- normalmixPMLEinit(y = y, z = z, ninits = ninits.nlopt, m = m)
+      h       <- 0  # dummy
+      tau     <- 0.5
       an      <- 1/n  # penalty term for variance
       cn      <- 0   # penalty term for tau
       sigma0  <- rep(sd0, m)
       mu0     <- double(m+1) # dummy
       
-      b0 <- as.matrix(rbind( tmp$alpha, tmp$mu, tmp$sigma, tmp$gam))
+      b0 <- as.matrix(rbind( tmp$alpha, tmp$mu, tmp$sigma, tmp$gamma))
       if (!is.null(binit)) {
         b0[ , 1] <- binit
       }
@@ -388,14 +390,17 @@ normalmixPMLE <- function (y, m = 2, z = NULL, vcov.method = c("Hessian", "OPG",
       
       suppressWarnings({
         for (jj in 1:ninits.nlopt){
-          if (is.finite(pllnormalmix_z_cpp(b0[,jj], y, z, m, p, an, sigma0)) &&
-              all(is.finite(pllnormalmix_z_grad_cpp(b0[,jj], y, z, m, p, an, sigma0))) ) {
+          if (is.finite(pllnormalmix_z_cpp(b0[,jj], y, z, m, p, an, cn, sigma0, tau, h)) &&
+              all(is.finite(pllnormalmix_z_grad_cpp(b0[,jj], y, z, m, p, an, cn, sigma0, tau, h))) ) {
               # out.list[[jj]] <- nloptr(x0=b0[,jj], eval_f=pllnormalmix_z,
               out.list[[jj]] <- nloptr(x0=b0[,jj], eval_f=pllnormalmix_z_cpp,
                                         eval_grad_f=pllnormalmix_z_grad_cpp,
-                                        lb=lb, ub=ub, eval_g_eq = normalmix_heq_cpp,
-                                        eval_jac_g_eq = normalmix_heq_gr_cpp, 
-                                        opts=opts, y=y, z=z, m=m, p=p, an=an, sigma0=sigma0)
+                                        lb=lb, ub=ub, 
+                                        eval_g_eq = normalmix_heq_cpp,
+                                        eval_jac_g_eq = normalmix_heq_grad_cpp,
+                                        opts=opts,
+                                        y=y, z=z, m=m, p=p, an=an, cn=cn,
+                                        sigma0=sigma0, tau=tau, h=h)
           } else {
             out.list[[jj]] <- list(objective = Inf)
           } # enf of if (is.finite...)
@@ -491,9 +496,10 @@ normalmixPhiInit <- function (y, parlist, z = NULL, h, tau, ninits = 1)
   if (is.null(z))
     gamma <- NULL
   else {
-    gamma0  <- parlist$gamma
+    z <- matrix(z, ncol=p)
+    gamma0  <- matrix(parlist$gamma, ncol=1)
     y    <- y - z %*% gamma0
-    gamma <- matrix(runif(p*ninits,min=0.5,max=1.5),nrow=p)*gamma0
+    gamma <- matrix(runif(p*ninits,min=0.5,max=1.5),nrow=p)*(gamma0 %*% rep(1,ninits))
   }
 
   if (m>=2){
